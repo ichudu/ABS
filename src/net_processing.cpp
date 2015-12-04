@@ -1480,11 +1480,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                     // This is because after startup of the node, we are in IBD mode, which will only be left when recent
                     // blocks arrive. At the same time, we won't get any blocks from peers because we keep delaying
                     // GETHEADERS
-<<<<<<< HEAD
-                    bool fPoVNETGenesis = chainparams.NetworkIDString() == CBaseChainParams::POVNET && pindexBestHeader->GetBlockHash() == chainparams.PoVNETGenesisBlock().GetHash();
-=======
-                    bool fDevNetGenesis = !chainparams.GetConsensus().hashDevnetGenesisBlock.IsNull() && pindexBestHeader->GetBlockHash() == chainparams.GetConsensus().hashDevnetGenesisBlock;
->>>>>>> 99b2789a7... Fix DeserializeAndCheckBlockTest benchmark and store hashDevnetGenesisBlock in `consensus` (#1888)
+                    bool fPoVNETGenesis = !chainparams.GetConsensus().hashPoVNETGenesisBlock.IsNull() && pindexBestHeader->GetBlockHash() == chainparams.GetConsensus().hashPoVNETGenesisBlock;
 
                     if (!fPoVNETGenesis && chainparams.DelayGetHeadersTime() != 0 && pindexBestHeader->GetBlockTime() < GetAdjustedTime() - chainparams.DelayGetHeadersTime()) {
                         // We are pretty far from being completely synced at the moment. If we would initiate a new
@@ -2094,6 +2090,14 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             pfrom->fDisconnect = true;
             return true;
         }
+
+        if (connman.OutboundTargetReached(false) && !pfrom->fWhitelisted)
+        {
+            LogPrint("net", "mempool request with bandwidth limit reached, disconnect peer=%d\n", pfrom->GetId());
+            pfrom->fDisconnect = true;
+            return true;
+        }
+
         LOCK(pfrom->cs_inventory);
         pfrom->fSendMempool = true;
     }
