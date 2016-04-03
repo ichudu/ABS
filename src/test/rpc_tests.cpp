@@ -320,6 +320,29 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/128");
 }
 
+BOOST_AUTO_TEST_CASE(rpc_convert_values_generatetoaddress)
+{
+    UniValue result;
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("101")("yZzA54XW3vK2tm1eSoCGqa66Zu1p1aUWVm")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 101);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "yZzA54XW3vK2tm1eSoCGqa66Zu1p1aUWVm");
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("101")("yQBtpjp4kcx5kdHy53JLt8WvSVMJpEck89")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 101);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "yQBtpjp4kcx5kdHy53JLt8WvSVMJpEck89");
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("1")("yLym2jNad4G8yAQk2Dqt8WVAhspb7Uh3QE")("9")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 1);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "yLym2jNad4G8yAQk2Dqt8WVAhspb7Uh3QE");
+    BOOST_CHECK_EQUAL(result[2].get_int(), 9);
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("1")("yeuGPR63dHk98cSMZetDhUFTyvJen6z7s9")("9")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 1);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "yeuGPR63dHk98cSMZetDhUFTyvJen6z7s9");
+    BOOST_CHECK_EQUAL(result[2].get_int(), 9);
+}
+
 BOOST_AUTO_TEST_CASE(rpc_sentinel_ping)
 {
     BOOST_CHECK_NO_THROW(CallRPC("sentinelping 1.0.2"));
