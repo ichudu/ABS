@@ -129,26 +129,26 @@ public:
         consensus.nMasternodePaymentsIncreaseBlock = 6720; // start increasing after first week
         consensus.nMasternodePaymentsIncreasePeriod = 6720; // weekly increase
         consensus.nMasternodeMinimumConfirmations = 15;
-		
+
 		consensus.nInstantSendKeepLock = 24;
-        
-		/* budget */		
-		consensus.nBudgetPaymentsStartBlock = 98800; 
+
+		/* budget */
+		consensus.nBudgetPaymentsStartBlock = 98800;
         consensus.nBudgetPaymentsCycleBlocks = 7300; // ~(60*24*30)/1.5 / 4
         consensus.nBudgetPaymentsWindowBlocks = 100;
-        consensus.nBudgetProposalEstablishingTime = 60*60*24; // in seconds 
-		
-        consensus.nSuperblockStartBlock = 98800; 
+        consensus.nBudgetProposalEstablishingTime = 60*60*24; // in seconds
+
+        consensus.nSuperblockStartBlock = 98800;
         consensus.nSuperblockCycle = 7300; // ~(60*24*30)/1.5 / 4
-        
-		/* Governance */ 
+
+		/* Governance */
 		consensus.nGovernanceMinQuorum = 10;
-        consensus.nGovernanceFilterElements = 20000;        
+        consensus.nGovernanceFilterElements = 20000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
         consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e"); 
+        consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 7.5 * 60; // 5 blocks
         consensus.nPowTargetSpacing = 1.5 * 60; // 1.5 minutes
@@ -174,7 +174,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_DIP0001].nThreshold = 3226; // 80% of 4032
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100000"); 
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100000");
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00"); // always verify
@@ -195,11 +195,11 @@ public:
         nPruneAfterHeight = 100000;
 
         genesis = CreateGenesisBlock(1518598800, 1399438, 0x1e0ffff0, 1, 30 * COIN);
-		
+
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e"));
         assert(genesis.hashMerkleRoot == uint256S("0x12844a9cbf517654e272975506ab56af4d5c8dde0332a0ee48ba159c72daae03"));
-        
+
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "seed1.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "seed2.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "seed3.absolutecoin.net"));
@@ -294,7 +294,7 @@ public:
 
         // The best chain should have at least this much work.
         // not used currently
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100000"); 
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100000");
 
         // By default assume that the signatures in ancestors of this block are valid.
         // not used currently
@@ -326,7 +326,7 @@ public:
 		vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed1.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed2.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed3.absolutecoin.net"));
-		        
+
 
         // Testnet Absolute addresses start with 'y'
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,140);
@@ -509,12 +509,14 @@ public:
         consensus.nMajorityWindow = 1000;
         consensus.BIP34Height = -1; // BIP34 is not required
         consensus.BIP34Hash = uint256();
+        consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
+        consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Absolute: 1 day
         consensus.nPowTargetSpacing = 2.5 * 60; // Absolute: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
-        consensus.nPowDGWHeight = 25;  
+        consensus.nPowDGWHeight = 25;
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -543,7 +545,7 @@ public:
         nPruneAfterHeight = 1000;
 
         genesis = CreateGenesisBlock(1518596800, 2542998, 0x1e0ffff0, 1, 30 * COIN);
-                			
+
 
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x00000d8cfc345deda15f4897bb9ed59878fb4c84f02c478dc1165ee8fbaede56"));
