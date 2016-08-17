@@ -106,8 +106,10 @@ linux-coverage-build
 linux-build
 win32-build
 qa/pull-tester/tests_config.py
+qa/pull-tester/test.*/*
+qa/tmp
 qa/cache/*
-
+share/BitcoindComparisonTool.jar
 
 !src/leveldb*/Makefile
 
