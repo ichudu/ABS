@@ -907,9 +907,9 @@ UniValue masternodebroadcast(const JSONRPCRequest& request)
     return NullUniValue;
 }
 
-UniValue sentinelping(const UniValue& params, bool fHelp)
+UniValue sentinelping(const JSONRPCRequest& request)
 {
-    if (fHelp || params.size() != 1) {
+    if (request.fHelp || request.params.size() != 1) {
         throw std::runtime_error(
             "sentinelping version\n"
             "\nSentinel ping.\n"
@@ -923,7 +923,7 @@ UniValue sentinelping(const UniValue& params, bool fHelp)
         );
     }
 
-    activeMasternode.UpdateSentinelPing(StringVersionToInt(params[0].get_str()));
+    activeMasternode.UpdateSentinelPing(StringVersionToInt(request.params[0].get_str()));
     return true;
 }
 
