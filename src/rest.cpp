@@ -277,7 +277,12 @@ static bool rest_block_notxdetails(HTTPRequest* req, const std::string& strURIPa
 }
 
 // A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
+<<<<<<< HEAD
 UniValue getblockchaininfo(const UniValue& params, bool fHelp);
+=======
+UniValue getblockchaininfo(const JSONRPCRequest& request);
+
+>>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
 static bool rest_chaininfo(HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
@@ -287,8 +292,9 @@ static bool rest_chaininfo(HTTPRequest* req, const std::string& strURIPart)
 
     switch (rf) {
     case RF_JSON: {
-        UniValue rpcParams(UniValue::VARR);
-        UniValue chainInfoObject = getblockchaininfo(rpcParams, false);
+        JSONRPCRequest jsonRequest;
+        jsonRequest.params = UniValue(UniValue::VARR);
+        UniValue chainInfoObject = getblockchaininfo(jsonRequest);
         string strJSON = chainInfoObject.write() + "\n";
         req->WriteHeader("Content-Type", "application/json");
         req->WriteReply(HTTP_OK, strJSON);
