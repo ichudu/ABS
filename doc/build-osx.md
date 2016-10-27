@@ -109,10 +109,13 @@ The next time you run it, it will start downloading the blockchain, but it won't
 output anything while it's doing this. This process may take several hours;
 you can monitor its process by looking at the debug.log file, like this:
 
+<<<<<<< HEAD
     tail -f $HOME/Library/Application\ Support/AbsoluteCore/debug.log
 
 Other commands:
 -------
+=======
+>>>>>>> 55208b759... Merge #9033: Update build notes for dropping osx 10.7 support (fanquake)
 
     ./absoluted -daemon # to start the absolute daemon.
     ./absolute-cli --help  # for a list of command-line options.
