@@ -6,6 +6,7 @@
 //#define ENABLE_ABSOLUTE_DEBUG
 
 #include "activemasternode.h"
+#include "consensus/validation.h"
 #include "governance.h"
 #include "governance-vote.h"
 #include "governance-classes.h"
@@ -179,7 +180,8 @@ UniValue gobject(const JSONRPCRequest& request)
         // -- make our change address
         CReserveKey reservekey(pwalletMain);
         // -- send the tx to the network
-        pwalletMain->CommitTransaction(wtx, reservekey, g_connman.get(), NetMsgType::TX);
+        CValidationState state;
+        pwalletMain->CommitTransaction(wtx, reservekey, g_connman.get(), state, NetMsgType::TX);
 
         DBG( cout << "gobject: prepare "
              << " strData = " << govobj.GetDataAsString()
