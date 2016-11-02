@@ -5,9 +5,11 @@
 
 from __future__ import division,print_function,unicode_literals
 import os
+import sys
 import bctest
 import buildenv
 import argparse
+import logging
 
 help_text="""Test framework for bitcoin utils.
 
@@ -20,9 +22,9 @@ test/bitcoin-util-test.py --src=[srcdir]
 
 
 if __name__ == '__main__':
-    verbose = False
     try:
         srcdir = os.environ["srcdir"]
+        verbose = False
     except:
         parser = argparse.ArgumentParser(description=help_text)
         parser.add_argument('-s', '--srcdir')
@@ -30,4 +32,13 @@ if __name__ == '__main__':
         args = parser.parse_args()
         srcdir = args.srcdir
         verbose = args.verbose
-    bctest.bctester(srcdir + "/test/data", "bitcoin-util-test.json", buildenv, verbose = verbose)
+
+    if verbose:
+        level = logging.DEBUG
+    else:
+        level = logging.ERROR
+    formatter = '%(asctime)s - %(levelname)s - %(message)s'
+    # Add the format/level to the logger
+    logging.basicConfig(format = formatter, level=level)
+
+    bctest.bctester(srcdir + "/test/data", "bitcoin-util-test.json", buildenv)
