@@ -148,7 +148,7 @@ public:
     // fConnectToMasternode should be 'true' only if you want this node to allow to connect to itself
     // and/or you want it to be disconnected on CMasternodeMan::ProcessMasternodeConnections()
     // Unfortunately, can't make this method private like in Bitcoin,
-    // because it's used in many Absolute-specific places (masternode, privatesend).
+    // because it's used in many Dash-specific places (masternode, privatesend).
     CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL, bool fCountFailure = false, bool fConnectToMasternode = false);
 
     struct CFullyConnectedOnly {
@@ -413,6 +413,7 @@ private:
     void ThreadMnbRequestConnections();
 
     uint64_t CalculateKeyedNetGroup(const CAddress& ad);
+
     void WakeMessageHandler();
 
     CNode* FindNode(const CNetAddr& ip);
@@ -501,6 +502,7 @@ private:
 
     /** SipHasher seeds for deterministic randomness */
     const uint64_t nSeed0, nSeed1;
+
     /** flag for waking the message processor. */
     bool fMsgProcWake;
 
@@ -707,7 +709,7 @@ public:
     bool fFeeler; // If true this node is being used as a short lived feeler.
     bool fOneShot;
     bool fClient;
-    bool fInbound;
+    const bool fInbound;
     bool fNetworkNode;
     std::atomic_bool fSuccessfullyConnected;
     bool fDisconnect;
@@ -724,7 +726,8 @@ public:
     CCriticalSection cs_filter;
     CBloomFilter* pfilter;
     int nRefCount;
-    NodeId id;
+    const NodeId id;
+
     const uint64_t nKeyedNetGroup;
 
     std::atomic_bool fPauseRecv;
@@ -793,21 +796,20 @@ public:
     CAmount lastSentFeeFilter;
     int64_t nextSendTimeFeeFilter;
 
-    CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, const std::string &addrNameIn = "", bool fInboundIn = false, bool fNetworkNodeIn = false);
+    CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, uint64_t nLocalHostNonceIn, const std::string &addrNameIn = "", bool fInboundIn = false, bool fNetworkNodeIn = false);
     ~CNode();
 
 private:
-
     CCriticalSection cs_nRefCount;
 
     CNode(const CNode&);
     void operator=(const CNode&);
 
 
-    uint64_t nLocalHostNonce;
+    const uint64_t nLocalHostNonce;
     // Services offered to this peer
-    ServiceFlags nLocalServices;
-    int nMyStartingHeight;
+    const ServiceFlags nLocalServices;
+    const int nMyStartingHeight;
     int nSendVersion;
     std::list<CNetMessage> vRecvMsg;  // Used only by SocketHandler thread
 public:
@@ -929,7 +931,6 @@ public:
     {
         return nLocalServices;
     }
-
 };
 
 class CExplicitNetCleanup
