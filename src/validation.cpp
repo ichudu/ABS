@@ -488,7 +488,7 @@ int GetUTXOConfirmations(const COutPoint& outpoint)
 }
 
 
-bool CheckTransaction(const CTransaction& tx, CValidationState &state)
+bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fCheckDuplicateInputs)
 {
     // Basic checks that don't depend on any context
     if (tx.vin.empty())
@@ -515,7 +515,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     // Check for duplicate inputs
     set<COutPoint> vInOutPoints;
 
-/** DISABLE PREMINE **/	
+/** DISABLE PREMINE **/
     for (const auto& txin : tx.vin)
     {
         CTransaction txPrev;
@@ -540,7 +540,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
         vInOutPoints.insert(txin.prevout);
     }
-	
+
 /** END DISABLE PREMINE **/
 /*    for (const auto& txin : tx.vin)
     {
@@ -1278,31 +1278,31 @@ NOTE:   unlike bitcoin we are using PREVIOUS block height here,
 CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params& consensusParams, bool fSuperblockPartOnly)
 {
     CAmount nSubsidyBase;
-	
+
     if (nPrevHeight == 0) {
         return 525000 * COIN; // Absolute project fund
     }
-	
+
 	if (nPrevHeight < 250) {
 		nSubsidyBase = 1;	//deployment phase
 	}else{
 		nSubsidyBase = 30;  // Absolute base reward
 	}
-	
+
     CAmount nSubsidy = nSubsidyBase * COIN;
 
     // decrease supply by 20% on the yearly basis, capping max supply at 52.5M ABS
     for (int i = consensusParams.nSubsidyHalvingInterval; i <= nPrevHeight; i += consensusParams.nSubsidyHalvingInterval) {
         nSubsidy -= nSubsidy/5;
     }
-	
-	// Hard fork to increase the block reward by 10 extra percent (allowing budget/superblocks)	
+
+	// Hard fork to increase the block reward by 10 extra percent (allowing budget/superblocks)
     CAmount nSuperblockPart = 0;
 	if( nPrevHeight > consensusParams.nBudgetPaymentsStartBlock) {
 		nSuperblockPart = nSubsidy / 10;
 		nSubsidy += nSuperblockPart;
 	}
-		
+
 
     return fSuperblockPartOnly ? nSuperblockPart : nSubsidy - nSuperblockPart;
 }
@@ -1316,7 +1316,7 @@ CAmount GetMasternodePayment(int nHeight, CAmount blockValue)
 
                                                                       // Masternode reward:
     if(nHeight > nMNPIBlock)                  ret += blockValue / 10; // 50%
-    if(nHeight > nMNPIBlock+(nMNPIPeriod* 1)) ret += blockValue / 10; // 60% 
+    if(nHeight > nMNPIBlock+(nMNPIPeriod* 1)) ret += blockValue / 10; // 60%
     if(nHeight > nMNPIBlock+(nMNPIPeriod* 2)) ret += blockValue / 10; // 70%
     if(nHeight > nMNPIBlock+(nMNPIPeriod* 3)) ret += blockValue / 10; // 80%
 
@@ -3278,7 +3278,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
                     // relaying instantsend data won't help it.
                     LOCK(cs_main);
                     mapRejectedBlocks.insert(make_pair(block.GetHash(), GetTime()));
-                    return state.DoS(100, false, REJECT_INVALID, "conflict-tx-lock", false, 
+                    return state.DoS(100, false, REJECT_INVALID, "conflict-tx-lock", false,
                                      strprintf("transaction %s conflicts with transaction lock %s", tx.GetHash().ToString(), hashLocked.ToString()));
                 }
             }
@@ -3291,7 +3291,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
 
     // Check transactions
     for (const auto& tx : block.vtx)
-        if (!CheckTransaction(tx, state))
+        if (!CheckTransaction(tx, state, false))
             return state.Invalid(false, state.GetRejectCode(), state.GetRejectReason(),
                                  strprintf("Transaction check failed (tx hash %s) %s", tx.GetHash().ToString(), state.GetDebugMessage()));
 
@@ -3962,7 +3962,7 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
         if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus(), GetAdjustedTime()))
-            return error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__, 
+            return error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__,
                          pindex->nHeight, pindex->GetBlockHash().ToString(), FormatStateMessage(state));
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
@@ -4065,7 +4065,7 @@ static bool AddGenesisBlock(const CChainParams& chainparams, const CBlock& block
         return error("%s: genesis block not accepted", __func__);
     return true;
 }
-bool InitBlockIndex(const CChainParams& chainparams) 
+bool InitBlockIndex(const CChainParams& chainparams)
 {
     LOCK(cs_main);
 
