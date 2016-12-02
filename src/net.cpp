@@ -1129,14 +1129,7 @@ void CConnman::ThreadSocketHandler()
                     pnode->CloseSocketDisconnect();
 
                     // hold in disconnected pool until all refs are released
-<<<<<<< HEAD
-                    if (pnode->fNetworkNode || pnode->fInbound)
-                        pnode->Release();
-                    if (pnode->fMasternode)
-                        pnode->Release();
-=======
                     pnode->Release();
->>>>>>> d54ef6d7e... Merge #9226: Remove fNetworkNode and pnodeLocalHost.
                     vNodesDisconnected.push_back(pnode);
                 }
             }
