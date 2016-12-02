@@ -80,49 +80,16 @@ class TestNode(NodeConnCB):
         return success
 
 class MaxUploadTest(BitcoinTestFramework):
- 
-    def add_options(self, parser):
-        parser.add_option("--testbinary", dest="testbinary",
-                          default=os.getenv("ABSOLUTED", "absoluted"),
-                          help="absoluted binary to test")
 
     def __init__(self):
         super().__init__()
         self.setup_clean_chain = True
         self.num_nodes = 1
 
-        self.utxo = []
-        self.txouts = gen_return_txouts()
-
     def setup_network(self):
         # Start a node with maxuploadtarget of 200 MB (/24h)
         self.nodes = []
         self.nodes.append(start_node(0, self.options.tmpdir, ["-debug", "-maxuploadtarget=200", "-blockmaxsize=999000"]))
-
-    def mine_full_block(self, node, address):
-        # Want to create a full block
-        # We'll generate a 66k transaction below, and 14 of them is close to the 1MB block limit
-        for j in range(14):
-            if len(self.utxo) < 14:
-                self.utxo = node.listunspent()
-            inputs=[]
-            outputs = {}
-            t = self.utxo.pop()
-            inputs.append({ "txid" : t["txid"], "vout" : t["vout"]})
-            remchange = t["amount"] - Decimal("0.001000")
-            outputs[address]=remchange
-            # Create a basic transaction that will send change back to ourself after account for a fee
-            # And then insert the 128 generated transaction outs in the middle rawtx[92] is where the #
-            # of txouts is stored and is the only thing we overwrite from the original transaction
-            rawtx = node.createrawtransaction(inputs, outputs)
-            newtx = rawtx[0:92]
-            newtx = newtx + self.txouts
-            newtx = newtx + rawtx[94:]
-            # Appears to be ever so slightly faster to sign with SIGHASH_NONE
-            signresult = node.signrawtransaction(newtx,None,None,"NONE")
-            txid = node.sendrawtransaction(signresult["hex"], True)
-        # Mine a full sized block which will be these transactions we just created
-        node.generate(1)
 
     def run_test(self):
         # Before we connect anything, we first set the time on the node
@@ -151,7 +118,7 @@ class MaxUploadTest(BitcoinTestFramework):
         # Test logic begins here
 
         # Now mine a big block
-        self.mine_full_block(self.nodes[0], self.nodes[0].getnewaddress())
+        mine_large_block(self.nodes[0])
 
         # Store the hash; we'll request this later
         big_old_block = self.nodes[0].getbestblockhash()
@@ -162,11 +129,10 @@ class MaxUploadTest(BitcoinTestFramework):
         self.nodes[0].setmocktime(int(time.time()) - 2*60*60*24)
 
         # Mine one more block, so that the prior block looks old
-        self.mine_full_block(self.nodes[0], self.nodes[0].getnewaddress())
+        mine_large_block(self.nodes[0])
 
         # We'll be requesting this new block too
         big_new_block = self.nodes[0].getbestblockhash()
-        new_block_size = self.nodes[0].getblock(big_new_block)['size']
         big_new_block = int(big_new_block, 16)
 
         # test_nodes[0] will test what happens if we just keep requesting the
@@ -188,7 +154,7 @@ class MaxUploadTest(BitcoinTestFramework):
             assert_equal(test_nodes[0].block_receive_map[big_old_block], i+1)
 
         assert_equal(len(self.nodes[0].getpeerinfo()), 3)
-        # At most a couple more tries should succeed (depending on how long 
+        # At most a couple more tries should succeed (depending on how long
         # the test has been running so far).
         for i in range(3):
             test_nodes[0].send_message(getdata_request)
