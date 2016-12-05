@@ -238,7 +238,7 @@ class TestBuilder
 {
 private:
     CScript scriptPubKey;
-    CTransaction creditTx;
+    CTransactionRef creditTx;
     CMutableTransaction spendTx;
     bool havePush;
     std::vector<unsigned char> push;
@@ -265,11 +265,11 @@ public:
     TestBuilder(const CScript& script_, const std::string& comment_, int flags_, bool P2SH = false) : scriptPubKey(script_), havePush(false), comment(comment_), flags(flags_), scriptError(SCRIPT_ERR_OK)
     {
         if (P2SH) {
-            creditTx = BuildCreditingTransaction(CScript() << OP_HASH160 << ToByteVector(CScriptID(script_)) << OP_EQUAL);
+            creditTx = MakeTransactionRef(BuildCreditingTransaction(CScript() << OP_HASH160 << ToByteVector(CScriptID(script_)) << OP_EQUAL));
         } else {
-            creditTx = BuildCreditingTransaction(script_);
+            creditTx = MakeTransactionRef(BuildCreditingTransaction(script_));
         }
-        spendTx = BuildSpendingTransaction(CScript(), creditTx);
+        spendTx = BuildSpendingTransaction(CScript(), *creditTx);
     }
 
     TestBuilder& ScriptError(ScriptError_t err)
@@ -357,7 +357,7 @@ public:
     {
         TestBuilder copy = *this; // Make a copy so we can rollback the push.
         DoPush();
-        DoTest(creditTx.vout[0].scriptPubKey, spendTx.vin[0].scriptSig, flags, comment, scriptError);
+        DoTest(creditTx->vout[0].scriptPubKey, spendTx.vin[0].scriptSig, flags, comment, scriptError);
         *this = copy;
         return *this;
     }
@@ -367,7 +367,7 @@ public:
         DoPush();
         UniValue array(UniValue::VARR);
         array.push_back(FormatScript(spendTx.vin[0].scriptSig));
-        array.push_back(FormatScript(creditTx.vout[0].scriptPubKey));
+        array.push_back(FormatScript(creditTx->vout[0].scriptPubKey));
         array.push_back(FormatScriptFlags(flags));
         array.push_back(FormatScriptError((ScriptError_t)scriptError));
         array.push_back(comment);
@@ -381,7 +381,7 @@ public:
 
     const CScript& GetScriptPubKey()
     {
-        return creditTx.vout[0].scriptPubKey;
+        return creditTx->vout[0].scriptPubKey;
     }
 };
 
