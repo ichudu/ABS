@@ -62,6 +62,7 @@ struct IteratorComparator
     }
 };
 struct COrphanTx {
+    // When modifying, adapt the copy of this definition in tests/DoS_tests.
     CTransaction tx;
     NodeId fromPeer;
     int64_t nTimeExpire;
