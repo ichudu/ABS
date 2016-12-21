@@ -103,6 +103,7 @@ BITCOIN_CORE_H = \
   consensus/consensus.h \
   core_io.h \
   core_memusage.h \
+  cuckoocache.h \
   privatesend.h \
   privatesend-client.h \
   privatesend-server.h \
