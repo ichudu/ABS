@@ -230,10 +230,10 @@ public:
         sigTime(0)
         {}
 
-    CDarksendBroadcastTx(CTransaction tx, COutPoint outpoint, int64_t sigTime) :
+    CDarksendBroadcastTx(const CTransactionRef& _tx, COutPoint _outpoint, int64_t _sigTime) :
         nConfirmedHeight(-1),
-        tx(tx),
-        vin(CTxIn(outpoint)),
+        tx(_tx),
+        vin(CTxIn(_outpoint)),
         vchSig(),
         sigTime(sigTime)
         {}
