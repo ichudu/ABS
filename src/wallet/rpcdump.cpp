@@ -82,6 +82,7 @@ UniValue importprivkey(const JSONRPCRequest& request)
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
 
+    
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 3)
         throw runtime_error(
             "importprivkey \"absoluteprivkey\" ( \"label\" ) ( rescan )\n"
@@ -192,6 +193,7 @@ UniValue importaddress(const JSONRPCRequest& request)
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
 
+    
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 4)
         throw runtime_error(
             "importaddress \"address\" ( \"label\" rescan p2sh )\n"
@@ -414,6 +416,7 @@ UniValue importwallet(const JSONRPCRequest& request)
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
 
+    
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "importwallet \"filename\"\n"
@@ -655,6 +658,7 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
 
+    
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "dumpprivkey \"address\"\n"
@@ -738,6 +742,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
 
+    
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
             "dumpwallet \"filename\"\n"
