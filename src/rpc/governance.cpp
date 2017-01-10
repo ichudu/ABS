@@ -992,3 +992,20 @@ UniValue getsuperblockbudget(const JSONRPCRequest& request)
 
     return strBudget;
 }
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafe argNames
+  //  --------------------- ------------------------  -----------------------  ------ ----------
+    /* absolute features */
+    { "absolute",               "getgovernanceinfo",      &getgovernanceinfo,      true,  {} },
+    { "absolute",               "getsuperblockbudget",    &getsuperblockbudget,    true,  {"index"} },
+    { "absolute",               "gobject",                &gobject,                true,  {} },
+    { "absolute",               "voteraw",                &voteraw,                true,  {} },
+
+};
+
+void RegisterGovernanceRPCCommands(CRPCTable &t)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
+}
