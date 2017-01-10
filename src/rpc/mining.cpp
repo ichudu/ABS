@@ -85,13 +85,13 @@ UniValue getnetworkhashps(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() > 2)
         throw runtime_error(
-            "getnetworkhashps ( blocks height )\n"
+            "getnetworkhashps ( nblocks height )\n"
             "\nReturns the estimated network hashes per second based on the last n blocks.\n"
             "Pass in [blocks] to override # of blocks, -1 specifies since last difficulty change.\n"
             "Pass in [height] to estimate the network speed at the time when a certain block was found.\n"
             "\nArguments:\n"
-            "1. blocks     (numeric, optional, default=120) The number of blocks, or -1 for blocks since last difficulty change.\n"
-            "2. height     (numeric, optional, default=-1) To estimate at the time of the given height.\n"
+            "1. nblocks     (numeric, optional, default=120) The number of blocks, or -1 for blocks since last difficulty change.\n"
+            "2. height      (numeric, optional, default=-1) To estimate at the time of the given height.\n"
             "\nResult:\n"
             "x             (numeric) Hashes per second estimated\n"
             "\nExamples:\n"
@@ -159,10 +159,10 @@ UniValue generate(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
         throw runtime_error(
-            "generate numblocks ( maxtries )\n"
-            "\nMine up to numblocks blocks immediately (before the RPC call returns)\n"
+            "generate nblocks ( maxtries )\n"
+            "\nMine up to nblocks blocks immediately (before the RPC call returns)\n"
             "\nArguments:\n"
-            "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
+            "1. nblocks      (numeric, required) How many blocks are generated immediately.\n"
             "2. maxtries     (numeric, optional) How many iterations to try (default = 1000000).\n"
             "\nResult:\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
@@ -195,11 +195,11 @@ UniValue generatetoaddress(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 2 || request.params.size() > 3)
         throw runtime_error(
-            "generatetoaddress numblocks address (maxtries)\n"
+            "generatetoaddress nblocks address (maxtries)\n"
             "\nMine blocks immediately to a specified address (before the RPC call returns)\n"
             "\nArguments:\n"
-            "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
-            "2. address    (string, required) The address to send the newly generated Absolute to.\n"
+            "1. nblocks      (numeric, required) How many blocks are generated immediately.\n"
+            "2. address      (string, required) The address to send the newly generated absolute to.\n"
             "3. maxtries     (numeric, optional) How many iterations to try (default = 1000000).\n"
             "\nResult:\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
@@ -217,7 +217,7 @@ UniValue generatetoaddress(const JSONRPCRequest& request)
     CBitcoinAddress address(request.params[1].get_str());
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Error: Invalid address");
-    
+
     boost::shared_ptr<CReserveScript> coinbaseScript(new CReserveScript());
     coinbaseScript->reserveScript = GetScriptForDestination(address.Get());
 
@@ -271,10 +271,10 @@ UniValue prioritisetransaction(const JSONRPCRequest& request)
             "Accepts the transaction into mined blocks at a higher (or lower) priority\n"
             "\nArguments:\n"
             "1. \"txid\"       (string, required) The transaction id.\n"
-            "2. priority delta (numeric, required) The priority to add or subtract.\n"
+            "2. priority_delta (numeric, required) The priority to add or subtract.\n"
             "                  The transaction selection algorithm considers the tx as it would have a higher priority.\n"
-            "                  (priority of a transaction is calculated: coinage * value_in_nABS / txsize) \n"
-            "3. fee delta      (numeric, required) The fee value (in nABS) to add (or subtract, if negative).\n"
+            "                  (priority of a transaction is calculated: coinage * value_in_duffs / txsize) \n"
+            "3. fee_delta      (numeric, required) The fee value (in duffs) to add (or subtract, if negative).\n"
             "                  The fee is not actually paid, only the algorithm for selecting transactions into a block\n"
             "                  considers the transaction as it would have paid a higher (or lower) fee.\n"
             "\nResult:\n"
@@ -335,7 +335,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             "    https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki#getblocktemplate_changes\n"
 
             "\nArguments:\n"
-            "1. TemplateRequest          (json object, optional) A json object in the following spec\n"
+            "1. template_request         (json object, optional) A json object in the following spec\n"
             "     {\n"
             "       \"mode\":\"template\"    (string, optional) This must be set to \"template\", \"proposal\" (see BIP 23), or omitted\n"
             "       \"capabilities\":[     (array, optional) A list of strings\n"
@@ -763,9 +763,9 @@ UniValue submitblock(const JSONRPCRequest& request)
             "The 'jsonparametersobject' parameter is currently ignored.\n"
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.\n"
 
-            "\nArguments:\n"
-            "1. \"hexdata\"    (string, required) the hex-encoded block data to submit\n"
-            "2. \"jsonparametersobject\"     (string, optional) object of optional parameters\n"
+            "\nArguments\n"
+            "1. \"hexdata\"        (string, required) the hex-encoded block data to submit\n"
+            "2. \"parameters\"     (string, optional) object of optional parameters\n"
             "    {\n"
             "      \"workid\" : \"id\"    (string, optional) if the server provided a workid, it MUST be included with submissions\n"
             "    }\n"
@@ -819,7 +819,7 @@ UniValue estimatefee(const JSONRPCRequest& request)
             "\nEstimates the approximate fee per kilobyte needed for a transaction to begin\n"
             "confirmation within nblocks blocks.\n"
             "\nArguments:\n"
-            "1. nblocks     (numeric)\n"
+            "1. nblocks     (numeric, required)\n"
             "\nResult:\n"
             "n              (numeric) estimated fee-per-kilobyte\n"
             "\n"
@@ -852,7 +852,7 @@ UniValue estimatepriority(const JSONRPCRequest& request)
             "\nDEPRECATED. Estimates the approximate priority a zero-fee transaction needs to begin\n"
             "confirmation within nblocks blocks.\n"
             "\nArguments:\n"
-            "1. nblocks     (numeric)\n"
+            "1. nblocks     (numeric, required)\n"
             "\nResult:\n"
             "n              (numeric) estimated priority\n"
             "\n"
@@ -917,7 +917,7 @@ UniValue estimatesmartpriority(const JSONRPCRequest& request)
             "confirmation within nblocks blocks if possible and return the number of blocks\n"
             "for which the estimate is valid.\n"
             "\nArguments:\n"
-            "1. nblocks     (numeric)\n"
+            "1. nblocks     (numeric, required)\n"
             "\nResult:\n"
             "{\n"
             "  \"priority\" : x.x,    (numeric) estimated priority\n"
@@ -946,19 +946,19 @@ UniValue estimatesmartpriority(const JSONRPCRequest& request)
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
-    { "mining",             "getnetworkhashps",       &getnetworkhashps,       true  },
-    { "mining",             "getmininginfo",          &getmininginfo,          true  },
-    { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
-    { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
-    { "mining",             "submitblock",            &submitblock,            true  },
+    { "mining",             "getnetworkhashps",       &getnetworkhashps,       true,  {"nblocks","height"} },
+    { "mining",             "getmininginfo",          &getmininginfo,          true,  {} },
+    { "mining",             "prioritisetransaction",  &prioritisetransaction,  true,  {"txid","priority_delta","fee_delta"} },
+    { "mining",             "getblocktemplate",       &getblocktemplate,       true,  {"template_request"} },
+    { "mining",             "submitblock",            &submitblock,            true,  {"hexdata","parameters"} },
 
-    { "generating",         "generate",               &generate,               true  },
-    { "generating",         "generatetoaddress",      &generatetoaddress,      true  },
+    { "generating",         "generate",               &generate,               true,  {"nblocks","maxtries"} },
+    { "generating",         "generatetoaddress",      &generatetoaddress,      true,  {"nblocks","address","maxtries"} },
 
-    { "util",               "estimatefee",            &estimatefee,            true  },
-    { "util",               "estimatepriority",       &estimatepriority,       true  },
-    { "util",               "estimatesmartfee",       &estimatesmartfee,       true  },
-    { "util",               "estimatesmartpriority",  &estimatesmartpriority,  true  },
+    { "util",               "estimatefee",            &estimatefee,            true,  {"nblocks"} },
+    { "util",               "estimatepriority",       &estimatepriority,       true,  {"nblocks"} },
+    { "util",               "estimatesmartfee",       &estimatesmartfee,       true,  {"nblocks"} },
+    { "util",               "estimatesmartpriority",  &estimatesmartpriority,  true,  {"nblocks"} },
 };
 
 void RegisterMiningRPCCommands(CRPCTable &t)
