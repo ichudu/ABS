@@ -361,13 +361,8 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
         CNode* pnode = FindNode((CService)addrConnect);
         if (pnode)
         {
-            // we have existing connection to this node but it was not a connection to masternode,
-            // change flag and add reference so that we can correctly clear it later
-            if(fConnectToMasternode && !pnode->fMasternode) {
-                pnode->AddRef();
-                pnode->fMasternode = true;
-            }
-            return pnode;
+            LogPrintf("Failed to open new connection, already connected\n");
+            return NULL;
         }
     }
 
@@ -397,17 +392,12 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
             CNode* pnode = FindNode((CService)addrConnect);
             if (pnode)
             {
-                // we have existing connection to this node but it was not a connection to masternode,
-                // change flag and add reference so that we can correctly clear it later
-                if(fConnectToMasternode && !pnode->fMasternode) {
-                    pnode->AddRef();
-                    pnode->fMasternode = true;
-                }
                 if (pnode->addrName.empty()) {
                     pnode->addrName = std::string(pszDest);
                 }
                 CloseSocket(hSocket);
-                return pnode;
+                LogPrintf("Failed to open new connection, already connected\n");
+                return NULL;
             }
         }
 
@@ -425,9 +415,6 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
             pnode->fMasternode = true;
         }
 
-        GetNodeSignals().InitializeNode(pnode, *this);
-        LOCK(cs_vNodes);
-        vNodes.push_back(pnode);
 
         return pnode;
     } else if (!proxyConnectionFailed) {
@@ -1910,6 +1897,12 @@ bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFai
         pnode->fOneShot = true;
     if (fFeeler)
         pnode->fFeeler = true;
+
+    {
+        LOCK(cs_vNodes);
+        vNodes.push_back(pnode);
+    }
+    GetNodeSignals().InitializeNode(pnode, *this);
 
     return true;
 }
