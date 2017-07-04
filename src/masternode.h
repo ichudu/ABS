@@ -37,15 +37,22 @@ static const int MASTERNODE_COLLATERAL                  = 2500;
 class CMasternodePing
 {
 public:
-    COutPoint masternodeOutpoint{};
-    uint256 blockHash{};
-    int64_t sigTime{}; //mnb message times
-    std::vector<unsigned char> vchSig{};
-    bool fSentinelIsCurrent = false; // true if last sentinel ping was current
-    // MSB is always 0, other 3 bits corresponds to x.x.x version scheme
-    uint32_t nSentinelVersion{DEFAULT_SENTINEL_VERSION};
+    CTxIn vin;
+    uint256 blockHash;
+    int64_t sigTime; //mnb message times
+    std::vector<unsigned char> vchSig;
+    bool fSentinelIsCurrent; // true if last sentinel ping was actual
+    uint32_t nSentinelVersion; // MSB is always 0, other 3 bits corresponds to x.x.x version scheme
+    //removed stop
 
-    CMasternodePing() = default;
+    CMasternodePing() :
+        vin(),
+        blockHash(),
+        sigTime(0),
+        vchSig(),
+        fSentinelIsCurrent(false),
+        nSentinelVersion(0)
+        {}
 
     CMasternodePing(const COutPoint& outpoint);
 
@@ -70,25 +77,26 @@ public:
         }
         READWRITE(blockHash);
         READWRITE(sigTime);
-        if (!(s.GetType() & SER_GETHASH)) {
-            READWRITE(vchSig);
-        }
-        if(ser_action.ForRead() && s.size() == 0) {
-            // TODO: drop this after migration to 70209
-            fSentinelIsCurrent = false;
-            nSentinelVersion = DEFAULT_SENTINEL_VERSION;
+        READWRITE(vchSig);
+        if(ser_action.ForRead() && (s.size() == 0))
             return;
-        }
         READWRITE(fSentinelIsCurrent);
         READWRITE(nSentinelVersion);
-        if(ser_action.ForRead() && s.size() == 0) {
-            // TODO: drop this after migration to 70209
-            nDaemonVersion = DEFAULT_DAEMON_VERSION;
-            return;
-        }
-        if (!(nVersion == 70208 && (s.GetType() & SER_NETWORK))) {
-            READWRITE(nDaemonVersion);
-        }
+    }
+
+    void swap(CMasternodePing& first, CMasternodePing& second) // nothrow
+    {
+        // enable ADL (not necessary in our case, but good practice)
+        using std::swap;
+
+        // by swapping the members of two classes,
+        // the two classes are effectively swapped
+        swap(first.vin, second.vin);
+        swap(first.blockHash, second.blockHash);
+        swap(first.sigTime, second.sigTime);
+        swap(first.vchSig, second.vchSig);
+        swap(first.fSentinelIsCurrent, second.fSentinelIsCurrent);
+        swap(first.nSentinelVersion, second.nSentinelVersion);
     }
 
     uint256 GetHash() const;
@@ -316,7 +324,9 @@ public:
 
     void RemoveGovernanceObject(uint256 nGovernanceObjectHash);
 
-    CMasternode& operator=(CMasternode const& from)
+    void UpdateWatchdogVoteTime(uint64_t nVoteTime = 0);
+
+    CMasternode& operator=(CMasternode from)
     {
         static_cast<masternode_info_t&>(*this)=from;
         lastPing = from.lastPing;

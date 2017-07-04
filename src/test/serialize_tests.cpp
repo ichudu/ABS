@@ -248,8 +248,8 @@ static bool isCanonicalException(const std::ios_base::failure& ex)
 
     // The string returned by what() can be different for different platforms.
     // Instead of directly comparing the ex.what() with an expected string,
-    // create an instance of exception to see if ex.what() matches 
-    // the expected explanatory string returned by the exception instance. 
+    // create an instance of exception to see if ex.what() matches
+    // the expected explanatory string returned by the exception instance.
     return strcmp(expectedException.what(), ex.what()) == 0;
 }
 
@@ -348,7 +348,7 @@ struct old_version
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(field1);
     }
 };\
@@ -360,7 +360,7 @@ struct new_version
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(field1);
         if(ser_action.ForRead() && (s.size() == 0))
         {
@@ -386,32 +386,6 @@ BOOST_AUTO_TEST_CASE(check_backward_compatibility)
     old_version old_dest({5});
     BOOST_REQUIRE_NO_THROW(ss >> old_dest);
     BOOST_REQUIRE(new_src.field1 == old_dest.field1);
-}
-
-BOOST_AUTO_TEST_CASE(class_methods)
-{
-    int intval(100);
-    bool boolval(true);
-    std::string stringval("testing");
-    const char* charstrval("testing charstr");
-    CMutableTransaction txval;
-    CSerializeMethodsTestSingle methodtest1(intval, boolval, stringval, charstrval, txval);
-    CSerializeMethodsTestMany methodtest2(intval, boolval, stringval, charstrval, txval);
-    CSerializeMethodsTestSingle methodtest3;
-    CSerializeMethodsTestMany methodtest4;
-    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
-    BOOST_CHECK(methodtest1 == methodtest2);
-    ss << methodtest1;
-    ss >> methodtest4;
-    ss << methodtest2;
-    ss >> methodtest3;
-    BOOST_CHECK(methodtest1 == methodtest2);
-    BOOST_CHECK(methodtest2 == methodtest3);
-    BOOST_CHECK(methodtest3 == methodtest4);
-
-    CDataStream ss2(SER_DISK, PROTOCOL_VERSION, intval, boolval, stringval, FLATDATA(charstrval), txval);
-    ss2 >> methodtest3;
-    BOOST_CHECK(methodtest3 == methodtest4);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

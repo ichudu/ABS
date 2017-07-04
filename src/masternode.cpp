@@ -230,15 +230,9 @@ void CMasternode::Check(bool fForce)
         }
     }
 
-<<<<<<< HEAD
-    // Allow MNs to become ENABLED immediately in regtest/povnet
-    // On mainnet/testnet, we require them to be in PRE_ENABLED state for some time before they get into ENABLED state
-    if (Params().NetworkIDString() != CBaseChainParams::REGTEST && Params().NetworkIDString() != CBaseChainParams::POVNET) {
-=======
     // We require MNs to be in PRE_ENABLED until they either start to expire or receive a ping and go into ENABLED state
     // Works on mainnet/testnet only and not the case on regtest/devnet.
     if (Params().NetworkIDString() != CBaseChainParams::REGTEST && Params().NetworkIDString() != CBaseChainParams::DEVNET) {
->>>>>>> b98643c27... Split sentinel expiration in CMasternode::Check() in two parts (timeout and version) (#2121)
         if (lastPing.sigTime - sigTime < MASTERNODE_MIN_MNP_SECONDS) {
             nActiveState = MASTERNODE_PRE_ENABLED;
             if (nActiveStatePrev != nActiveState) {
@@ -735,7 +729,9 @@ uint256 CMasternodePing::GetSignatureHash() const
     return GetHash();
 }
 
-CMasternodePing::CMasternodePing(const COutPoint& outpoint)
+CMasternodePing::CMasternodePing(CTxIn& vinNew) :
+    fSentinelIsCurrent(false),
+    nSentinelVersion(0)
 {
     LOCK(cs_main);
     if (!chainActive.Tip() || chainActive.Height() < 12) return;
@@ -786,7 +782,7 @@ bool CMasternodePing::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMaste
 bool CMasternodePing::CheckSignature(const CPubKey& pubKeyMasternode, int &nDos) const
 {
     // TODO: add sentinel data
-    std::string strMessage = CTxIn(masternodeOutpoint).ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
+    std::string strMessage = vin.ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
     std::string strError = "";
     nDos = 0;
 
@@ -952,6 +948,12 @@ void CMasternode::RemoveGovernanceObject(uint256 nGovernanceObjectHash)
         return;
     }
     mapGovernanceObjectsVotedOn.erase(it);
+}
+
+void CMasternode::UpdateWatchdogVoteTime(uint64_t nVoteTime)
+{
+    LOCK(cs);
+    nTimeLastWatchdogVote = (nVoteTime == 0) ? GetTime() : nVoteTime;
 }
 
 /**

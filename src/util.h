@@ -43,7 +43,7 @@
 #ifdef ENABLE_ABSOLUTE_DEBUG
 #define DBG( x ) x
 #else
-#define DBG( x ) 
+#define DBG( x )
 #endif
 
 //Absolute only features
@@ -263,7 +263,6 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
     }
 }
 
-std::string CopyrightHolders(const std::string& strPrefix, unsigned int nStartYear, unsigned int nEndYear);
 
 /**
  * @brief Converts version strings to 4-byte unsigned integer
@@ -281,16 +280,6 @@ uint32_t StringVersionToInt(const std::string& strVersion);
  * Throws std::bad_cast if format doesn\t match.
  */
 std::string IntVersionToString(uint32_t nVersion);
-
-
-/**
- * @brief Copy of the IntVersionToString, that returns "Invalid version" string
- * instead of throwing std::bad_cast
- * @param nVersion 4-byte unsigned integer, most significant byte is always 0
- * @return version string in "x.x.x" format (last 3 bytes as version parts)
- * or "Invalid version" if can't cast the given value
- */
-std::string SafeIntVersionToString(uint32_t nVersion);
 
 
 #endif // BITCOIN_UTIL_H

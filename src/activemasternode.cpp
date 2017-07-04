@@ -96,10 +96,10 @@ bool CActiveMasternode::SendMasternodePing(CConnman& connman)
         return false;
     }
 
-    CMasternodePing mnp(outpoint);
+    CMasternodePing mnp(vin);
     mnp.nSentinelVersion = nSentinelVersion;
     mnp.fSentinelIsCurrent =
-            (abs(GetAdjustedTime() - nSentinelPingTime) < MASTERNODE_SENTINEL_PING_MAX_SECONDS);
+            (abs(GetAdjustedTime() - nSentinelPingTime) < MASTERNODE_WATCHDOG_MAX_SECONDS);
     if(!mnp.Sign(keyMasternode, pubKeyMasternode)) {
         LogPrintf("CActiveMasternode::SendMasternodePing -- ERROR: Couldn't sign Masternode Ping\n");
         return false;
@@ -132,7 +132,15 @@ bool CActiveMasternode::UpdateSentinelPing(int version)
     return true;
 }
 
-void CActiveMasternode::ManageStateInitial(CConnman& connman)
+bool CActiveMasternode::UpdateSentinelPing(int version)
+{
+    nSentinelVersion = version;
+    nSentinelPingTime = GetAdjustedTime();
+
+    return true;
+}
+
+void CActiveMasternode::ManageStateInitial()
 {
     LogPrint("masternode", "CActiveMasternode::ManageStateInitial -- status = %s, type = %s, pinger enabled = %d\n", GetStatus(), GetTypeString(), fPingerEnabled);
 
@@ -208,7 +216,7 @@ void CActiveMasternode::ManageStateInitial(CConnman& connman)
 
 void CActiveMasternode::ManageStateRemote()
 {
-    LogPrint("masternode", "CActiveMasternode::ManageStateRemote -- Start status = %s, type = %s, pinger enabled = %d, pubKeyMasternode.GetID() = %s\n", 
+    LogPrint("masternode", "CActiveMasternode::ManageStateRemote -- Start status = %s, type = %s, pinger enabled = %d, pubKeyMasternode.GetID() = %s\n",
              GetStatus(), GetTypeString(), fPingerEnabled, pubKeyMasternode.GetID().ToString());
 
     mnodeman.CheckMasternode(pubKeyMasternode, true);

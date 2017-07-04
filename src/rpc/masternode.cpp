@@ -907,9 +907,9 @@ UniValue masternodebroadcast(const JSONRPCRequest& request)
     return NullUniValue;
 }
 
-UniValue sentinelping(const JSONRPCRequest& request)
+UniValue sentinelping(const UniValue& params, bool fHelp)
 {
-    if (request.fHelp || request.params.size() != 1) {
+    if (fHelp || params.size() != 1) {
         throw std::runtime_error(
             "sentinelping version\n"
             "\nSentinel ping.\n"
@@ -923,25 +923,6 @@ UniValue sentinelping(const JSONRPCRequest& request)
         );
     }
 
-    activeMasternode.UpdateSentinelPing(StringVersionToInt(request.params[0].get_str()));
+    activeMasternode.UpdateSentinelPing(StringVersionToInt(params[0].get_str()));
     return true;
-}
-
-static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         okSafe argNames
-  //  --------------------- ------------------------  -----------------------  ------ ----------
-    { "absolute",               "masternode",             &masternode,             true,  {} },
-    { "absolute",               "masternodelist",         &masternodelist,         true,  {} },
-    { "absolute",               "masternodebroadcast",    &masternodebroadcast,    true,  {} },
-    { "absolute",               "getpoolinfo",            &getpoolinfo,            true,  {} },
-    { "absolute",               "sentinelping",           &sentinelping,           true,  {} },
-#ifdef ENABLE_WALLET
-    { "absolute",               "privatesend",            &privatesend,            false, {} },
-#endif // ENABLE_WALLET
-};
-
-void RegisterMasternodeRPCCommands(CRPCTable &t)
-{
-    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

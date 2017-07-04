@@ -25,8 +25,7 @@
 /** Masternode manager */
 CMasternodeMan mnodeman;
 
-const std::string CMasternodeMan::SERIALIZATION_VERSION_STRING = "CMasternodeMan-Version-8";
-const int CMasternodeMan::LAST_PAID_SCAN_BLOCKS = 100;
+const std::string CMasternodeMan::SERIALIZATION_VERSION_STRING = "CMasternodeMan-Version-5";
 
 struct CompareLastPaidBlock
 {
@@ -859,6 +858,12 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, const std::string& strCommand,
         if(pmn && mnp.fSentinelIsCurrent)
             UpdateLastSentinelPingTime();
 
+        // if masternode uses sentinel ping instead of watchdog
+        // we shoud update nTimeLastWatchdogVote here if sentinel
+        // ping flag is actual
+        if(pmn && mnp.fSentinelIsCurrent)
+            pmn->UpdateWatchdogVoteTime(mnp.sigTime);
+
         // too late, new MNANNOUNCE is required
         if(pmn && pmn->IsNewStartRequired()) return;
 
@@ -1677,10 +1682,12 @@ void CMasternodeMan::SetMasternodeLastPing(const COutPoint& outpoint, const CMas
     if(!pmn) {
         return;
     }
-    pmn->lastPing = mnp;
-    if(mnp.fSentinelIsCurrent) {
-        UpdateLastSentinelPingTime();
-    }
+    pMN->lastPing = mnp;
+    // if masternode uses sentinel ping instead of watchdog
+    // we shoud update nTimeLastWatchdogVote here if sentinel
+    // ping flag is actual
+    if(mnp.fSentinelIsCurrent)
+        pMN->UpdateWatchdogVoteTime(mnp.sigTime);
     mapSeenMasternodePing.insert(std::make_pair(mnp.GetHash(), mnp));
 
     CMasternodeBroadcast mnb(*pmn);
