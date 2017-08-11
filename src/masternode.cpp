@@ -5,6 +5,7 @@
 
 #include "activemasternode.h"
 #include "base58.h"
+#include "clientversion.h"
 #include "init.h"
 #include "netbase.h"
 #include "masternode.h"
@@ -737,16 +738,14 @@ CMasternodePing::CMasternodePing(const COutPoint& outpoint)
     masternodeOutpoint = outpoint;
     blockHash = chainActive[chainActive.Height() - 12]->GetBlockHash();
     sigTime = GetAdjustedTime();
+    nDaemonVersion = CLIENT_VERSION;
 }
 
 bool CMasternodePing::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMasternode)
 {
     std::string strError;
-    std::string strMasterNodeSignMessage;
 
-    // TODO: add sentinel data
     sigTime = GetAdjustedTime();
-    std::string strMessage = CTxIn(masternodeOutpoint).ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
 
     if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
         uint256 hash = GetSignatureHash();
@@ -769,9 +768,10 @@ bool CMasternodePing::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMaste
             return false;
         }
 
-    if(!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
-        LogPrintf("CMasternodePing::Sign -- VerifyMessage() failed, error: %s\n", strError);
-        return false;
+        if (!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
+            LogPrintf("CMasternodePing::Sign -- VerifyMessage() failed, error: %s\n", strError);
+            return false;
+        }
     }
 
     return true;
@@ -779,8 +779,6 @@ bool CMasternodePing::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMaste
 
 bool CMasternodePing::CheckSignature(const CPubKey& pubKeyMasternode, int &nDos) const
 {
-    // TODO: add sentinel data
-    std::string strMessage = vin.ToString() + blockHash.ToString() + boost::lexical_cast<std::string>(sigTime);
     std::string strError = "";
     nDos = 0;
 
@@ -946,12 +944,6 @@ void CMasternode::RemoveGovernanceObject(uint256 nGovernanceObjectHash)
         return;
     }
     mapGovernanceObjectsVotedOn.erase(it);
-}
-
-void CMasternode::UpdateWatchdogVoteTime(uint64_t nVoteTime)
-{
-    LOCK(cs);
-    nTimeLastWatchdogVote = (nVoteTime == 0) ? GetTime() : nVoteTime;
 }
 
 /**

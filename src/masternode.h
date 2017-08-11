@@ -28,31 +28,25 @@ static const int MASTERNODE_COLLATERAL                  = 2500;
 // The Masternode Ping Class : Contains a different serialize method for sending pings from masternodes throughout the network
 //
 
-// sentinel version before sentinel ping implementation
+// sentinel version before implementation of nSentinelVersion in CMasternodePing
 #define DEFAULT_SENTINEL_VERSION 0x010001
 
-// sentinel with voting fix to enable proposals
-#define MIN_SENTINEL_VERSION 0x010200
+// daemon version before implementation of nDaemonVersion in CMasternodePing
+#define DEFAULT_DAEMON_VERSION 120200
 
 class CMasternodePing
 {
 public:
-    CTxIn vin;
-    uint256 blockHash;
-    int64_t sigTime; //mnb message times
-    std::vector<unsigned char> vchSig;
-    bool fSentinelIsCurrent; // true if last sentinel ping was actual
-    uint32_t nSentinelVersion; // MSB is always 0, other 3 bits corresponds to x.x.x version scheme
-    //removed stop
+    COutPoint masternodeOutpoint{};
+    uint256 blockHash{};
+    int64_t sigTime{}; //mnb message times
+    std::vector<unsigned char> vchSig{};
+    bool fSentinelIsCurrent = false; // true if last sentinel ping was current
+    // MSB is always 0, other 3 bits corresponds to x.x.x version scheme
+    uint32_t nSentinelVersion{DEFAULT_SENTINEL_VERSION};
+    uint32_t nDaemonVersion{DEFAULT_DAEMON_VERSION};
 
-    CMasternodePing() :
-        vin(),
-        blockHash(),
-        sigTime(0),
-        vchSig(),
-        fSentinelIsCurrent(false),
-        nSentinelVersion(0)
-        {}
+    CMasternodePing() = default;
 
     CMasternodePing(const COutPoint& outpoint);
 
@@ -77,26 +71,26 @@ public:
         }
         READWRITE(blockHash);
         READWRITE(sigTime);
-        READWRITE(vchSig);
-        if(ser_action.ForRead() && (s.size() == 0))
+        if (!(s.GetType() & SER_GETHASH)) {
+            READWRITE(vchSig);
+        }
+        if(ser_action.ForRead() && s.size() == 0) {
+            // TODO: drop this after migration to 70209
+            fSentinelIsCurrent = false;
+            nSentinelVersion = DEFAULT_SENTINEL_VERSION;
+            nDaemonVersion = DEFAULT_DAEMON_VERSION;
             return;
+        }
         READWRITE(fSentinelIsCurrent);
         READWRITE(nSentinelVersion);
-    }
-
-    void swap(CMasternodePing& first, CMasternodePing& second) // nothrow
-    {
-        // enable ADL (not necessary in our case, but good practice)
-        using std::swap;
-
-        // by swapping the members of two classes,
-        // the two classes are effectively swapped
-        swap(first.vin, second.vin);
-        swap(first.blockHash, second.blockHash);
-        swap(first.sigTime, second.sigTime);
-        swap(first.vchSig, second.vchSig);
-        swap(first.fSentinelIsCurrent, second.fSentinelIsCurrent);
-        swap(first.nSentinelVersion, second.nSentinelVersion);
+        if(ser_action.ForRead() && s.size() == 0) {
+            // TODO: drop this after migration to 70210
+            nDaemonVersion = DEFAULT_DAEMON_VERSION;
+            return;
+        }
+        if (!(nVersion == 70209 && (s.GetType() & SER_NETWORK))) {
+            READWRITE(nDaemonVersion);
+        }
     }
 
     uint256 GetHash() const;
@@ -324,9 +318,7 @@ public:
 
     void RemoveGovernanceObject(uint256 nGovernanceObjectHash);
 
-    void UpdateWatchdogVoteTime(uint64_t nVoteTime = 0);
-
-    CMasternode& operator=(CMasternode from)
+    CMasternode& operator=(CMasternode const& from)
     {
         static_cast<masternode_info_t&>(*this)=from;
         lastPing = from.lastPing;
