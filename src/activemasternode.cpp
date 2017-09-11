@@ -96,7 +96,7 @@ bool CActiveMasternode::SendMasternodePing(CConnman& connman)
         return false;
     }
 
-    CMasternodePing mnp(vin);
+    CMasternodePing mnp(outpoint);
     mnp.nSentinelVersion = nSentinelVersion;
     mnp.fSentinelIsCurrent =
             (abs(GetAdjustedTime() - nSentinelPingTime) < MASTERNODE_WATCHDOG_MAX_SECONDS);

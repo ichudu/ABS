@@ -729,9 +729,7 @@ uint256 CMasternodePing::GetSignatureHash() const
     return GetHash();
 }
 
-CMasternodePing::CMasternodePing(CTxIn& vinNew) :
-    fSentinelIsCurrent(false),
-    nSentinelVersion(0)
+CMasternodePing::CMasternodePing(const COutPoint& outpoint)
 {
     LOCK(cs_main);
     if (!chainActive.Tip() || chainActive.Height() < 12) return;
