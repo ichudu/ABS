@@ -1,9 +1,10 @@
 <!--- Remove sections that do not apply -->
-This issue tracker is only for technical issues related to bitcoin-core or Dash.
 
-General bitcoin questions and/or support requests and are best directed to the [Bitcoin StackExchange](https://bitcoin.stackexchange.com).
+This issue tracker is only for technical issues related to absolute-core.
 
-For reporting security issues, please read instructions at [https://bitcoincore.org/en/contact/](https://bitcoincore.org/en/contact/).
+General bitcoin questions and/or support requests and are best directed to the [absolutecoin Reddit](https://www.reddit.com/r/absolutecoin/).
+
+To report critical security issues, email contact@absolutecoin.net instead of creating Github issues.
 
 ### Describe the issue
 
@@ -22,7 +23,7 @@ Tell us what happens instead
 ### Screenshots.
 If the issue is related to the GUI, screenshots can be added to this issue via drag & drop.
 
-### What version of bitcoin-core are you using?
+### What version of absolute-core are you using?
 List the version number/commit ID, and if it is an official binary, self compiled or a distribution package such as PPA.
 
 ### Machine specs:
