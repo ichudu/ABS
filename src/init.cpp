@@ -905,7 +905,7 @@ void InitParameterInteraction()
         GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);
 
     if (fAdditionalIndexes && GetArg("-checklevel", DEFAULT_CHECKLEVEL) < 4) {
-        mapArgs["-checklevel"] = "4";
+        ForceSetArg("-checklevel", "4");
         LogPrintf("%s: parameter interaction: additional indexes -> setting -checklevel=4\n", __func__);
     }
 }
@@ -1007,11 +1007,11 @@ bool AppInitParameterInteraction()
 
     }
 
-    if (mapArgs.count("-povnet")) {
-        // Require setting of ports when running PoVNET
-        if (GetArg("-listen", DEFAULT_LISTEN) && !mapArgs.count("-port"))
+    if (IsArgSet("-povnet")) {
+        // Require setting of ports when running povnet
+        if (GetArg("-listen", DEFAULT_LISTEN) && !IsArgSet("-port"))
             return InitError(_("-port must be specified when -povnet and -listen are specified"));
-        if (GetArg("-server", false) && !mapArgs.count("-rpcport"))
+        if (GetArg("-server", false) && !IsArgSet("-rpcport"))
             return InitError(_("-rpcport must be specified when -povnet and -server are specified"));
 
         if (mapMultiArgs.count("-povnet") > 1)
