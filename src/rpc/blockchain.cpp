@@ -1018,7 +1018,7 @@ UniValue gettxout(const JSONRPCRequest& request)
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
             "     \"addresses\" : [          (array of string) array of absolute addresses\n"
-            "        \"address\"     (string) bitcoin address\n"
+            "        \"address\"     (string) absolute address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"
