@@ -387,7 +387,7 @@ UniValue sendtoaddress(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() < 2 || request.params.size() > 7)
         throw runtime_error(
-            "sendtoaddress \"address\" amount ( \"comment\" \"comment_to\" subtractfeefromamount )\n"
+            "sendtoaddress \"address\" amount ( \"comment\" \"comment_to\" subtractfeefromamount use_is use_ps )\n"
             "\nSend an amount to a given address.\n"
             + HelpRequiringPassphrase() +
             "\nArguments:\n"
@@ -619,7 +619,7 @@ UniValue getreceivedbyaddress(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 3)
         throw runtime_error(
-            "getreceivedbyaddress \"address\" ( minconf )\n"
+            "getreceivedbyaddress \"address\" ( minconf addlockconf )\n"
             "\nReturns the total amount received by the given address in transactions with at least minconf confirmations.\n"
             "\nArguments:\n"
             "1. \"address\"         (string, required) The absolute address for transactions.\n"
@@ -738,7 +738,7 @@ UniValue getbalance(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() > 4)
         throw runtime_error(
-            "getbalance ( \"account\" minconf include_watchonly )\n"
+            "getbalance ( \"account\" minconf addlockconf include_watchonly )\n"
             "\nIf account is not specified, returns the server's total available balance.\n"
             "If account is specified (DEPRECATED), returns the balance in the account.\n"
             "Note that the account \"\" is not the same as leaving the parameter out.\n"
@@ -878,7 +878,7 @@ UniValue sendfrom(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() < 3 || request.params.size() > 7)
         throw runtime_error(
-            "sendfrom \"fromaccount\" \"toaddress\" amount ( minconf \"comment\" \"comment_to\" )\n"
+            "sendfrom \"fromaccount\" \"toaddress\" amount ( minconf addlockconf \"comment\" \"comment_to\" )\n"
             "\nDEPRECATED (use sendtoaddress). Sent an amount from an account to a absolute address."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
@@ -1262,7 +1262,7 @@ UniValue listreceivedbyaddress(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() > 4)
         throw runtime_error(
-            "listreceivedbyaddress ( minconf include_empty include_watchonly)\n"
+            "listreceivedbyaddress ( minconf addlockconf include_empty include_watchonly)\n"
             "\nList balances by receiving address.\n"
             "\nArguments:\n"
             "1. minconf           (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
@@ -1303,7 +1303,7 @@ UniValue listreceivedbyaccount(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() > 4)
         throw runtime_error(
-            "listreceivedbyaccount ( minconf include_empty include_watchonly)\n"
+            "listreceivedbyaccount ( minconf addlockconf include_empty include_watchonly)\n"
             "\nDEPRECATED. List balances by account.\n"
             "\nArguments:\n"
             "1. minconf           (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
@@ -1569,7 +1569,7 @@ UniValue listaccounts(const JSONRPCRequest& request)
 
     if (request.fHelp || request.params.size() > 3)
         throw runtime_error(
-            "listaccounts ( minconf include_watchonly)\n"
+            "listaccounts ( minconf addlockconf include_watchonly)\n"
             "\nDEPRECATED. Returns Object that has account names as keys, account balances as values.\n"
             "\nArguments:\n"
             "1. minconf             (numeric, optional, default=1) Only include transactions with at least this many confirmations\n"
