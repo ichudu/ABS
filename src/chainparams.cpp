@@ -52,7 +52,7 @@ static CBlock CreatePoVNETGenesisBlock(const uint256 &prevBlockHash, const std::
     txNew.nVersion = 4;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
-    // put height (BIP34) and devnet name into coinbase
+    // put height (BIP34) and povnet name into coinbase
     txNew.vin[0].scriptSig = CScript() << 1 << std::vector<unsigned char>(PoVNETName.begin(), PoVNETName.end());
     txNew.vout[0].nValue = genesisReward;
     txNew.vout[0].scriptPubKey = CScript() << OP_RETURN;
@@ -389,9 +389,9 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.BIP34Height = 1; // BIP34 activated immediately on devnet (BIP34Hash is set later for the devnet genesis block)
-        consensus.BIP65Height = 1; // BIP65 activated immediately on devnet
-        consensus.BIP66Height = 1; // BIP66 activated immediately on devnet
+        consensus.BIP34Height = 1; // BIP34 activated immediately on povnet (BIP34Hash is set later for the povnet genesis block)
+        consensus.BIP65Height = 1; // BIP65 activated immediately on povnet
+        consensus.BIP66Height = 1; // BIP66 activated immediately on povnet
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 6 * 60 * 60; // Absolute: 6 Hours
         consensus.nPowTargetSpacing = 2 * 60; // Absolute: 2 minutes
@@ -438,7 +438,7 @@ public:
 
         PoVNETGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
 
-        consensus.BIP34Hash = devnetGenesis.GetHash();
+        consensus.BIP34Hash = povnetGenesis.GetHash();
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -479,6 +479,13 @@ public:
             0
         };
 
+        chainTxData = ChainTxData{
+            // Data as of block 0000024bc3f4f4cb30d29827c13d921ad77d2c6072e586c7f60d83c2722cdcc5 (height 2999)
+            povnetGenesis.GetBlockTime(),
+            2,     // * total number of transactions between genesis and last checkpoint
+            //   (the tx=... number in the SetBestChain debug.log lines)
+            0.01        // * estimated number of transactions per day after checkpoint
+        };
     }
 };
 static CPoVNETParams *PoVNETParams;
