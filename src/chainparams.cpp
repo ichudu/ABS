@@ -49,10 +49,11 @@ static CBlock CreatePoVNETGenesisBlock(const uint256 &prevBlockHash, const std::
     assert(!PoVNETName.empty());
 
     CMutableTransaction txNew;
-    txNew.nVersion = 1;
+    txNew.nVersion = 4;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
-    txNew.vin[0].scriptSig = CScript() << std::vector<unsigned char>(PoVNETName.begin(), PoVNETName.end());
+    // put height (BIP34) and devnet name into coinbase
+    txNew.vin[0].scriptSig = CScript() << 1 << std::vector<unsigned char>(PoVNETName.begin(), PoVNETName.end());
     txNew.vout[0].nValue = genesisReward;
     txNew.vout[0].scriptPubKey = CScript() << OP_RETURN;
 
@@ -388,11 +389,9 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.nMajorityEnforceBlockUpgrade = 51;
-        consensus.nMajorityRejectBlockOutdated = 75;
-        consensus.nMajorityWindow = 100;
-        consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
+        consensus.BIP34Height = 1; // BIP34 activated immediately on devnet (BIP34Hash is set later for the devnet genesis block)
+        consensus.BIP65Height = 1; // BIP65 activated immediately on devnet
+        consensus.BIP66Height = 1; // BIP66 activated immediately on devnet
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 6 * 60 * 60; // Absolute: 6 Hours
         consensus.nPowTargetSpacing = 2 * 60; // Absolute: 2 minutes
@@ -438,6 +437,8 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0xe0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"));
 
         PoVNETGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
+
+        consensus.BIP34Hash = devnetGenesis.GetHash();
 
         vFixedSeeds.clear();
         vSeeds.clear();
