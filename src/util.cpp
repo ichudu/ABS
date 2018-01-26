@@ -110,7 +110,7 @@ namespace boost {
 using namespace std;
 
 //Absolute only features
-bool fMasterNode = false;
+bool fMasternodeMode = false;
 bool fLiteMode = false;
 /**
     nWalletBackups:
