@@ -1351,7 +1351,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::vector<std::string> uacomments;
 
     if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-        // Add povnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own devnet
+        // Add povnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own povnet
         uacomments.push_back(strprintf("povnet=%s", GetPoVNETName()));
     }
 
@@ -1592,8 +1592,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
-                if (chainparams.NetworkIDString() == CBaseChainParams::POVNET && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.PoVNETGenesisBlock().GetHash()) == 0)
+                if (!chainparams.GetConsensus().hashPoVNETGenesisBlock.IsNull() && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashPoVNETGenesisBlock) == 0)
                     return InitError(_("Incorrect or no povnet genesis block found. Wrong datadir for povnet specified?"));
+
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex(chainparams)) {
                     strLoadError = _("Error initializing block database");

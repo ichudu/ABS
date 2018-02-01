@@ -3266,12 +3266,21 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const 
     if (block.GetBlockTime() > nAdjustedTime + 2 * 60 * 60)
         return state.Invalid(false, REJECT_INVALID, "time-too-new", "block timestamp too far in the future");
 
+<<<<<<< HEAD
     // Check PoVNET
     if (Params().NetworkIDString() == CBaseChainParams::POVNET &&
             block.hashPrevBlock == Params().GetConsensus().hashGenesisBlock &&
             block.GetHash() != Params().PoVNETGenesisBlock().GetHash()) {
         return state.DoS(100, error("CheckBlockHeader(): wrong PoVNET genesis"),
                          REJECT_INVALID, "PoVNET-genesis");
+=======
+    // Check DevNet
+    if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
+            block.hashPrevBlock == consensusParams.hashGenesisBlock &&
+            block.GetHash() != consensusParams.hashDevnetGenesisBlock) {
+        return state.DoS(100, error("CheckBlockHeader(): wrong devnet genesis"),
+                         REJECT_INVALID, "devnet-genesis");
+>>>>>>> 99b2789a7... Fix DeserializeAndCheckBlockTest benchmark and store hashDevnetGenesisBlock in `consensus` (#1888)
     }
     return true;
 }

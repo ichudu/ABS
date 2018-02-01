@@ -1480,7 +1480,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                     // This is because after startup of the node, we are in IBD mode, which will only be left when recent
                     // blocks arrive. At the same time, we won't get any blocks from peers because we keep delaying
                     // GETHEADERS
+<<<<<<< HEAD
                     bool fPoVNETGenesis = chainparams.NetworkIDString() == CBaseChainParams::POVNET && pindexBestHeader->GetBlockHash() == chainparams.PoVNETGenesisBlock().GetHash();
+=======
+                    bool fDevNetGenesis = !chainparams.GetConsensus().hashDevnetGenesisBlock.IsNull() && pindexBestHeader->GetBlockHash() == chainparams.GetConsensus().hashDevnetGenesisBlock;
+>>>>>>> 99b2789a7... Fix DeserializeAndCheckBlockTest benchmark and store hashDevnetGenesisBlock in `consensus` (#1888)
 
                     if (!fPoVNETGenesis && chainparams.DelayGetHeadersTime() != 0 && pindexBestHeader->GetBlockTime() < GetAdjustedTime() - chainparams.DelayGetHeadersTime()) {
                         // We are pretty far from being completely synced at the moment. If we would initiate a new

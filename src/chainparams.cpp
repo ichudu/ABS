@@ -378,7 +378,7 @@ public:
             (      0, uint256S("0x00000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6"))
         };
 
-        chainTxData = ChainTxData{   
+        chainTxData = ChainTxData{
             1518597800, // * UNIX timestamp of last checkpoint block
             0,		// * total number of transactions between genesis and last checkpoint
 			//   (the tx=... number in the SetBestChain debug.log lines)
@@ -466,7 +466,8 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"));
         assert(genesis.hashMerkleRoot == uint256S("0xe0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"));
 
-        PoVNETGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
+        PoVNETtGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
+        consensus.hashPoVNETGenesisBlock = PoVNETGenesis.GetHash();
 
         consensus.BIP34Hash = PoVNETGenesis.GetHash();
 
