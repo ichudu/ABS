@@ -35,21 +35,42 @@ extern "C" {
 
 typedef enum absoluteconsensus_error_t
 {
+<<<<<<< HEAD:src/script/absoluteconsensus.h
     absoluteconsensus_ERR_OK = 0,
     absoluteconsensus_ERR_TX_INDEX,
     absoluteconsensus_ERR_TX_SIZE_MISMATCH,
     absoluteconsensus_ERR_TX_DESERIALIZE,
 } absoluteconsensus_error;
+=======
+    dashconsensus_ERR_OK = 0,
+    dashconsensus_ERR_TX_INDEX,
+    dashconsensus_ERR_TX_SIZE_MISMATCH,
+    dashconsensus_ERR_TX_DESERIALIZE,
+    dashconsensus_ERR_INVALID_FLAGS,
+} dashconsensus_error;
+>>>>>>> 61af31531... Merge #8976: libconsensus: Add input validation of flags (#1891):src/script/dashconsensus.h
 
 /** Script verification flags */
 enum
 {
+<<<<<<< HEAD:src/script/absoluteconsensus.h
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_DERSIG              = (1U << 2), // enforce strict DER (BIP66) compliance
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
+=======
+    dashconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
+    dashconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
+    dashconsensus_SCRIPT_FLAGS_VERIFY_DERSIG              = (1U << 2), // enforce strict DER (BIP66) compliance
+    dashconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
+    dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
+    dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
+    dashconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = dashconsensus_SCRIPT_FLAGS_VERIFY_P2SH | dashconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
+                                                            dashconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
+                                                            dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY
+>>>>>>> 61af31531... Merge #8976: libconsensus: Add input validation of flags (#1891):src/script/dashconsensus.h
 };
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
