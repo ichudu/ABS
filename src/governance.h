@@ -179,7 +179,7 @@ public: // Types
 
     typedef object_m_t::const_iterator object_m_cit;
 
-    typedef CacheMap<uint256, CGovernanceObject*> object_ref_cache_t;
+    typedef CacheMap<uint256, CGovernanceObject*> object_ref_cm_t;
 
     typedef std::map<uint256, CGovernanceVote> vote_m_t;
 
@@ -187,9 +187,9 @@ public: // Types
 
     typedef vote_m_t::const_iterator vote_m_cit;
 
-    typedef CacheMap<uint256, CGovernanceVote> vote_cache_t;
+    typedef CacheMap<uint256, CGovernanceVote> vote_cm_t;
 
-    typedef CacheMultiMap<uint256, vote_time_pair_t> vote_mcache_t;
+    typedef CacheMultiMap<uint256, vote_time_pair_t> vote_cmm_t;
 
     typedef object_m_t::size_type size_type;
 
@@ -252,11 +252,11 @@ private:
 
     int64_t nTimeWatchdogCurrent;
 
-    object_ref_cache_t mapVoteToObject;
+    object_ref_cm_t cmapVoteToObject;
 
-    vote_cache_t mapInvalidVotes;
+    vote_cm_t cmapInvalidVotes;
 
-    vote_mcache_t mapOrphanVotes;
+    vote_cmm_t cmmapOrphanVotes;
 
     txout_m_t mapLastMasternodeObject;
 
@@ -331,9 +331,9 @@ public:
         mapWatchdogObjects.clear();
         nHashWatchdogCurrent = uint256();
         nTimeWatchdogCurrent = 0;
-        mapVoteToObject.Clear();
-        mapInvalidVotes.Clear();
-        mapOrphanVotes.Clear();
+        cmapVoteToObject.Clear();
+        cmapInvalidVotes.Clear();
+        cmmapOrphanVotes.Clear();
         mapLastMasternodeObject.clear();
     }
 
@@ -354,8 +354,8 @@ public:
         }
 
         READWRITE(mapErasedGovernanceObjects);
-        READWRITE(mapInvalidVotes);
-        READWRITE(mapOrphanVotes);
+        READWRITE(cmapInvalidVotes);
+        READWRITE(cmmapOrphanVotes);
         READWRITE(mapObjects);
         READWRITE(mapWatchdogObjects);
         READWRITE(nHashWatchdogCurrent);
@@ -429,12 +429,12 @@ private:
 
     void AddInvalidVote(const CGovernanceVote& vote)
     {
-        mapInvalidVotes.Insert(vote.GetHash(), vote);
+        cmapInvalidVotes.Insert(vote.GetHash(), vote);
     }
 
     void AddOrphanVote(const CGovernanceVote& vote)
     {
-        mapOrphanVotes.Insert(vote.GetHash(), vote_time_pair_t(vote, GetAdjustedTime() + GOVERNANCE_ORPHAN_EXPIRATION_TIME));
+        cmmapOrphanVotes.Insert(vote.GetHash(), vote_time_pair_t(vote, GetAdjustedTime() + GOVERNANCE_ORPHAN_EXPIRATION_TIME));
     }
 
     bool ProcessVote(CNode* pfrom, const CGovernanceVote& vote, CGovernanceException& exception, CConnman& connman);
