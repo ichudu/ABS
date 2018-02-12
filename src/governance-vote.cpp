@@ -147,7 +147,7 @@ std::string CGovernanceVoting::ConvertSignalToString(vote_signal_enum_t nSignal)
 }
 
 
-vote_outcome_enum_t CGovernanceVoting::ConvertVoteOutcome(std::string strVoteOutcome)
+vote_outcome_enum_t CGovernanceVoting::ConvertVoteOutcome(const std::string& strVoteOutcome)
 {
     vote_outcome_enum_t eVote = VOTE_OUTCOME_NONE;
     if(strVoteOutcome == "yes") {
@@ -162,7 +162,7 @@ vote_outcome_enum_t CGovernanceVoting::ConvertVoteOutcome(std::string strVoteOut
     return eVote;
 }
 
-vote_signal_enum_t CGovernanceVoting::ConvertVoteSignal(std::string strVoteSignal)
+vote_signal_enum_t CGovernanceVoting::ConvertVoteSignal(const std::string& strVoteSignal)
 {
     vote_signal_enum_t eSignal = VOTE_SIGNAL_NONE;
     if(strVoteSignal == "funding") {
@@ -238,7 +238,7 @@ void CGovernanceVote::Relay(CConnman& connman) const
     connman.RelayInv(inv, MIN_GOVERNANCE_PEER_PROTO_VERSION);
 }
 
-bool CGovernanceVote::Sign(CKey& keyMasternode, CPubKey& pubKeyMasternode)
+bool CGovernanceVote::Sign(const CKey& keyMasternode, const CPubKey& pubKeyMasternode)
 {
     // Choose coins to use
     CPubKey pubKeyCollateralAddress;

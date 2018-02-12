@@ -28,9 +28,6 @@ typedef boost::shared_ptr<CSuperblock> CSuperblock_sptr;
 // DECLARE GLOBAL VARIABLES FOR GOVERNANCE CLASSES
 extern CGovernanceTriggerManager triggerman;
 
-// SPLIT A STRING UP - USED FOR SUPERBLOCK PAYMENTS
-std::vector<std::string> SplitBy(std::string strCommand, std::string strDelimit);
-
 /**
 *   Trigger Mananger
 *
@@ -153,7 +150,7 @@ private:
     int nStatus;
     std::vector<CGovernancePayment> vecPayments;
 
-    void ParsePaymentSchedule(std::string& strPaymentAddresses, std::string& strPaymentAmounts);
+    void ParsePaymentSchedule(const std::string& strPaymentAddresses, const std::string& strPaymentAmounts);
 
 public:
 
