@@ -8,6 +8,7 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
+#include "masternode-payments.h"
 #include "masternode-sync.h"
 #include "masternodeman.h"
 #include "netmessagemaker.h"
@@ -853,6 +854,12 @@ bool CPrivateSendClient::JoinExistingQueue(CAmount nBalanceNeedsAnonymized, CCon
 
         if(infoMn.nProtocolVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) continue;
 
+        // skip next mn payments winners
+        if (mnpayments.IsScheduled(infoMn, 0)) {
+            LogPrintf("CPrivateSendClient::JoinExistingQueue -- skipping winner, masternode=%s\n", infoMn.vin.prevout.ToStringShort());
+            continue;
+        }
+
         std::vector<int> vecBits;
         if(!CPrivateSend::GetDenominationsBits(dsq.nDenom, vecBits)) {
             // incompatible denom
@@ -916,11 +923,20 @@ bool CPrivateSendClient::StartNewQueue(CAmount nValueMin, CAmount nBalanceNeedsA
     // otherwise, try one randomly
     while(nTries < 10) {
         masternode_info_t infoMn = mnodeman.FindRandomNotInVec(vecMasternodesUsed, MIN_PRIVATESEND_PEER_PROTO_VERSION);
+
         if(!infoMn.fInfoValid) {
             LogPrintf("CPrivateSendClient::StartNewQueue -- Can't find random masternode!\n");
             strAutoDenomResult = _("Can't find random Masternode.");
             return false;
         }
+
+        // skip next mn payments winners
+        if (mnpayments.IsScheduled(infoMn, 0)) {
+            LogPrintf("CPrivateSendClient::StartNewQueue -- skipping winner, masternode=%s\n", infoMn.vin.prevout.ToStringShort());
+            nTries++;
+            continue;
+        }
+
         vecMasternodesUsed.push_back(infoMn.vin.prevout);
 
         if(infoMn.nLastDsq != 0 && infoMn.nLastDsq + nMnCountEnabled/5 > mnodeman.nDsqCount) {
