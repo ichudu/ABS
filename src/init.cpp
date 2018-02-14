@@ -67,6 +67,8 @@
 #include "spork.h"
 #include "warnings.h"
 
+#include "evo/deterministicmns.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <memory>
@@ -291,6 +293,8 @@ void PrepareShutdown()
         pcoinsdbview = NULL;
         delete pblocktree;
         pblocktree = NULL;
+        delete deterministicMNManager;
+        deterministicMNManager = NULL;
         delete evoDb;
         evoDb = NULL;
     }
@@ -1625,6 +1629,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 delete pcoinsdbview;
                 delete pcoinscatcher;
                 delete pblocktree;
+                delete deterministicMNManager;
                 delete evoDb;
 
                 evoDb = new CEvoDB(nEvoDbCache, false, fReindex || fReindexChainState);
@@ -1633,6 +1638,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex || fReindexChainState);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
+                deterministicMNManager = new CDeterministicMNManager(*evoDb);
 
                 if (fReindex) {
                     pblocktree->WriteReindexing(true);
