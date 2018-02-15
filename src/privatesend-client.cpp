@@ -1182,7 +1182,7 @@ bool CPrivateSendClient::MakeCollateralAmounts(const CompactTallyItem& tallyItem
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // denominated input is always a single one, so we can check its amount directly and return early
-    if(!fTryDenominated && tallyItem.vecTxIn.size() == 1 && CPrivateSend::IsDenominatedAmount(tallyItem.nAmount))
+    if(!fTryDenominated && tallyItem.vecOutPoints.size() == 1 && CPrivateSend::IsDenominatedAmount(tallyItem.nAmount))
         return false;
 
     CWalletTx wtx;
@@ -1209,8 +1209,8 @@ bool CPrivateSendClient::MakeCollateralAmounts(const CompactTallyItem& tallyItem
     coinControl.fAllowWatchOnly = false;
     // send change to the same address so that we were able create more denoms out of it later
     coinControl.destChange = tallyItem.txdest;
-    for (const auto& txin : tallyItem.vecTxIn)
-        coinControl.Select(txin.prevout);
+    for (const auto& outpoint : tallyItem.vecOutPoints)
+        coinControl.Select(outpoint);
 
     bool fSuccess = pwalletMain->CreateTransaction(vecSend, wtx, reservekeyChange,
             nFeeRet, nChangePosRet, strFail, &coinControl, true, ONLY_NONDENOMINATED);
@@ -1345,8 +1345,8 @@ bool CPrivateSendClient::CreateDenominated(const CompactTallyItem& tallyItem, bo
     coinControl.fAllowWatchOnly = false;
     // send change to the same address so that we were able create more denoms out of it later
     coinControl.destChange = tallyItem.txdest;
-    for (const auto& txin : tallyItem.vecTxIn)
-        coinControl.Select(txin.prevout);
+    for (const auto& outpoint : tallyItem.vecOutPoints)
+        coinControl.Select(outpoint);
 
     CWalletTx wtx;
     CAmount nFeeRet = 0;

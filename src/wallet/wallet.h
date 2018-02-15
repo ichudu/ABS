@@ -114,7 +114,7 @@ struct CompactTallyItem
 {
     CTxDestination txdest;
     CAmount nAmount;
-    std::vector<CTxIn> vecTxIn;
+    std::vector<COutPoint> vecOutPoints;
     CompactTallyItem()
     {
         nAmount = 0;
