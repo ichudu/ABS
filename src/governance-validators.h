@@ -51,7 +51,7 @@ private:
     static bool CheckURL(const std::string& strURLIn);
 
 private:
-    std::string            strData;
+    std::string            strDataHex;
 
     UniValue               objJSON;
 

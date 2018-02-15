@@ -24,7 +24,7 @@ CGovernanceObject::CGovernanceObject()
   nTime(0),
   nDeletionTime(0),
   nCollateralHash(),
-  strData(),
+  vchData(),
   masternodeOutpoint(),
   vchSig(),
   fCachedLocalValidity(false),
@@ -40,11 +40,11 @@ CGovernanceObject::CGovernanceObject()
   cmmapOrphanVotes(),
   fileVotes()
 {
-    // PARSE JSON DATA STORAGE (STRDATA)
+    // PARSE JSON DATA STORAGE (VCHDATA)
     LoadData();
 }
 
-CGovernanceObject::CGovernanceObject(const uint256& nHashParentIn, int nRevisionIn, int64_t nTimeIn, const uint256& nCollateralHashIn, const std::string& strDataIn)
+CGovernanceObject::CGovernanceObject(const uint256& nHashParentIn, int nRevisionIn, int64_t nTimeIn, const uint256& nCollateralHashIn, const std::string& strDataHexIn)
 : cs(),
   nObjectType(GOVERNANCE_OBJECT_UNKNOWN),
   nHashParent(nHashParentIn),
@@ -52,7 +52,7 @@ CGovernanceObject::CGovernanceObject(const uint256& nHashParentIn, int nRevision
   nTime(nTimeIn),
   nDeletionTime(0),
   nCollateralHash(nCollateralHashIn),
-  strData(strDataIn),
+  vchData(ParseHex(strDataHexIn)),
   masternodeOutpoint(),
   vchSig(),
   fCachedLocalValidity(false),
@@ -68,7 +68,7 @@ CGovernanceObject::CGovernanceObject(const uint256& nHashParentIn, int nRevision
   cmmapOrphanVotes(),
   fileVotes()
 {
-    // PARSE JSON DATA STORAGE (STRDATA)
+    // PARSE JSON DATA STORAGE (VCHDATA)
     LoadData();
 }
 
@@ -80,7 +80,7 @@ CGovernanceObject::CGovernanceObject(const CGovernanceObject& other)
   nTime(other.nTime),
   nDeletionTime(other.nDeletionTime),
   nCollateralHash(other.nCollateralHash),
-  strData(other.strData),
+  vchData(other.vchData),
   masternodeOutpoint(other.masternodeOutpoint),
   vchSig(other.vchSig),
   fCachedLocalValidity(other.fCachedLocalValidity),
@@ -218,7 +218,7 @@ std::string CGovernanceObject::GetSignatureMessage() const
     std::string strMessage = nHashParent.ToString() + "|" +
         boost::lexical_cast<std::string>(nRevision) + "|" +
         boost::lexical_cast<std::string>(nTime) + "|" +
-        strData + "|" +
+        GetDataAsHexString() + "|" +
         masternodeOutpoint.ToStringShort() + "|" +
         nCollateralHash.ToString();
 
@@ -277,25 +277,25 @@ uint256 CGovernanceObject::GetHash() const
     ss << nHashParent;
     ss << nRevision;
     ss << nTime;
-    ss << strData;
+    ss << GetDataAsHexString();
     ss << masternodeOutpoint << uint8_t{} << 0xffffffff;
     ss << vchSig;
     // fee_tx is left out on purpose
 
-    DBG( printf("CGovernanceObject::GetHash %i %li %s\n", nRevision, nTime, strData.c_str()); );
+    DBG( printf("CGovernanceObject::GetHash %i %li %s\n", nRevision, nTime, GetDataAsHexString().c_str()); );
 
     return ss.GetHash();
 }
 
 /**
-   Return the actual object from the strData JSON structure.
+   Return the actual object from the vchData JSON structure.
 
    Returns an empty object on error.
  */
 UniValue CGovernanceObject::GetJSONObject()
 {
     UniValue obj(UniValue::VOBJ);
-    if(strData.empty()) {
+    if(vchData.empty()) {
         return obj;
     }
 
@@ -313,7 +313,7 @@ UniValue CGovernanceObject::GetJSONObject()
 *   LoadData
 *   --------------------------------------------------------
 *
-*   Attempt to load data from strData
+*   Attempt to load data from vchData
 *
 */
 
@@ -322,17 +322,17 @@ void CGovernanceObject::LoadData()
     // todo : 12.1 - resolved
     //return;
 
-    if(strData.empty()) {
+    if(vchData.empty()) {
         return;
     }
 
     try  {
-        // ATTEMPT TO LOAD JSON STRING FROM STRDATA
+        // ATTEMPT TO LOAD JSON STRING FROM VCHDATA
         UniValue objResult(UniValue::VOBJ);
         GetData(objResult);
 
-        DBG( cout << "CGovernanceObject::LoadData strData = "
-             << GetDataAsString()
+        DBG( cout << "CGovernanceObject::LoadData GetDataAsPlainString = "
+             << GetDataAsPlainString()
              << endl; );
 
         UniValue obj = GetJSONObject();
@@ -368,7 +368,7 @@ void CGovernanceObject::LoadData()
 void CGovernanceObject::GetData(UniValue& objResult)
 {
     UniValue o(UniValue::VOBJ);
-    std::string s = GetDataAsString();
+    std::string s = GetDataAsPlainString();
     o.read(s);
     objResult = o;
 }
@@ -379,17 +379,14 @@ void CGovernanceObject::GetData(UniValue& objResult)
 *
 */
 
-std::string CGovernanceObject::GetDataAsHex()
+std::string CGovernanceObject::GetDataAsHexString() const
 {
-    return strData;
+    return HexStr(vchData);
 }
 
-std::string CGovernanceObject::GetDataAsString()
+std::string CGovernanceObject::GetDataAsPlainString() const
 {
-    std::vector<unsigned char> v = ParseHex(strData);
-    std::string s(v.begin(), v.end());
-
-    return s;
+    return std::string(vchData.begin(), vchData.end());
 }
 
 void CGovernanceObject::UpdateLocalValidity()
@@ -422,6 +419,10 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
         case GOVERNANCE_OBJECT_PROPOSAL:
         case GOVERNANCE_OBJECT_TRIGGER:
         case GOVERNANCE_OBJECT_WATCHDOG:
+            if (vchData.size() > MAX_GOVERNANCE_OBJECT_DATA_SIZE) {
+                strError = strprintf("Invalid object size %d", vchData.size());
+                return false;
+            }
             break;
         default:
             strError = strprintf("Invalid object type %d", nObjectType);
@@ -705,7 +706,7 @@ void CGovernanceObject::swap(CGovernanceObject& first, CGovernanceObject& second
     swap(first.nTime, second.nTime);
     swap(first.nDeletionTime, second.nDeletionTime);
     swap(first.nCollateralHash, second.nCollateralHash);
-    swap(first.strData, second.strData);
+    swap(first.vchData, second.vchData);
     swap(first.nObjectType, second.nObjectType);
 
     // swap all cached valid flags
