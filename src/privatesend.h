@@ -173,7 +173,7 @@ class CDarksendQueue
 {
 public:
     int nDenom;
-    CTxIn vin;
+    COutPoint masternodeOutpoint;
     int64_t nTime;
     bool fReady; //ready for submit
     std::vector<unsigned char> vchSig;
@@ -182,7 +182,7 @@ public:
 
     CDarksendQueue() :
         nDenom(0),
-        vin(CTxIn()),
+        masternodeOutpoint(COutPoint()),
         nTime(0),
         fReady(false),
         vchSig(std::vector<unsigned char>()),
@@ -191,7 +191,7 @@ public:
 
     CDarksendQueue(int nDenom, COutPoint outpoint, int64_t nTime, bool fReady) :
         nDenom(nDenom),
-        vin(CTxIn(outpoint)),
+        masternodeOutpoint(outpoint),
         nTime(nTime),
         fReady(fReady),
         vchSig(std::vector<unsigned char>()),
@@ -203,7 +203,21 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nDenom);
-        READWRITE(vin);
+        int nVersion = s.GetVersion();
+        if (nVersion == 70208) {
+            // converting from/to old format
+            CTxIn txin{};
+            if (ser_action.ForRead()) {
+                READWRITE(txin);
+                masternodeOutpoint = txin.prevout;
+            } else {
+                txin = CTxIn(masternodeOutpoint);
+                READWRITE(txin);
+            }
+        } else {
+            // using new format directly
+            READWRITE(masternodeOutpoint);
+        }
         READWRITE(nTime);
         READWRITE(fReady);
         READWRITE(vchSig);
@@ -228,12 +242,12 @@ public:
     std::string ToString()
     {
         return strprintf("nDenom=%d, nTime=%lld, fReady=%s, fTried=%s, masternode=%s",
-                        nDenom, nTime, fReady ? "true" : "false", fTried ? "true" : "false", vin.prevout.ToStringShort());
+                        nDenom, nTime, fReady ? "true" : "false", fTried ? "true" : "false", masternodeOutpoint.ToStringShort());
     }
 
     friend bool operator==(const CDarksendQueue& a, const CDarksendQueue& b)
     {
-        return a.nDenom == b.nDenom && a.vin.prevout == b.vin.prevout && a.nTime == b.nTime && a.fReady == b.fReady;
+        return a.nDenom == b.nDenom && a.masternodeOutpoint == b.masternodeOutpoint && a.nTime == b.nTime && a.fReady == b.fReady;
     }
 };
 
@@ -248,14 +262,14 @@ private:
 
 public:
     CTransactionRef tx;
-    CTxIn vin;
+    COutPoint masternodeOutpoint;
     std::vector<unsigned char> vchSig;
     int64_t sigTime;
 
     CDarksendBroadcastTx() :
         nConfirmedHeight(-1),
         tx(MakeTransactionRef()),
-        vin(),
+        masternodeOutpoint(),
         vchSig(),
         sigTime(0)
         {}
@@ -263,7 +277,7 @@ public:
     CDarksendBroadcastTx(const CTransactionRef& _tx, COutPoint _outpoint, int64_t _sigTime) :
         nConfirmedHeight(-1),
         tx(_tx),
-        vin(CTxIn(_outpoint)),
+        masternodeOutpoint(_outpoint),
         vchSig(),
         sigTime(_sigTime)
         {}
@@ -273,7 +287,21 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(tx);
-        READWRITE(vin);
+        int nVersion = s.GetVersion();
+        if (nVersion == 70208) {
+            // converting from/to old format
+            CTxIn txin{};
+            if (ser_action.ForRead()) {
+                READWRITE(txin);
+                masternodeOutpoint = txin.prevout;
+            } else {
+                txin = CTxIn(masternodeOutpoint);
+                READWRITE(txin);
+            }
+        } else {
+            // using new format directly
+            READWRITE(masternodeOutpoint);
+        }
         READWRITE(vchSig);
         READWRITE(sigTime);
     }
