@@ -805,6 +805,7 @@ bool CMasternodePing::CheckSignature(const CPubKey& pubKeyMasternode, int &nDos)
             return false;
         }
     }
+
     return true;
 }
 

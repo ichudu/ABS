@@ -30,6 +30,8 @@ static const int MASTERNODE_COLLATERAL                  = 2500;
 
 // sentinel version before implementation of nSentinelVersion in CMasternodePing
 #define DEFAULT_SENTINEL_VERSION 0x010001
+// daemon version before implementation of nDaemonVersion in CMasternodePing
+#define DEFAULT_DAEMON_VERSION 120200
 
 // daemon version before implementation of nDaemonVersion in CMasternodePing
 #define DEFAULT_DAEMON_VERSION 120200

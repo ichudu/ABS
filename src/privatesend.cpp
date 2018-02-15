@@ -84,6 +84,18 @@ bool CDarksendQueue::Sign()
 bool CDarksendQueue::CheckSignature(const CPubKey& pubKeyMasternode) const
 {
     std::string strError = "";
+    std::string strMessage;
+    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+        strMessage = masternodeOutpoint.ToStringShort() +
+                    boost::lexical_cast<std::string>(nDenom) +
+                    boost::lexical_cast<std::string>(nTime) +
+                    boost::lexical_cast<std::string>(fReady);
+    } else {
+        strMessage = CTxIn(masternodeOutpoint).ToString() +
+                    boost::lexical_cast<std::string>(nDenom) +
+                    boost::lexical_cast<std::string>(nTime) +
+                    boost::lexical_cast<std::string>(fReady);
+    }
 
     if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
         uint256 hash = GetSignatureHash();
