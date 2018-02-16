@@ -214,11 +214,6 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nDenom);
         int nVersion = s.GetVersion();
-        if (nVersion > 70208) {
-            READWRITE(nInputCount);
-        } else if (ser_action.ForRead()) {
-            nInputCount = 0;
-        }
         if (nVersion == 70208 && (s.GetType() & SER_NETWORK)) {
             // converting from/to old format
             CTxIn txin{};
@@ -235,9 +230,12 @@ public:
         }
         READWRITE(nTime);
         READWRITE(fReady);
-        READWRITE(vchSig);
+        if (!(s.GetType() & SER_GETHASH)) {
+            READWRITE(vchSig);
+        }
     }
 
+    uint256 GetSignatureHash() const;
     /** Sign this mixing transaction
      *  \return true if all conditions are met:
      *     1) we have an active Masternode,
@@ -247,14 +245,14 @@ public:
      */
     bool Sign();
     /// Check if we have a valid Masternode address
-    bool CheckSignature(const CPubKey& pubKeyMasternode);
+    bool CheckSignature(const CPubKey& pubKeyMasternode) const;
 
     bool Relay(CConnman &connman);
 
     /// Is this queue expired?
     bool IsExpired() { return GetAdjustedTime() - nTime > PRIVATESEND_QUEUE_TIMEOUT; }
 
-    std::string ToString()
+    std::string ToString() const
     {
         return strprintf("nDenom=%d, nInputCount=%d, nTime=%lld, fReady=%s, fTried=%s, masternode=%s",
                         nDenom, nInputCount, nTime, fReady ? "true" : "false", fTried ? "true" : "false", masternodeOutpoint.ToStringShort());
@@ -303,7 +301,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(tx);
         int nVersion = s.GetVersion();
-        if (nVersion == 70208) {
+        if (nVersion == 70208 && (s.GetType() & SER_NETWORK)) {
             // converting from/to old format
             CTxIn txin{};
             if (ser_action.ForRead()) {
@@ -317,7 +315,9 @@ public:
             // using new format directly
             READWRITE(masternodeOutpoint);
         }
-        READWRITE(vchSig);
+        if (!(s.GetType() & SER_GETHASH)) {
+            READWRITE(vchSig);
+        }
         READWRITE(sigTime);
     }
 
@@ -334,8 +334,10 @@ public:
         return *this != CDarksendBroadcastTx();
     }
 
+    uint256 GetSignatureHash() const;
+
     bool Sign();
-    bool CheckSignature(const CPubKey& pubKeyMasternode);
+    bool CheckSignature(const CPubKey& pubKeyMasternode) const;
 
     void SetConfirmedHeight(int nConfirmedHeightIn) { nConfirmedHeight = nConfirmedHeightIn; }
     bool IsExpired(int nHeight);

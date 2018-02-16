@@ -98,6 +98,9 @@ Every few minutes, masternodes ping the network with a message that propagates t
 | 32 | blockHash | uint256 | Current chaintip blockhash minus 12
 | 8 | sigTime | int64_t | Signature time for this ping
 | 71-73 | vchSig | char[] | Signature of this message by masternode (verifiable via pubKeyMasternode)
+| 1 | fSentinelIsCurrent | bool | true if last sentinel ping was current
+| 4 | nSentinelVersion | uint32_t | The version of Sentinel running on the masternode which is signing the message
+| 4 | nDaemonVersion | uint32_t | The version of dashd of the masternode which is signing the message (i.e. CLIENT_VERSION)
 
 ### MASTERNODEPAYMENTVOTE - "mnw"
 
@@ -246,18 +249,19 @@ Spork
 | 66* | vchSig | char[] | Unclear if 66 is the correct size, but this is what it appears to be in most cases |
 
 #### Defined Sporks (per src/sporks.h)
- 
-| Spork ID | Number | Name | Description | 
+
+| Spork ID | Number | Name | Description |
 | ---------- | ---------- | ----------- | ----------- |
 | 10001 | 2 | INSTANTSEND_ENABLED | Turns on and off InstantSend network wide
 | 10002 | 3 | INSTANTSEND_BLOCK_FILTERING | Turns on and off InstantSend block filtering
-| 10004 | 5 | INSTANTSEND_MAX_VALUE | Controls the max value for an InstantSend transaction (currently 2000 ABS)
+| 10004 | 5 | INSTANTSEND_MAX_VALUE | Controls the max value for an InstantSend transaction (currently 2000 dash)
+| 10005 | 6 | NEW_SIGS | Turns on and off new signature format for Absolute-specific messages
 | 10007 | 8 | MASTERNODE_PAYMENT_ENFORCEMENT | Requires masternodes to be paid by miners when blocks are processed
 | 10008 | 9 | SUPERBLOCKS_ENABLED | Superblocks are enabled (the 10% comes to fund the absolute treasury)
 | 10009 | 10 | MASTERNODE_PAY_UPDATED_NODES | Only current protocol version masternode's will be paid (not older nodes)
 | 10011 | 12 | RECONSIDER_BLOCKS | |
 | 10012 | 13 | OLD_SUPERBLOCK_FLAG | |
-| 10013 | 14 | REQUIRE_SENTINEL_FLAG | Only masternode's running sentinel will be paid 
+| 10013 | 14 | REQUIRE_SENTINEL_FLAG | Only masternode's running sentinel will be paid
 
 ## Undocumented messages
 
@@ -273,8 +277,8 @@ Masternode Verify
 
 | Field Size | Field Name | Data type | Description |
 | ---------- | ----------- | --------- | ---------- |
-| 36 | masternodeOutpoint1 | [COutPoint](#coutpoint) | The unspent output which is holding 1000 DASH for masternode 1
-| 36 | masternodeOutpoint2 | [COutPoint](#coutpoint) | The unspent output which is holding 1000 DASH for masternode 2
+| 36 | masternodeOutpoint1 | [COutPoint](#coutpoint) | The unspent output which is holding 2500 ABS for masternode 1
+| 36 | masternodeOutpoint2 | [COutPoint](#coutpoint) | The unspent output which is holding 2500 ABS for masternode 2
 | # | addr | [CService](#cservice) | IPv4 address / port of the masternode
 | 4 | nonce | int | Nonce
 | 4 | nBlockHeight | int | The blockheight
