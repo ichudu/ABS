@@ -149,6 +149,8 @@ public:
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(vchSig);
         }
+        if (ser_action.ForRead())
+            UpdateHash();
     }
 
 };

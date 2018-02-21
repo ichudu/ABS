@@ -122,7 +122,7 @@ void CGovernanceVote::Relay(CConnman& connman) const
     connman.RelayInv(inv, MIN_GOVERNANCE_PEER_PROTO_VERSION);
 }
 
-uint256 CGovernanceVote::GetHash() const
+void CGovernanceVote::UpdateHash() const
 {
     // Note: doesn't match serialization
 
@@ -132,7 +132,12 @@ uint256 CGovernanceVote::GetHash() const
     ss << nVoteSignal;
     ss << nVoteOutcome;
     ss << nTime;
-    return ss.GetHash();
+    *const_cast<uint256*>(&hash) = ss.GetHash();
+}
+
+uint256 CGovernanceVote::GetHash() const
+{
+    return hash;
 }
 
 uint256 CGovernanceVote::GetSignatureHash() const
