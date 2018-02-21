@@ -225,6 +225,31 @@ std::string CGovernanceObject::GetSignatureMessage() const
     return strMessage;
 }
 
+uint256 CGovernanceObject::GetHash() const
+{
+    // Note: doesn't match serialization
+
+    // CREATE HASH OF ALL IMPORTANT PIECES OF DATA
+
+    CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
+    ss << nHashParent;
+    ss << nRevision;
+    ss << nTime;
+    ss << GetDataAsHexString();
+    ss << masternodeOutpoint << uint8_t{} << 0xffffffff; // adding dummy values here to match old hashing
+    ss << vchSig;
+    // fee_tx is left out on purpose
+
+    DBG( printf("CGovernanceObject::GetHash %i %lli %s\n", nRevision, nTime, GetDataAsHexString().c_str()); );
+
+    return ss.GetHash();
+}
+
+uint256 CGovernanceObject::GetSignatureHash() const
+{
+    return SerializeHash(*this);
+}
+
 void CGovernanceObject::SetMasternodeOutpoint(const COutPoint& outpoint)
 {
     masternodeOutpoint = outpoint;
@@ -331,9 +356,9 @@ void CGovernanceObject::LoadData()
         UniValue objResult(UniValue::VOBJ);
         GetData(objResult);
 
-        DBG( cout << "CGovernanceObject::LoadData GetDataAsPlainString = "
+        DBG( std::cout << "CGovernanceObject::LoadData GetDataAsPlainString = "
              << GetDataAsPlainString()
-             << endl; );
+             << std::endl; );
 
         UniValue obj = GetJSONObject();
         nObjectType = obj["type"].get_int();
@@ -343,7 +368,7 @@ void CGovernanceObject::LoadData()
         std::ostringstream ostr;
         ostr << "CGovernanceObject::LoadData Error parsing JSON"
              << ", e.what() = " << e.what();
-        DBG( cout << ostr.str() << endl; );
+        DBG( std::cout << ostr.str() << std::endl; );
         LogPrintf("%s\n", ostr.str());
         return;
     }
@@ -351,7 +376,7 @@ void CGovernanceObject::LoadData()
         fUnparsable = true;
         std::ostringstream ostr;
         ostr << "CGovernanceObject::LoadData Unknown Error parsing JSON";
-        DBG( cout << ostr.str() << endl; );
+        DBG( std::cout << ostr.str() << std::endl; );
         LogPrintf("%s\n", ostr.str());
         return;
     }
@@ -433,7 +458,7 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
 
     // CHECK COLLATERAL IF REQUIRED (HIGH CPU USAGE)
 
-    if(fCheckCollateral) { 
+    if(fCheckCollateral) {
         if((nObjectType == GOVERNANCE_OBJECT_TRIGGER) || (nObjectType == GOVERNANCE_OBJECT_WATCHDOG)) {
             std::string strOutpoint = masternodeOutpoint.ToStringShort();
             masternode_info_t infoMn;
@@ -524,30 +549,30 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
     CScript findScript;
     findScript << OP_RETURN << ToByteVector(nExpectedHash);
 
-    DBG( cout << "IsCollateralValid: txCollateral->vout.size() = " << txCollateral->vout.size() << endl; );
+    DBG( std::cout << "IsCollateralValid: txCollateral->vout.size() = " << txCollateral->vout.size() << std::endl; );
 
-    DBG( cout << "IsCollateralValid: findScript = " << ScriptToAsmStr( findScript, false ) << endl; );
+    DBG( std::cout << "IsCollateralValid: findScript = " << ScriptToAsmStr( findScript, false ) << std::endl; );
 
-    DBG( cout << "IsCollateralValid: nMinFee = " << nMinFee << endl; );
+    DBG( std::cout << "IsCollateralValid: nMinFee = " << nMinFee << std::endl; );
 
 
     bool foundOpReturn = false;
     for (const auto& output : txCollateral->vout) {
-        DBG( cout << "IsCollateralValid txout : " << output.ToString()
+        DBG( std::cout << "IsCollateralValid txout : " << output.ToString()
              << ", output.nValue = " << output.nValue
              << ", output.scriptPubKey = " << ScriptToAsmStr( output.scriptPubKey, false )
-             << endl; );
+             << std::endl; );
         if(!output.scriptPubKey.IsPayToPublicKeyHash() && !output.scriptPubKey.IsUnspendable()) {
             strError = strprintf("Invalid Script %s", txCollateral->ToString());
             LogPrintf ("CGovernanceObject::IsCollateralValid -- %s\n", strError);
             return false;
         }
         if(output.scriptPubKey == findScript && output.nValue >= nMinFee) {
-            DBG( cout << "IsCollateralValid foundOpReturn = true" << endl; );
+            DBG( std::cout << "IsCollateralValid foundOpReturn = true" << std::endl; );
             foundOpReturn = true;
         }
         else  {
-            DBG( cout << "IsCollateralValid No match, continuing" << endl; );
+            DBG( std::cout << "IsCollateralValid No match, continuing" << std::endl; );
         }
 
     }
