@@ -167,7 +167,7 @@ void CGovernanceTriggerManager::CleanAndRemove()
         CGovernanceObject* pObj = nullptr;
         CSuperblock_sptr& pSuperblock = it->second;
         if(!pSuperblock) {
-            DBG( std::cout << "CGovernanceTriggerManager::CleanAndRemove: NULL superblock marked for removal " << std::endl; );
+            DBG( std::cout << "CGovernanceTriggerManager::CleanAndRemove: NULL superblock marked for removal" << std::endl; );
             LogPrint("gobject", "CGovernanceTriggerManager::CleanAndRemove -- NULL superblock marked for removal\n");
             remove = true;
         } else {

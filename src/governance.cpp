@@ -80,6 +80,7 @@ bool CGovernanceManager::SerializeVoteForHash(const uint256& nHash, CDataStream&
     LOCK(cs);
 
     CGovernanceObject* pGovobj = NULL;
+
     return cmapVoteToObject.Get(nHash,pGovobj) && pGovobj->GetVoteFile().SerializeVoteToStream(nHash, ss);
 }
 
@@ -327,11 +328,6 @@ void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CConnman
         LogPrintf("CGovernanceManager::AddGovernanceObject -- already have governance object %s\n", nHash.ToString());
         return;
     }
-
-    LogPrint("gobject", "CGovernanceManager::AddGovernanceObject -- Adding object: hash = %s, type = %d\n", nHash.ToString(), govobj.GetObjectType());
-
-    // INSERT INTO OUR GOVERNANCE OBJECT MEMORY
-    mapObjects.insert(std::make_pair(nHash, govobj));
 
     // SHOULD WE ADD THIS OBJECT TO ANY OTHER MANANGERS?
 
