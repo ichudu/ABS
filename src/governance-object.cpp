@@ -455,17 +455,13 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
     }
 
     switch(nObjectType) {
-        case GOVERNANCE_OBJECT_WATCHDOG: {
+        case GOVERNANCE_OBJECT_WATCHDOG:
             // watchdogs are deprecated
             return false;
-        }
-        case GOVERNANCE_OBJECT_PROPOSAL: {
-            CProposalValidator validator(GetDataAsHexString());
-            // Note: It's ok to have expired proposals
-            // they are going to be cleared by CGovernanceManager::UpdateCachesAndClean()
-            // TODO: should they be tagged as "expired" to skip vote downloading?
-            if (!validator.Validate(false)) {
-                strError = strprintf("Invalid proposal data, error messages: %s", validator.GetErrorMessages());
+        case GOVERNANCE_OBJECT_PROPOSAL:
+        case GOVERNANCE_OBJECT_TRIGGER:
+            if (vchData.size() > MAX_GOVERNANCE_OBJECT_DATA_SIZE) {
+                strError = strprintf("Invalid object size %d", vchData.size());
                 return false;
             }
             if (fCheckCollateral && !IsCollateralValid(strError, fMissingConfirmations)) {
@@ -479,6 +475,8 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
                 // nothing else we can check here (yet?)
                 return true;
 
+    if(fCheckCollateral) {
+        if(nObjectType == GOVERNANCE_OBJECT_TRIGGER) {
             std::string strOutpoint = masternodeOutpoint.ToStringShort();
             masternode_info_t infoMn;
             if (!mnodeman.GetMasternodeInfo(masternodeOutpoint, infoMn)) {

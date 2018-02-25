@@ -4199,6 +4199,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
             CValidationState state;
             if (!AddGenesisBlock(chainparams, chainparams.GenesisBlock(), state))
                 return false;
+
             if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
                 // We can't continue if povnet genesis block is invalid
                 std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(chainparams.PoVNETGenesisBlock());
