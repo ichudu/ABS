@@ -2,38 +2,24 @@
 // Copyright (c) 2018 The Absolute Core developers
 
 #include "governance-validators.h"
-#include "univalue.h"
 #include "utilstrencodings.h"
 
-#include "test/test_absolute.h"
+#include "data/proposals_valid.json.h"
+#include "data/proposals_invalid.json.h"
 
-#include <boost/test/unit_test.hpp>
+#include "test/test_absolute.h"
 
 #include <iostream>
 #include <fstream>
 #include <string>
 
+#include <boost/test/unit_test.hpp>
+
+#include <univalue.h>
+
+extern UniValue read_json(const std::string& jsondata);
+
 BOOST_FIXTURE_TEST_SUITE(governance_validators_tests, BasicTestingSetup)
-
-UniValue LoadJSON(const std::string& strFilename)
-{
-    UniValue obj(UniValue::VOBJ);
-    std::ifstream istr(strFilename.c_str());
-
-    std::string strData;
-    std::string strLine;
-    bool fFirstLine = true;
-    while(std::getline(istr, strLine)) {
-        if(!fFirstLine) {
-            strData += "\n";
-        }
-        strData += strLine;
-        fFirstLine = false;
-    }
-    obj.read(strData);
-
-    return obj;
-}
 
 std::string CreateEncodedProposalObject(const UniValue& objJSON)
 {
@@ -43,7 +29,7 @@ std::string CreateEncodedProposalObject(const UniValue& objJSON)
 
     UniValue outerArray(UniValue::VARR);
     outerArray.push_back(innerArray);
-    
+
     std::string strData = outerArray.write();
     std::string strHex = HexStr(strData);
     return strHex;
@@ -51,33 +37,27 @@ std::string CreateEncodedProposalObject(const UniValue& objJSON)
 
 BOOST_AUTO_TEST_CASE(valid_proposals_test)
 {
-    CProposalValidator validator;
-    UniValue obj = LoadJSON("src/test/data/proposals-valid.json");
-    for(size_t i = 0; i < obj.size(); ++i) {
-        const UniValue& objProposal = obj[i];
+    UniValue tests = read_json(std::string(json_tests::proposals_valid, json_tests::proposals_valid + sizeof(json_tests::proposals_valid)));
+
+    BOOST_CHECK_MESSAGE(tests.size(), "Empty `tests`");
+    for(size_t i = 0; i < tests.size(); ++i) {
+        const UniValue& objProposal = tests[i];
         std::string strHexData = CreateEncodedProposalObject(objProposal);
-        validator.SetHexData(strHexData);
-        BOOST_CHECK(validator.ValidateJSON());
-        BOOST_CHECK(validator.ValidateName());
-        BOOST_CHECK(validator.ValidateURL());
-        BOOST_CHECK(validator.ValidateStartEndEpoch());
-        BOOST_CHECK(validator.ValidatePaymentAmount());
-        BOOST_CHECK(validator.ValidatePaymentAddress());
-        BOOST_CHECK(validator.Validate());
-        validator.Clear();
+        CProposalValidator validator(strHexData);
+        BOOST_CHECK_MESSAGE(validator.Validate(), validator.GetErrorMessages());
     }
 }
 
 BOOST_AUTO_TEST_CASE(invalid_proposals_test)
 {
-    CProposalValidator validator;
-    UniValue obj = LoadJSON("src/test/data/proposals-invalid.json");
-    for(size_t i = 0; i < obj.size(); ++i) {
-        const UniValue& objProposal = obj[i];
+    UniValue tests = read_json(std::string(json_tests::proposals_invalid, json_tests::proposals_invalid + sizeof(json_tests::proposals_invalid)));
+
+    BOOST_CHECK_MESSAGE(tests.size(), "Empty `tests`");
+    for(size_t i = 0; i < tests.size(); ++i) {
+        const UniValue& objProposal = tests[i];
         std::string strHexData = CreateEncodedProposalObject(objProposal);
-        validator.SetHexData(strHexData);
-        BOOST_CHECK(!validator.Validate());
-        validator.Clear();
+        CProposalValidator validator(strHexData);
+        BOOST_CHECK_MESSAGE(!validator.Validate(), validator.GetErrorMessages());
     }
 }
 
