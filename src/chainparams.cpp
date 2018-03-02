@@ -38,7 +38,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.nBits    = nBits;
     genesis.nNonce   = nNonce;
     genesis.nVersion = nVersion;
-    
+
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
@@ -151,8 +151,8 @@ public:
         consensus.nMasternodeMinimumConfirmations = 15;
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
-        consensus.BIP65Height = 390000; 
-        consensus.BIP66Height = 395000; 
+        consensus.BIP65Height = 390000;
+        consensus.BIP66Height = 395000;
         consensus.DIP0001Height = 450000;
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 7.5 * 60; // 5 blocks
@@ -220,7 +220,7 @@ public:
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,23);
         // Absolute script addresses start with 's'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,125);
-        // Absolute private keys start with 'm'
+        // Absolute private keys start with 'h'
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,110);
         // Absolute BIP32 pubkeys start with 'xpub' (Bitcoin defaults)
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x88)(0xB2)(0x1E).convert_to_container<std::vector<unsigned char> >();
@@ -241,7 +241,8 @@ public:
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
-        strSporkPubKey = "04ef78a6e3c69ce24e01f929bcfff56844320c78f840b4febcf21d634e3951d213c94c4d7830f6d8a987fd04ad82982efb85e471b763b13841bc93f427929302cf";
+
+        strSporkAddress = "AYZX23zmfNQgCZtzq7JsWHRKKyuzzxYHfD";
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -251,7 +252,7 @@ public:
             (  250000, uint256S("0x00000000000640d8897addd4200209b6dd754aa3ca1f39857f8f03f36a44cc02"))
             (  300000, uint256S("0x00000000000abec2c4fe6aec36d3f37026df8ed8817789a43278392092fe9d1a"))
             (  350400, uint256S("0x0000000000056195689db2edb979305163b7ed88c1e7ce8875bd2b5feb4c432d"))
-                
+
 	};
 
         chainTxData = ChainTxData{
@@ -352,7 +353,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
 	// nodes with support for servicebits filtering should be at the top
-		vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed1.absolutecoin.net"));
+		    vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed1.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed2.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed3.absolutecoin.net"));
 
@@ -380,7 +381,7 @@ public:
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
-        strSporkPubKey = "044cff76819f7fafc4fd1b2de299e7052cc60c137330485d1b0018e9f14fdebe3d1b0595f716851837655a61dbea5a2f80727d43b7aa7a598b0222e3f547eeefa2";
+        strSporkAddress = "yQzniXSTqRwaEujSkvZicJsYZkt7wpa4NJ";
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -505,7 +506,8 @@ public:
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
-        strSporkPubKey = "046f78dcf911fbd61910136f7f0f8d90578f68d0b3ac973b5040fb7afb501b5939f39b108b0569dca71488f5bbf498d92e4d1194f6f941307ffd95f75e76869f0e";
+
+        strSporkAddress = "yQzniXSTqRwaEujSkvZicJsYZkt7wpa4NJ";
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -557,7 +559,7 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
 
-        consensus.nPowDGWHeight = 25; 
+        consensus.nPowDGWHeight = 25;
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -606,6 +608,9 @@ public:
         fAllowMultiplePorts = true;
 
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
+
+        // privKey: cR18Ss9mBdYow42WduSawHVvMwyusoLde32FjjDUX7K3qh3yFoko
+        strSporkAddress = "ydUCk8yb3HJ9BsUjfi6snQxHKw3cEDCiNW";
 
         checkpointData = (CCheckpointData){
             boost::assign::map_list_of
