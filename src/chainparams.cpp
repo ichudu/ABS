@@ -409,11 +409,9 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-
-        consensus.BIP34Height = 0;
-        consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
-        consensus.BIP65Height = 1; // BIP65 activated immediately on povnet
-        consensus.BIP66Height = 1; // BIP66 activated immediately on povnet
+        consensus.BIP34Height = 2; // BIP34 activated immediately on povnet
+        consensus.BIP65Height = 2; // BIP65 activated immediately on povnet
+        consensus.BIP66Height = 2; // BIP66 activated immediately on povnet
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 6 * 60 * 60; // Absolute: 6 Hours
         consensus.nPowTargetSpacing = 2 * 60; // Absolute: 2 minutes
@@ -468,8 +466,6 @@ public:
         PoVNETtGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
         consensus.hashPoVNETGenesisBlock = PoVNETGenesis.GetHash();
 
-        consensus.BIP34Hash = PoVNETGenesis.GetHash();
-
         vFixedSeeds.clear();
         vSeeds.clear();
         //vSeeds.push_back(CDNSSeedData("absolutecoin.net",  "pov.absolutecoin.net"));
@@ -487,8 +483,6 @@ public:
 
         // Testnet Absolute BIP44 coin type is '1' (All coin's testnet default)
         nExtCoinType = 1;
-
-        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
