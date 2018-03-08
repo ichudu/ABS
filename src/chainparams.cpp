@@ -232,6 +232,7 @@ public:
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fAllowMultipleAddressesFromGroup = false;
+        fAllowMultiplePorts = false;
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
@@ -368,6 +369,7 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
         fAllowMultipleAddressesFromGroup = false;
+        fAllowMultiplePorts = false;
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
@@ -489,6 +491,7 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
         fAllowMultipleAddressesFromGroup = true;
+        fAllowMultiplePorts = false;
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
@@ -586,6 +589,7 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
         fAllowMultipleAddressesFromGroup = true;
+        fAllowMultiplePorts = true;
 
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
 
