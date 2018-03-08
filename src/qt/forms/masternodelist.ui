@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>723</width>
+    <width>762</width>
     <height>457</height>
    </rect>
   </property>
@@ -171,6 +171,16 @@
               <widget class="QPushButton" name="UpdateButton">
                <property name="text">
                 <string>&amp;Update status</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="QRButton">
+               <property name="toolTip">
+                <string>Show additional Masternode information</string>
+               </property>
+               <property name="text">
+                <string>Show &amp;Info...</string>
                </property>
               </widget>
              </item>
