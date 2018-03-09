@@ -5,6 +5,7 @@
 
 #include "activemasternode.h"
 #include "base58.h"
+#include "clientversion.h"
 #include "init.h"
 #include "netbase.h"
 #include "validation.h"
