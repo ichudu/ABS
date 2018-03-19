@@ -18,6 +18,7 @@ class thread_group;
 
 
 void StartShutdown();
+void StartRestart();
 bool ShutdownRequested();
 /** Interrupt threads */
 void Interrupt(boost::thread_group& threadGroup);
