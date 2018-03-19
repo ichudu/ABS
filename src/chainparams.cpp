@@ -417,9 +417,9 @@ public:
         consensus.BIP65Height = 2; // BIP65 activated immediately on povnet
         consensus.BIP66Height = 2; // BIP66 activated immediately on povnet
         consensus.DIP0001Height = 2; // DIP0001 activated immediately on povnet
-        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 6 * 60 * 60; // Absolute: 6 Hours
-        consensus.nPowTargetSpacing = 2 * 60; // Absolute: 2 minutes
+        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
+        consensus.nPowTargetTimespan = 24 * 60 * 60; // ABS: 1 day
+        consensus.nPowTargetSpacing = 2 * 60; // ABS: 2 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nPowDGWHeight = 100;
