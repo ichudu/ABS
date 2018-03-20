@@ -461,16 +461,19 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
         return false;
     }
 
+    // TODO: This is redundant and should be removed
+    // TODO: Use size validation for each specific object type (if applicable)
+    if (vchData.size() > MAX_GOVERNANCE_OBJECT_DATA_SIZE) {
+        strError = strprintf("Invalid object size %d", vchData.size());
+        return false;
+    }
+
     switch(nObjectType) {
-        case GOVERNANCE_OBJECT_WATCHDOG:
+        case GOVERNANCE_OBJECT_WATCHDOG: {
             // watchdogs are deprecated
             return false;
-        case GOVERNANCE_OBJECT_PROPOSAL:
-        case GOVERNANCE_OBJECT_TRIGGER:
-            if (vchData.size() > MAX_GOVERNANCE_OBJECT_DATA_SIZE) {
-                strError = strprintf("Invalid object size %d", vchData.size());
-                return false;
-            }
+        }
+        case GOVERNANCE_OBJECT_PROPOSAL: {
             if (fCheckCollateral && !IsCollateralValid(strError, fMissingConfirmations)) {
                 strError = "Invalid proposal collateral";
                 return false;
@@ -482,8 +485,6 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
                 // nothing else we can check here (yet?)
                 return true;
 
-    if(fCheckCollateral) {
-        if(nObjectType == GOVERNANCE_OBJECT_TRIGGER) {
             std::string strOutpoint = masternodeOutpoint.ToStringShort();
             masternode_info_t infoMn;
             if (!mnodeman.GetMasternodeInfo(masternodeOutpoint, infoMn)) {
