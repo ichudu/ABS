@@ -461,19 +461,20 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
         return false;
     }
 
-    // TODO: This is redundant and should be removed
-    // TODO: Use size validation for each specific object type (if applicable)
-    if (vchData.size() > MAX_GOVERNANCE_OBJECT_DATA_SIZE) {
-        strError = strprintf("Invalid object size %d", vchData.size());
-        return false;
-    }
-
     switch(nObjectType) {
         case GOVERNANCE_OBJECT_WATCHDOG: {
             // watchdogs are deprecated
             return false;
         }
         case GOVERNANCE_OBJECT_PROPOSAL: {
+            CProposalValidator validator(GetDataAsHexString());
+            // Note: It's ok to have expired proposals
+            // they are going to be cleared by CGovernanceManager::UpdateCachesAndClean()
+            // TODO: should they be tagged as "expired" to skip vote downloading?
+            if (!validator.Validate(false)) {
+                strError = strprintf("Invalid proposal data, error messages: %s", validator.GetErrorMessages());
+                return false;
+            }
             if (fCheckCollateral && !IsCollateralValid(strError, fMissingConfirmations)) {
                 strError = "Invalid proposal collateral";
                 return false;
@@ -709,11 +710,9 @@ void CGovernanceObject::UpdateSentinelVariables()
 
     // CALCULATE THE MINUMUM VOTE COUNT REQUIRED FOR FULL SIGNAL
 
-    // todo - 12.1 - should be set to `10` after governance vote compression is implemented
+
     int nAbsVoteReq = std::max(Params().GetConsensus().nGovernanceMinQuorum, nMnCount / 10);
     int nAbsDeleteReq = std::max(Params().GetConsensus().nGovernanceMinQuorum, (2 * nMnCount) / 3);
-    // todo - 12.1 - Temporarily set to 1 for testing - reverted
-    //nAbsVoteReq = 1;
 
     // SET SENTINEL FLAGS TO FALSE
 
