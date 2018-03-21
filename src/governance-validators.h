@@ -20,7 +20,7 @@ private:
 public:
     CProposalValidator(const std::string& strDataHexIn = std::string());
 
-    bool Validate();
+    bool Validate(bool fCheckExpiration = true);
 
     const std::string& GetErrorMessages()
     {
@@ -36,7 +36,7 @@ private:
     bool GetDataValue(const std::string& strKey, double& dValueRet);
 
     bool ValidateName();
-    bool ValidateStartEndEpoch();
+    bool ValidateStartEndEpoch(bool fCheckExpiration = true);
     bool ValidatePaymentAmount();
     bool ValidatePaymentAddress();
     bool ValidateURL();
