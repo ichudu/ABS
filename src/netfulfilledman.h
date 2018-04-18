@@ -25,6 +25,8 @@ private:
     fulfilledreqmap_t mapFulfilledRequests;
     CCriticalSection cs_mapFulfilledRequests;
 
+    void RemoveFulfilledRequest(const CService& addr, const std::string& strRequest);
+
 public:
     CNetFulfilledRequestManager() {}
 
@@ -38,7 +40,6 @@ public:
 
     void AddFulfilledRequest(const CService& addr, const std::string& strRequest);
     bool HasFulfilledRequest(const CService& addr, const std::string& strRequest);
-    void RemoveFulfilledRequest(const CService& addr, const std::string& strRequest);
 
     void CheckAndRemove();
     void Clear();
