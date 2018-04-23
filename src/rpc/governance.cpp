@@ -332,7 +332,7 @@ UniValue gobject(const JSONRPCRequest& request)
         if(eVoteSignal == VOTE_SIGNAL_NONE) {
             throw JSONRPCError(RPC_INVALID_PARAMETER,
                                "Invalid vote signal. Please using one of the following: "
-                               "(funding|valid|delete|endorsed) OR `custom sentinel code` ");
+                               "(funding|valid|delete|endorsed)");
         }
 
         vote_outcome_enum_t eVoteOutcome = CGovernanceVoting::ConvertVoteOutcome(strVoteOutcome);
@@ -411,7 +411,7 @@ UniValue gobject(const JSONRPCRequest& request)
         if(eVoteSignal == VOTE_SIGNAL_NONE) {
             throw JSONRPCError(RPC_INVALID_PARAMETER,
                                "Invalid vote signal. Please using one of the following: "
-                               "(funding|valid|delete|endorsed) OR `custom sentinel code` ");
+                               "(funding|valid|delete|endorsed)");
         }
 
         vote_outcome_enum_t eVoteOutcome = CGovernanceVoting::ConvertVoteOutcome(strVoteOutcome);
@@ -521,7 +521,7 @@ UniValue gobject(const JSONRPCRequest& request)
         if(eVoteSignal == VOTE_SIGNAL_NONE) {
             throw JSONRPCError(RPC_INVALID_PARAMETER,
                                "Invalid vote signal. Please using one of the following: "
-                               "(funding|valid|delete|endorsed) OR `custom sentinel code` ");
+                               "(funding|valid|delete|endorsed)");
         }
 
         vote_outcome_enum_t eVoteOutcome = CGovernanceVoting::ConvertVoteOutcome(strVoteOutcome);
@@ -883,7 +883,7 @@ UniValue voteraw(const JSONRPCRequest& request)
     if(eVoteSignal == VOTE_SIGNAL_NONE)  {
         throw JSONRPCError(RPC_INVALID_PARAMETER,
                            "Invalid vote signal. Please using one of the following: "
-                           "(funding|valid|delete|endorsed) OR `custom sentinel code` ");
+                           "(funding|valid|delete|endorsed)");
     }
 
     vote_outcome_enum_t eVoteOutcome = CGovernanceVoting::ConvertVoteOutcome(strVoteOutcome);
