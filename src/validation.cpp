@@ -4203,8 +4203,10 @@ bool InitBlockIndex(const CChainParams& chainparams)
                 return false;
 
             if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-                if (!AddGenesisBlock(chainparams, chainparams.PoVNETGenesisBlock(), state))
-                    return false;
+                // We can't continue if povnet genesis block is invalid
+                std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(chainparams.PoVNETGenesisBlock());
+                bool fProcessPoVNETGenesisBlock = ProcessNewBlock(chainparams, shared_pblock, true, NULL);
+                assert(fProcessPoVNETGenesisBlock);
             }
             // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
             return FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
