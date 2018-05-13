@@ -413,9 +413,9 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.BIP34Height = 2; // BIP34 activated immediately on povnet
-        consensus.BIP65Height = 2; // BIP65 activated immediately on povnet
-        consensus.BIP66Height = 2; // BIP66 activated immediately on povnet
+        consensus.BIP34Height = 1; // BIP34 activated immediately on povnet
+        consensus.BIP65Height = 1; // BIP65 activated immediately on povnet
+        consensus.BIP66Height = 1; // BIP66 activated immediately on povnet
         consensus.DIP0001Height = 2; // DIP0001 activated immediately on povnet
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // ABS: 1 day
