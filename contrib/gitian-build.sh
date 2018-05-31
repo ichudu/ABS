@@ -260,12 +260,12 @@ if [[ $build = true ]]
 then
 	# Make output folder
 	mkdir -p ./absolute-binaries/${VERSION}
-	
+
 	# Build Dependencies
 	echo ""
 	echo "Building Dependencies"
 	echo ""
-	pushd ./gitian-builder	
+	pushd ./gitian-builder
 	mkdir -p inputs
 	wget -N -P inputs $osslPatchUrl
 	wget -N -P inputs $osslTarUrl
@@ -278,8 +278,8 @@ then
 	    echo "Compiling ${VERSION} Linux"
 	    echo ""
 	    ./bin/gbuild -j ${proc} -m ${mem} --commit absolute=${COMMIT} --url absolute=${url} ../absolute/contrib/gitian-descriptors/gitian-linux.yml
-	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-linux --destination ../gitian.signature/ ../absolute/contrib/gitian-descriptors/gitian-linux.yml
-	    mv build/out/absolute-*.tar.gz build/out/src/absolute-*.tar.gz ../absolute-binaries/${VERSION}
+	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-linux --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-linux.yml
+	    mv build/out/absolutecore-*.tar.gz build/out/src/absolutecore-*.tar.gz ../absolutecore-binaries/${VERSION}
 	fi
 	# Windows
 	if [[ $windows = true ]]
@@ -288,9 +288,9 @@ then
 	    echo "Compiling ${VERSION} Windows"
 	    echo ""
 	    ./bin/gbuild -j ${proc} -m ${mem} --commit absolute=${COMMIT} --url absolute=${url} ../absolute/contrib/gitian-descriptors/gitian-win.yml
-	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-win-unsigned --destination ../gitian.signature/ ../absolute/contrib/gitian-descriptors/gitian-win.yml
-	    mv build/out/absolute-*-win-unsigned.tar.gz inputs/absolute-win-unsigned.tar.gz
-	    mv build/out/absolute-*.zip build/out/absolute-*.exe ../absolute-binaries/${VERSION}
+	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-win-unsigned --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-win.yml
+	    mv build/out/absolutecore-*-win-unsigned.tar.gz inputs/absolutecore-win-unsigned.tar.gz
+	    mv build/out/absolutecore-*.zip build/out/absolutecore-*.exe ../absolutecore-binaries/${VERSION}
 	fi
 	# Mac OSX
 	if [[ $osx = true ]]
@@ -299,9 +299,9 @@ then
 	    echo "Compiling ${VERSION} Mac OSX"
 	    echo ""
 	    ./bin/gbuild -j ${proc} -m ${mem} --commit absolute=${COMMIT} --url absolute=${url} ../absolute/contrib/gitian-descriptors/gitian-osx.yml
-	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-osx-unsigned --destination ../gitian.signature/ ../absolute/contrib/gitian-descriptors/gitian-osx.yml
-	    mv build/out/absolute-*-osx-unsigned.tar.gz inputs/absolute-osx-unsigned.tar.gz
-	    mv build/out/absolute-*.tar.gz build/out/absolute-*.dmg ../absolute-binaries/${VERSION}
+	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-osx-unsigned --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-osx.yml
+	    mv build/out/absolutecore-*-osx-unsigned.tar.gz inputs/absolutecore-osx-unsigned.tar.gz
+	    mv build/out/absolutecore-*.tar.gz build/out/absolutecore-*.dmg ../absolutecore-binaries/${VERSION}
 	fi
 	popd
 
@@ -334,10 +334,10 @@ then
 	echo "Verifying v${VERSION} Windows"
 	echo ""
 	./bin/gverify -v -d ../gitian.signatures/ -r ${VERSION}-win-unsigned ../absolute/contrib/gitian-descriptors/gitian-win.yml
-	# Mac OSX	
+	# Mac OSX
 	echo ""
 	echo "Verifying v${VERSION} Mac OSX"
-	echo ""	
+	echo ""
 	./bin/gverify -v -d ../gitian.signatures/ -r ${VERSION}-osx-unsigned ../absolute/contrib/gitian-descriptors/gitian-osx.yml
 	# Signed Windows
 	echo ""
@@ -355,7 +355,7 @@ fi
 # Sign binaries
 if [[ $sign = true ]]
 then
-	
+
         pushd ./gitian-builder
 	# Sign Windows
 	if [[ $windows = true ]]
@@ -365,8 +365,8 @@ then
 	    echo ""
 	    ./bin/gbuild -i --commit signature=${COMMIT} ../absolute/contrib/gitian-descriptors/gitian-win-signer.yml
 	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-win-signed --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-win-signer.yml
-	    mv build/out/absolute-*win64-setup.exe ../absolute-binaries/${VERSION}
-	    mv build/out/absolute-*win32-setup.exe ../absolute-binaries/${VERSION}
+	    mv build/out/absolutecore-*win64-setup.exe ../absolutecore-binaries/${VERSION}
+	    mv build/out/absolutecore-*win32-setup.exe ../absolutecore-binaries/${VERSION}
 	fi
 	# Sign Mac OSX
 	if [[ $osx = true ]]
@@ -376,7 +376,7 @@ then
 	    echo ""
 	    ./bin/gbuild -i --commit signature=${COMMIT} ../absolute/contrib/gitian-descriptors/gitian-osx-signer.yml
 	    ./bin/gsign -p "$signProg" --signer "$SIGNER" --release ${VERSION}-osx-signed --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-osx-signer.yml
-	    mv build/out/absolute-osx-signed.dmg ../absolute-binaries/${VERSION}/absolute-${VERSION}-osx.dmg
+	    mv build/out/absolutecore-osx-signed.dmg ../absolutecore-binaries/${VERSION}/absolutecore-${VERSION}-osx.dmg
 	fi
 	popd
 
