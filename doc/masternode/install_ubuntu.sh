@@ -33,7 +33,7 @@ printf  "\n\n******* Starting Absolute-Community Masternode installation *******
 printf " working directory is $(pwd)\n"
 {
 echo "Step 1 : Updating packages"
-	sudo add-apt-repository ppa:bitcoin/bitcoin -y -qq
+	sudo add-apt-repository ppa:bitcoin/bitcoin -y
 	sudo apt-get update -y -qq
 	sudo apt-get upgrade -y -qq
 	sudo apt-get dist-upgrade -y -qq
