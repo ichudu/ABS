@@ -158,7 +158,7 @@ public:
         consensus.nPowTargetSpacing = 1.5 * 60; // 1.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
-        consensus.nPowKGWHeight = 375000;
+        consensus.nPowKGWHeight = 390000;
         consensus.nPowDGWHeight = 150;
         consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
