@@ -571,15 +571,25 @@ struct CCoinsStats
 static void ApplyStats(CCoinsStats &stats, CHashWriter& ss, const uint256& hash, const std::map<uint32_t, Coin>& outputs)
 {
     assert(!outputs.empty());
+    // 100000 + 38599.99982500 + 350000 = 488599.999825
+    uint256 premine1(uint256S("01d6b322a1036785a0e223f4a7069ffb07ab5daf2068a830e2ef4b1638804096"));
+    uint256 premine2(uint256S("3e8baff88799c3b3b5ff2583f9e60159729d4383a87b6e12c3c9029f1160e86f"));
+    uint256 premine3(uint256S("cee9dcb2c6e56f2800ea551245a457e1d1da2ccd2ac9bb9408fbc1ae6b487425"));
+    bool isPremine = (hash == premine1) || (hash == premine2) || (hash == premine3);
     ss << hash;
     ss << VARINT(outputs.begin()->second.nHeight * 2 + outputs.begin()->second.fCoinBase);
-    stats.nTransactions++;
+    if(!isPremine){
+    	stats.nTransactions++;
+    }
     for (const auto output : outputs) {
         ss << VARINT(output.first + 1);
         ss << *(const CScriptBase*)(&output.second.out.scriptPubKey);
         ss << VARINT(output.second.out.nValue);
-        stats.nTransactionOutputs++;
-        stats.nTotalAmount += output.second.out.nValue;
+	// Do not add premine to UTXO 
+	if(!isPremine){
+            stats.nTransactionOutputs++;
+            stats.nTotalAmount += output.second.out.nValue;
+	}
     }
     ss << VARINT(0);
 }
