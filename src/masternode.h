@@ -22,6 +22,7 @@ static const int MASTERNODE_WATCHDOG_MAX_SECONDS        = 120 * 60;
 static const int MASTERNODE_NEW_START_REQUIRED_SECONDS  = 180 * 60;
 
 static const int MASTERNODE_POSE_BAN_MAX_SCORE          = 5;
+static const int MASTERNODE_COLLATERAL                  = 2500;
 
 //
 // The Masternode Ping Class : Contains a different serialize method for sending pings from masternodes throughout the network
@@ -29,6 +30,9 @@ static const int MASTERNODE_POSE_BAN_MAX_SCORE          = 5;
 
 // sentinel version before sentinel ping implementation
 #define DEFAULT_SENTINEL_VERSION 0x010001
+
+// sentinel with voting fix to enable proposals
+#define MIN_SENTINEL_VERSION 0x010200
 
 class CMasternodePing
 {
