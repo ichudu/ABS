@@ -66,7 +66,7 @@ bool CGovernanceManager::HaveVoteForHash(const uint256& nHash) const
 {
     LOCK(cs);
 
-    CGovernanceObject* pGovobj = NULL;
+    CGovernanceObject* pGovobj = nullptr;
     return cmapVoteToObject.Get(nHash, pGovobj) && pGovobj->GetVoteFile().HasVote(nHash);
 }
 
@@ -80,8 +80,7 @@ bool CGovernanceManager::SerializeVoteForHash(const uint256& nHash, CDataStream&
 {
     LOCK(cs);
 
-    CGovernanceObject* pGovobj = NULL;
-
+    CGovernanceObject* pGovobj = nullptr;
     return cmapVoteToObject.Get(nHash,pGovobj) && pGovobj->GetVoteFile().SerializeVoteToStream(nHash, ss);
 }
 
@@ -289,7 +288,7 @@ void CGovernanceManager::CheckOrphanVotes(CGovernanceObject& govobj, CGovernance
         if(pairVote.second < nNow) {
             fRemove = true;
         }
-        else if(govobj.ProcessVote(NULL, vote, exception, connman)) {
+        else if(govobj.ProcessVote(nullptr, vote, exception, connman)) {
             vote.Relay(connman);
             fRemove = true;
         }
@@ -352,7 +351,7 @@ void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CConnman
         DBG( std::cout << "CGovernanceManager::AddGovernanceObject After AddNewTrigger" << std::endl; );
     }
 
-    LogPrintf("CGovernanceManager::AddGovernanceObject -- %s new, received from %s\n", strHash, pfrom? pfrom->GetAddrName() : "NULL");
+    LogPrintf("CGovernanceManager::AddGovernanceObject -- %s new, received from %s\n", strHash, pfrom ? pfrom->GetAddrName() : "nullptr");
     govobj.Relay(connman);
 
     // Update the rate buffer
@@ -491,7 +490,7 @@ CGovernanceObject* CGovernanceManager::FindGovernanceObject(const uint256& nHash
     if(mapObjects.count(nHash))
         return &mapObjects[nHash];
 
-    return NULL;
+    return nullptr;
 }
 
 std::vector<CGovernanceVote> CGovernanceManager::GetMatchingVotes(const uint256& nParentHash) const
@@ -626,7 +625,7 @@ bool CGovernanceManager::ConfirmInventoryRequest(const CInv& inv)
     }
 
 
-    hash_s_t* setHash = NULL;
+    hash_s_t* setHash = nullptr;
     switch(inv.type) {
     case MSG_GOVERNANCE_OBJECT:
         setHash = &setRequestedObjects;
