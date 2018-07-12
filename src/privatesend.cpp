@@ -16,7 +16,7 @@
 #include "util.h"
 #include "utilmoneystr.h"
 
-#include <boost/lexical_cast.hpp>
+#include <string>
 
 bool CDarkSendEntry::AddScriptSig(const CTxIn& txin)
 {
@@ -70,9 +70,9 @@ bool CDarksendQueue::Sign()
         }
     } else {
         std::string strMessage = CTxIn(masternodeOutpoint).ToString() +
-                        boost::lexical_cast<std::string>(nDenom) +
-                        boost::lexical_cast<std::string>(nTime) +
-                        boost::lexical_cast<std::string>(fReady);
+                        std::to_string(nDenom) +
+                        std::to_string(nTime) +
+                        std::to_string(fReady);
 
         if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternodeInfo.legacyKeyOperator)) {
             LogPrintf("CDarksendQueue::Sign -- SignMessage() failed, %s\n", ToString());
@@ -110,9 +110,9 @@ bool CDarksendQueue::CheckSignature(const CKeyID& keyIDOperator, const CBLSPubli
         }
     } else {
         std::string strMessage = CTxIn(masternodeOutpoint).ToString() +
-                        boost::lexical_cast<std::string>(nDenom) +
-                        boost::lexical_cast<std::string>(nTime) +
-                        boost::lexical_cast<std::string>(fReady);
+                        std::to_string(nDenom) +
+                        std::to_string(nTime) +
+                        std::to_string(fReady);
 
         if(!CMessageSigner::VerifyMessage(keyIDOperator, vchSig, strMessage, strError)) {
             LogPrintf("CDarksendQueue::CheckSignature -- Got bad Masternode queue signature: %s; error: %s\n", ToString(), strError);
@@ -162,7 +162,7 @@ bool CDarksendBroadcastTx::Sign()
             return false;
         }
     } else {
-        std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
+        std::string strMessage = tx->GetHash().ToString() + std::to_string(sigTime);
 
         if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternodeInfo.legacyKeyOperator)) {
             LogPrintf("CDarksendBroadcastTx::Sign -- SignMessage() failed\n");
@@ -200,7 +200,7 @@ bool CDarksendBroadcastTx::CheckSignature(const CKeyID& keyIDOperator, const CBL
             return false;
         }
     } else {
-        std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
+        std::string strMessage = tx->GetHash().ToString() + std::to_string(sigTime);
 
         if(!CMessageSigner::VerifyMessage(keyIDOperator, vchSig, strMessage, strError)) {
             LogPrintf("CDarksendBroadcastTx::CheckSignature -- Got bad dstx signature, error: %s\n", strError);
