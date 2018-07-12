@@ -38,7 +38,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.nBits    = nBits;
     genesis.nNonce   = nNonce;
     genesis.nVersion = nVersion;
-    
+
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
@@ -151,8 +151,8 @@ public:
         consensus.nMasternodeMinimumConfirmations = 15;
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
-        consensus.BIP65Height = 390000; 
-        consensus.BIP66Height = 395000; 
+        consensus.BIP65Height = 390000;
+        consensus.BIP66Height = 395000;
         consensus.DIP0001Height = 450000;
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 7.5 * 60; // 5 blocks
@@ -235,6 +235,7 @@ public:
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
+        fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
         fAllowMultipleAddressesFromGroup = false;
         fAllowMultiplePorts = false;
@@ -251,7 +252,7 @@ public:
             (  250000, uint256S("0x00000000000640d8897addd4200209b6dd754aa3ca1f39857f8f03f36a44cc02"))
             (  300000, uint256S("0x00000000000abec2c4fe6aec36d3f37026df8ed8817789a43278392092fe9d1a"))
             (  350400, uint256S("0x0000000000056195689db2edb979305163b7ed88c1e7ce8875bd2b5feb4c432d"))
-                
+
 	};
 
         chainTxData = ChainTxData{
@@ -374,6 +375,7 @@ public:
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
+        fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = true;
         fAllowMultipleAddressesFromGroup = false;
         fAllowMultiplePorts = false;
@@ -557,7 +559,7 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
 
-        consensus.nPowDGWHeight = 25; 
+        consensus.nPowDGWHeight = 25;
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -601,6 +603,7 @@ public:
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = true;
         fRequireStandard = false;
+        fRequireRoutableExternalIP = false;
         fMineBlocksOnDemand = true;
         fAllowMultipleAddressesFromGroup = true;
         fAllowMultiplePorts = true;
