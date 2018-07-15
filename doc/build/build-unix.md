@@ -257,6 +257,7 @@ First install the toolchain:
 To build executables for ARM:
 
     cd depends
+    apt-get install curl
     make HOST=arm-linux-gnueabihf NO_QT=1
     cd ..
     ./configure --prefix=$PWD/depends/arm-linux-gnueabihf --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++
