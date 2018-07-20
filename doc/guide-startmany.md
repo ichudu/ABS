@@ -88,7 +88,7 @@ You can confirm that remote server is on the correct block by issuing
 
 ```absolute-cli getinfo```
 
-and comparing with the official explorer at https://explorer.absolutecrypto.com
+and comparing with the official explorer at https://explorer.absolutecoin.net
 
 ### Local
 
