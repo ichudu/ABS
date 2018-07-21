@@ -93,7 +93,7 @@ echo "Step 1 : Updating packages"
 	echo "Step 3: Configure"
 
 	if [ ! -f "$conf_path" ]; then
-		ext_ip=`wget -qO- eth0.me`
+		ext_ip=`wget -qO- pinfo.io/ip`
 		PASS=`pwgen -1 20 -n`
 		
 		mkdir -p "$(dirname "$conf_path")" &&
@@ -101,7 +101,7 @@ echo "Step 1 : Updating packages"
 
 		printf "\n#--- basic configuration --- \nrpcuser=user\nrpcpassword=$PASS\nrpcport=18889\ndaemon=1\nlisten=1\nserver=1\nmaxconnections=256\nrpcallowip=127.0.0.1\nexternalip=$ext_ip:18888\n" > $conf_path
 		printf "\n#--- masternode ---\nmasternode=1\nmasternodeprivkey=$mn_key\n" >> $conf_path
-		#printf "\n#--- new nodes ---\naddnode=139.99.41.241:18888\naddnode=139.99.41.242:18888\naddnode=139.99.202.1:18888\n" >> $conf_path
+		printf "\n#--- new nodes ---\naddnode=139.99.41.241:18888\naddnode=139.99.41.242:18888\naddnode=139.99.202.1:18888\n" >> $conf_path
 		
 	else
 		printError "Configuration already exist. Remove this file '$conf_path' or configure manyally"
