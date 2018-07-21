@@ -66,7 +66,7 @@ echo "Step 1 : Updating packages"
 	
 	if [ ! -f absolute_12.2.2_linux.tar.gz ]; then
 		echo "Dowloading..."
-		wget https://github.com/absolute-community/absolute/releases/download/12.2.2/absolute_12.2.2_linux.tar.gz -O absolute_12.2.2_linux.tar.gz -q
+		wget https://github.com/absolute-community/absolute/releases/download/12.2.3/absolute_12.2.3_linux.tar.gz -O absolute_12.2.3_linux.tar.gz -q
 	else
 		printWarning "File already exist"
 	fi
