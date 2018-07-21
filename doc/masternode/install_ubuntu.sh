@@ -75,7 +75,7 @@ echo "Step 1 : Updating packages"
 		echo "Extracting"
 		tar -zxvf absolute_12.2.3_linux.tar.gz &&
 		echo "Rename daemon folder"
-		mv absolute_12.2.2_linux Absolute
+		mv absolute_12.2.3_linux Absolute
 		ln -s $root_path/Absolute/absolute-cli /usr/local/bin/absolute-cli
 		ln -s $root_path/Absolute/absoluted /usr/local/bin/absoluted
 	else
