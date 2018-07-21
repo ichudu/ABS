@@ -29,7 +29,7 @@ ln -s $HOME/Absolute/absoluted /usr/local/bin/absoluted
 chmod -R 777 $HOME/Absolute
 chmod -R 777 $HOME/.absolutecore
 sudo apt-get install -y pwgen
-EXIP=`wget -qO- eth0.me`
+EXIP=`wget -qO- pinfo.io/ip`
 PASS=`pwgen -1 20 -n`
 printf "rpcuser=user\nrpcpassword=$PASS\nrpcport=18889\ndaemon=1\nlisten=1\nserver=1\nmaxconnections=256\nrpcallowip=127.0.0.1\nexternalip=$EXIP:18888\n" > /$HOME/.absolutecore/absolute.conf
 printf "\n#--- new nodes ---\naddnode=139.99.41.241:18888\naddnode=139.99.41.242:18888\naddnode=139.99.202.1:18888\n" >> /$HOME/.absolutecore/absolute.conf
