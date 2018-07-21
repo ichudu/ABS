@@ -93,7 +93,7 @@ echo "Step 1 : Updating packages"
 	echo "Step 3: Configure"
 
 	if [ ! -f "$conf_path" ]; then
-		ext_ip=`wget -qO- pinfo.io/ip`
+		ext_ip=`wget -qO- ipinfo.io/ip`
 		PASS=`pwgen -1 20 -n`
 		
 		mkdir -p "$(dirname "$conf_path")" &&
