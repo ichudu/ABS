@@ -64,7 +64,7 @@ echo "Step 1 : Updating packages"
 {
 	echo "Step 2 : Downloading binaries - extract"
 	
-	if [ ! -f absolute_12.2.2_linux.tar.gz ]; then
+	if [ ! -f absolute_12.2.3_linux.tar.gz ]; then
 		echo "Dowloading..."
 		wget https://github.com/absolute-community/absolute/releases/download/12.2.3/absolute_12.2.3_linux.tar.gz -O absolute_12.2.3_linux.tar.gz -q
 	else
@@ -73,7 +73,7 @@ echo "Step 1 : Updating packages"
 
 	if [ ! -d Absolute ]; then
 		echo "Extracting"
-		tar -zxvf absolute_12.2.2_linux.tar.gz &&
+		tar -zxvf absolute_12.2.3_linux.tar.gz &&
 		echo "Rename daemon folder"
 		mv absolute_12.2.2_linux Absolute
 		ln -s $root_path/Absolute/absolute-cli /usr/local/bin/absolute-cli
