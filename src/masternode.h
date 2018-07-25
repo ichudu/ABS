@@ -103,6 +103,9 @@ public:
     bool CheckAndUpdate(CMasternode* pmn, bool fFromNewBroadcast, int& nDos, CConnman& connman);
     void Relay(CConnman& connman);
 
+    std::string GetSentinelString() const;
+    std::string GetDaemonString() const;
+
     explicit operator bool() const;
 };
 
