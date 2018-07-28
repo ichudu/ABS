@@ -34,7 +34,6 @@ extern CWallet* pwalletMain;
 extern CTxMemPool mempool;
 
 bool fEnableInstantSend = true;
-int nInstantSendDepth = DEFAULT_INSTANTSEND_DEPTH;
 int nCompleteTXLocks;
 
 CInstantSend instantsend;
@@ -837,11 +836,6 @@ int CInstantSend::GetTransactionLockSignatures(const uint256& txHash)
     }
 
     return -1;
-}
-
-int CInstantSend::GetConfirmations(const uint256 &nTXHash)
-{
-    return IsLockedInstantSendTransaction(nTXHash) ? nInstantSendDepth : 0;
 }
 
 bool CInstantSend::IsTxLockCandidateTimedOut(const uint256& txHash)
