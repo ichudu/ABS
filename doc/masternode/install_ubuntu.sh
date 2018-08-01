@@ -40,7 +40,9 @@ echo "Step 1 : Updating packages"
 	sudo apt-get install libdb4.8-dev libdb4.8++-dev -y -qq
 	sudo apt-get install libevent-pthreads-2.0-5 -y -qq
 	sudo apt-get install libboost-all-dev -y -qq
-	
+	sudo apt-get install libzmq3-dev -y -qq
+	sudo apt-get install libminiupnpc-dev -y -qq
+
 	printf "Detect python version "
 	p_version="$(python -V)"
 
