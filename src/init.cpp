@@ -263,6 +263,8 @@ void PrepareShutdown()
             CFlatDB<CInstantSend> flatdb5("instantsend.dat", "magicInstantSendCache");
             flatdb5.Dump(instantsend);
         }
+        CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
+        flatdb6.Dump(sporkManager);
     }
 
     UnregisterNodeSignals(GetNodeSignals());
@@ -1959,6 +1961,13 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError(_("Failed to load InstantSend data cache from") + "\n" + (pathDB / strDBName).string());
             }
         }
+
+        strDBName = "sporks.dat";
+        uiInterface.InitMessage(_("Loading sporks cache..."));
+        CFlatDB<CSporkManager> flatdb6(strDBName, "magicSporkCache");
+        if(!flatdb6.Load(sporkManager)) {
+            return InitError(_("Failed to load sporks cache from") + "\n" + (pathDB / strDBName).string());
+        }
     }
 
 
@@ -1980,7 +1989,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         scheduler.scheduleEvery(boost::bind(&CMasternodeMan::DoMaintenance, boost::ref(mnodeman), boost::ref(*g_connman)), 1);
         scheduler.scheduleEvery(boost::bind(&CActiveLegacyMasternodeManager::DoMaintenance, boost::ref(legacyActiveMasternodeManager), boost::ref(*g_connman)), MASTERNODE_MIN_MNP_SECONDS);
 
-        scheduler.scheduleEvery(bFoost::bind(&CMasternodePayments::DoMaintenance, boost::ref(mnpayments)), 60);
+        scheduler.scheduleEvery(boost::bind(&CMasternodePayments::DoMaintenance, boost::ref(mnpayments)), 60);
         scheduler.scheduleEvery(boost::bind(&CGovernanceManager::DoMaintenance, boost::ref(governance), boost::ref(*g_connman)), 60 * 5);
 
         scheduler.scheduleEvery(boost::bind(&CInstantSend::DoMaintenance, boost::ref(instantsend)), 60);
