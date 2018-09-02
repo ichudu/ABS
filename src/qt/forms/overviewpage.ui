@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>960</width>
-    <height>585</height>
+    <height>603</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -640,6 +640,41 @@
         </widget>
        </item>
        <item>
+        <layout class="QVBoxLayout" name="verticalLayout_blockdetails">
+         <item>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="1" column="0">
+            <widget class="QLabel" name="numberOfBlocks">
+             <property name="text">
+              <string>N/A</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labeloviewblock">
+             <property name="text">
+              <string>Block Number</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../absolute.qrc">:/images/base/absolute_logo_horizontal</pixmap>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -647,7 +682,7 @@
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>80</height>
           </size>
          </property>
         </spacer>
@@ -752,6 +787,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../absolute.qrc"/>
+ </resources>
  <connections/>
 </ui>
