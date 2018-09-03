@@ -626,6 +626,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="pixmap">
+          <pixmap resource="../absolute.qrc">:/images/base/wallet_version</pixmap>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QVBoxLayout" name="verticalLayout_blockdetails">
          <item>
           <layout class="QGridLayout" name="gridLayout_2">
@@ -640,19 +650,12 @@
             </widget>
            </item>
            <item row="0" column="0">
-            <widget class="QLabel" name="labeloviewblock">
+            <widget class="QLabel" name="lastBlockTime">
              <property name="text">
               <string>Block Number</string>
              </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string/>
-             </property>
-             <property name="pixmap">
-              <pixmap resource="../absolute.qrc">:/images/base/wallet_version</pixmap>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
