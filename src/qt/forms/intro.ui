@@ -10,17 +10,31 @@
     <height>363</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Welcome</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="label_2">
+     <property name="minimumSize">
+      <size>
+       <width>385</width>
+       <height>100</height>
+      </size>
+     </property>
      <property name="styleSheet">
       <string notr="true">QLabel { font-style:italic; }</string>
      </property>
      <property name="text">
-      <string>Welcome to Absolute Core.</string>
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../absolute.qrc">:/images/base/absolute_logo_horizontal</pixmap>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -228,7 +242,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../absolute.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

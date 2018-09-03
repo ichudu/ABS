@@ -10,6 +10,11 @@
     <height>307</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Configure PrivateSend</string>
   </property>

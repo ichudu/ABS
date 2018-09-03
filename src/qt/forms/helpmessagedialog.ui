@@ -16,6 +16,11 @@
     <height>500</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string notr="true">Absolute Core - Command-line options</string>
   </property>
@@ -76,7 +81,7 @@
         <bool>false</bool>
        </property>
        <property name="pixmap">
-        <pixmap resource="../absolute.qrc">:/images/drkblue/about</pixmap>
+        <pixmap>:/images/drkblue/about</pixmap>
        </property>
        <property name="scaledContents">
         <bool>false</bool>
@@ -113,8 +118,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>630</width>
-          <height>201</height>
+          <width>639</width>
+          <height>214</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -171,9 +176,7 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../absolute.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>okButton</sender>
