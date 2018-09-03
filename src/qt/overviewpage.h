@@ -41,6 +41,10 @@ public Q_SLOTS:
     void privateSendStatus();
     void setBalance(const CAmount& balance, const CAmount& unconfirmedBalance, const CAmount& immatureBalance, const CAmount& anonymizedBalance,
                     const CAmount& watchOnlyBalance, const CAmount& watchUnconfBalance, const CAmount& watchImmatureBalance);
+	/** Set number of connections shown in the UI */
+    void setNumConnections(int count);
+	/** Set number of blocks and last block date shown in the UI */
+    void setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers);
 
 Q_SIGNALS:
     void transactionClicked(const QModelIndex &index);
@@ -79,6 +83,7 @@ private Q_SLOTS:
     void updateAlerts(const QString &warnings);
     void updateWatchOnlyLabels(bool showWatchOnly);
     void handleOutOfSyncWarningClicks();
+
 };
 
 #endif // BITCOIN_QT_OVERVIEWPAGE_H

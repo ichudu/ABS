@@ -18,6 +18,11 @@
 #include "transactiontablemodel.h"
 #include "utilitydialog.h"
 #include "walletmodel.h"
+#include "chainparams.h"
+#include "netbase.h"
+#include "rpc/server.h"
+#include "rpc/client.h"
+#include "util.h"
 
 #include "instantx.h"
 #include "darksendconfig.h"
@@ -237,6 +242,14 @@ void OverviewPage::setBalance(const CAmount& balance, const CAmount& unconfirmed
     if(cachedTxLocks != nCompleteTXLocks){
         cachedTxLocks = nCompleteTXLocks;
         ui->listTransactions->update();
+    }
+}
+
+void OverviewPage::setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers)
+{
+    if (!headers) {
+        ui->numberOfBlocks->setText(QString::number(count));
+        ui->lastBlockTime->setText(blockDate.toString());
     }
 }
 
