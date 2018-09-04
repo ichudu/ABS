@@ -77,7 +77,7 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
         }
 
     } else if(strCommand == NetMsgType::DSQUEUE) {
-        TRY_LOCK(cs_darksend, lockRecv);
+        TRY_LOCK(cs_vecqueue, lockRecv);
         if(!lockRecv) return;
 
         if(pfrom->nVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) {
@@ -283,7 +283,8 @@ void CPrivateSendServer::SetNull()
     // MN side
     vecSessionCollaterals.clear();
 
-    CPrivateSendBase::SetNull();
+    CPrivateSendBaseSession::SetNull();
+    CPrivateSendBaseManager::SetNull();
 }
 
 //
