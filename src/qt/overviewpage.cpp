@@ -18,8 +18,6 @@
 #include "transactiontablemodel.h"
 #include "utilitydialog.h"
 #include "walletmodel.h"
-#include "chainparams.h"
-#include "netbase.h"
 
 #include "instantx.h"
 #include "darksendconfig.h"
