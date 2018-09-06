@@ -102,7 +102,7 @@ The next three steps are an example of how to acquire the source in an appropria
 
     cd /usr/src
     sudo git clone https://github.com/absolute-community/absolute.git
-    sudo chmod -R a+rw absolute
+    sudo chmod 777 -R absolute
     cd absolute
 
 Once the source code is ready the build steps are below.
