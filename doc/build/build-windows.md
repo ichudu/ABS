@@ -133,7 +133,7 @@ The next three steps are an example of how to acquire the source in an appropria
 
     cd /usr/src
     sudo git clone https://github.com/absolute-community/absolute.git
-    sudo chmod -R a+rw absolutecoin
+    sudo chmod 777 -R absolute
 
 Then build using:
 
@@ -157,7 +157,7 @@ executables to a directory on the windows drive in the same directory structure
 as they appear in the release `.zip` archive. This can be done in the following
 way. This will install to `c:\workspace\racone`, for example:
 
-    make install DESTDIR=/mnt/c/workspace/absolutecoin
+    make install DESTDIR=/mnt/c/workspace/absolute
 
 Footnotes
 ---------
