@@ -78,8 +78,8 @@ echo "Step 1 : Updating packages"
 		tar -zxvf absolute_12.2.4_linux.tar.gz &&
 		echo "Rename daemon folder"
 		mv absolute_12.2.4_linux Absolute
-		ln -s $root_path/Absolute/absolute-cli /usr/local/bin/absolute-cli
-		ln -s $root_path/Absolute/absoluted /usr/local/bin/absoluted
+		sudo ln -s $root_path/Absolute/absolute-cli /usr/local/bin/absolute-cli
+		sudo ln -s $root_path/Absolute/absoluted /usr/local/bin/absoluted
 	else
 		printWarning "Daemon already exist"
 	fi
