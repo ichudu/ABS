@@ -66,18 +66,18 @@ echo "Step 1 : Updating packages"
 {
 	echo "Step 2 : Downloading binaries - extract"
 	
-	if [ ! -f absolute_12.2.3_linux.tar.gz ]; then
+	if [ ! -f absolute_12.2.4_linux.tar.gz ]; then
 		echo "Dowloading..."
-		wget https://github.com/absolute-community/absolute/releases/download/12.2.3/absolute_12.2.3_linux.tar.gz -O absolute_12.2.3_linux.tar.gz -q
+		wget https://github.com/absolute-community/absolute/releases/download/12.2.4/absolute_12.2.4_linux.tar.gz -O absolute_12.2.4_linux.tar.gz -q
 	else
 		printWarning "File already exist"
 	fi
 
 	if [ ! -d Absolute ]; then
 		echo "Extracting"
-		tar -zxvf absolute_12.2.3_linux.tar.gz &&
+		tar -zxvf absolute_12.2.4_linux.tar.gz &&
 		echo "Rename daemon folder"
-		mv absolute_12.2.3_linux Absolute
+		mv absolute_12.2.4_linux Absolute
 		ln -s $root_path/Absolute/absolute-cli /usr/local/bin/absolute-cli
 		ln -s $root_path/Absolute/absoluted /usr/local/bin/absoluted
 	else
