@@ -9,7 +9,6 @@ sudo apt-get install libzmq3-dev -y
 sudo apt-get install libminiupnpc-dev -y
 sudo apt-get update -y
 sudo apt-get install libdb4.8-dev libdb4.8++-dev -y
-sudo apt-get install libminiupnpc-dev -y
 mkdir $HOME/tempABS
 chmod -R 777 $HOME/tempABS
 sudo git clone https://github.com/absolute-community/absolute.git $HOME/tempABS
