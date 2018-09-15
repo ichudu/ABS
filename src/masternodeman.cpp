@@ -125,11 +125,7 @@ void CMasternodeMan::AskForMN(CNode* pnode, const COutPoint& outpoint, CConnman&
     }
     mWeAskedForMasternodeListEntry[outpoint][addrSquashed] = GetTime() + DSEG_UPDATE_SECONDS;
 
-    if (pnode->GetSendVersion() == 70209) {
-        connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSEG, CTxIn(outpoint)));
-    } else {
-        connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSEG, outpoint));
-    }
+    connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSEG, outpoint));
 }
 
 bool CMasternodeMan::AllowMixing(const COutPoint &outpoint)
@@ -527,11 +523,8 @@ void CMasternodeMan::DsegUpdate(CNode* pnode, CConnman& connman)
         }
     }
 
-    if (pnode->GetSendVersion() == 70209) {
-        connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSEG, CTxIn()));
-    } else {
-        connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSEG, COutPoint()));
-    }
+    connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSEG, COutPoint()));
+
     int64_t askAgain = GetTime() + DSEG_UPDATE_SECONDS;
     mWeAskedForMasternodeList[addrSquashed] = askAgain;
 
@@ -1073,14 +1066,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, const std::string& strCommand,
         if (!masternodeSync.IsSynced()) return;
 
         COutPoint masternodeOutpoint;
-
-        if (pfrom->nVersion == 70208) {
-            CTxIn vin;
-            vRecv >> vin;
-            masternodeOutpoint = vin.prevout;
-        } else {
-            vRecv >> masternodeOutpoint;
-        }
+        vRecv >> masternodeOutpoint;
 
         LogPrint("masternode", "DSEG -- Masternode list, masternode=%s\n", masternodeOutpoint.ToStringShort());
 
