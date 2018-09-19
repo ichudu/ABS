@@ -1116,7 +1116,6 @@ UniValue getgovernanceinfo(const JSONRPCRequest& request)
             "  \"superblockcycle\": xxxxx,               (numeric) the number of blocks between superblocks\n"
             "  \"lastsuperblock\": xxxxx,                (numeric) the block number of the last superblock\n"
             "  \"nextsuperblock\": xxxxx,                (numeric) the block number of the next superblock\n"
-            "  \"maxgovobjdatasize\": xxxxx,             (numeric) maximum governance object data size in bytes\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getgovernanceinfo", "")
@@ -1139,7 +1138,6 @@ UniValue getgovernanceinfo(const JSONRPCRequest& request)
     obj.push_back(Pair("superblockcycle", Params().GetConsensus().nSuperblockCycle));
     obj.push_back(Pair("lastsuperblock", nLastSuperblock));
     obj.push_back(Pair("nextsuperblock", nNextSuperblock));
-    obj.push_back(Pair("maxgovobjdatasize", MAX_GOVERNANCE_OBJECT_DATA_SIZE));
 
     return obj;
 }
