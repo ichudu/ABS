@@ -50,7 +50,7 @@ if 'ENABLE_UTILS' not in vars():
 if 'ENABLE_ZMQ' not in vars():
     ENABLE_ZMQ=0
 
-    
+
 # python-zmq may not be installed. Handle this gracefully and with some helpful info
 if ENABLE_ZMQ:
     try:
@@ -199,8 +199,7 @@ testScriptsExt = [
     'forknotify.py',
     'invalidateblock.py',
     'maxblocksinflight.py',
-    'p2p-acceptblock.py', # NOTE: needs absolute_hash to pass
-    # 'replace-by-fee.py', # RBF is disabled in absolute Core
+    'p2p-acceptblock.py', # NOTE: needs dash_hash to pass
 ]
 
 
