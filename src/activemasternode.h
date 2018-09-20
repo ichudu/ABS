@@ -63,7 +63,6 @@ public:
 
     CDeterministicMNCPtr GetDMN() const { return mnListEntry; }
 
-    masternode_state_t GetState() const { return state; }
     std::string GetStateString() const;
     std::string GetStatus() const;
 
