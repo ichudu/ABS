@@ -19,6 +19,7 @@ enum DeploymentPos
     DEPLOYMENT_DIP0001, // Deployment of DIP0001 and lower transaction fees.
     DEPLOYMENT_BIP147, // Deployment of BIP147 (NULLDUMMY)
     DEPLOYMENT_AIP0003, // Deployment of AIP0002 and AIP0003 (txv3 and deterministic MN lists)
+    DEPLOYMENT_ISAUTOLOCKS, // Deployment of automatic IS locks for simple transactions
     // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
     MAX_VERSION_BITS_DEPLOYMENTS
 };

@@ -117,6 +117,8 @@ testScripts = [
     'p2p-fullblocktest.py', # NOTE: needs absolute_hash to pass
     'fundrawtransaction.py',
     'fundrawtransaction-hd.py',
+    'p2p-autoinstantsend.py',
+    'autoix-mempool.py',
     # vv Tests less than 2m vv
     'p2p-instantsend.py',
     'wallet.py',
