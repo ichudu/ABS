@@ -732,7 +732,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
                                         hash.ToString(), ptxConflicting->GetHash().ToString()),
                                 REJECT_INVALID, "txlockreq-tx-mempool-conflict");
             }
-            // Transaction conflicts with mempool and RBF doesn't exist in Dash
+            // Transaction conflicts with mempool and RBF doesn't exist in Absolute
             return state.Invalid(false, REJECT_CONFLICT, "txn-mempool-conflict");
         }
     }

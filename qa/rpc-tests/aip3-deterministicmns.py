@@ -54,7 +54,7 @@ class AIP3Test(BitcoinTestFramework):
         print("funding controller node")
         while self.nodes[0].getbalance() < (self.num_initial_mn + 3) * 1000:
             self.nodes[0].generate(1) # generate enough for collaterals
-        print("controller node has {} dash".format(self.nodes[0].getbalance()))
+        print("controller node has {} absolute".format(self.nodes[0].getbalance()))
 
         # Make sure we're below block 143 (which activates aip3)
         print("testing rejection of ProTx before aip3 activation")
