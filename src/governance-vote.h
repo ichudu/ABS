@@ -1,8 +1,9 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
+// Copyright (c) 2018-2019 The Absolute Core developers
 
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef GOVERNANCE_VOTE_H
 #define GOVERNANCE_VOTE_H
 
@@ -15,7 +16,7 @@ class CGovernanceVote;
 class CConnman;
 
 // INTENTION OF MASTERNODES REGARDING ITEM
-enum vote_outcome_enum_t  {
+enum vote_outcome_enum_t {
     VOTE_OUTCOME_NONE      = 0,
     VOTE_OUTCOME_YES       = 1,
     VOTE_OUTCOME_NO        = 2,
@@ -24,7 +25,7 @@ enum vote_outcome_enum_t  {
 
 
 // SIGNAL VARIOUS THINGS TO HAPPEN:
-enum vote_signal_enum_t  {
+enum vote_signal_enum_t {
     VOTE_SIGNAL_NONE       = 0,
     VOTE_SIGNAL_FUNDING    = 1, //   -- fund this object for it's stated amount
     VOTE_SIGNAL_VALID      = 2, //   -- this object checks out in sentinel engine
@@ -60,8 +61,8 @@ class CGovernanceVote
     friend bool operator<(const CGovernanceVote& vote1, const CGovernanceVote& vote2);
 
 private:
-    bool fValid; //if the vote is currently valid / counted
-    bool fSynced; //if we've sent this to our peers
+    bool fValid;     //if the vote is currently valid / counted
+    bool fSynced;    //if we've sent this to our peers
     int nVoteSignal; // see VOTE_ACTIONS above
     COutPoint masternodeOutpoint;
     uint256 nParentHash;
@@ -83,13 +84,17 @@ public:
 
     int64_t GetTimestamp() const { return nTime; }
 
-    vote_signal_enum_t GetSignal() const  { return vote_signal_enum_t(nVoteSignal); }
+    vote_signal_enum_t GetSignal() const { return vote_signal_enum_t(nVoteSignal); }
 
-    vote_outcome_enum_t GetOutcome() const  { return vote_outcome_enum_t(nVoteOutcome); }
+    vote_outcome_enum_t GetOutcome() const { return vote_outcome_enum_t(nVoteOutcome); }
 
     const uint256& GetParentHash() const { return nParentHash; }
 
-    void SetTime(int64_t nTimeIn) { nTime = nTimeIn; UpdateHash(); }
+    void SetTime(int64_t nTimeIn)
+    {
+        nTime = nTimeIn;
+        UpdateHash();
+    }
 
     void SetSignature(const std::vector<unsigned char>& vchSigIn) { vchSig = vchSigIn; }
 
@@ -97,10 +102,6 @@ public:
     bool CheckSignature(const CKeyID& keyID) const;
     bool IsValid(bool useVotingKey) const;
     void Relay(CConnman& connman) const;
-
-    std::string GetVoteString() const {
-        return CGovernanceVoting::ConvertOutcomeToString(GetOutcome());
-    }
 
     const COutPoint& GetMasternodeOutpoint() const { return masternodeOutpoint; }
 
@@ -118,7 +119,8 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
         READWRITE(masternodeOutpoint);
         READWRITE(nParentHash);
         READWRITE(nVoteOutcome);
@@ -130,7 +132,6 @@ public:
         if (ser_action.ForRead())
             UpdateHash();
     }
-
 };
 
 #endif

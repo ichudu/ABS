@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2019 The Dash Core developers
+// Copyright (c) 2018-2019 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef GOVERNANCE_CLASSES_H
@@ -47,7 +47,8 @@ private:
     void CleanAndRemove();
 
 public:
-    CGovernanceTriggerManager() : mapTrigger() {}
+    CGovernanceTriggerManager() :
+        mapTrigger() {}
 };
 
 /**
@@ -62,7 +63,6 @@ private:
     static bool GetBestSuperblock(CSuperblock_sptr& pSuperblockRet, int nBlockHeight);
 
 public:
-
     static bool IsSuperblockTriggered(int nBlockHeight);
 
     static bool GetSuperblockPayments(int nBlockHeight, std::vector<CTxOut>& voutSuperblockRet);
@@ -86,33 +86,29 @@ public:
     CScript script;
     CAmount nAmount;
 
-    CGovernancePayment()
-        :fValid(false),
-         script(),
-         nAmount(0)
-    {}
-
-    CGovernancePayment(CBitcoinAddress addrIn, CAmount nAmountIn)
-        :fValid(false),
-         script(),
-         nAmount(0)
+    CGovernancePayment() :
+        fValid(false),
+        script(),
+        nAmount(0)
     {
-        try
-        {
+    }
+
+    CGovernancePayment(CBitcoinAddress addrIn, CAmount nAmountIn) :
+        fValid(false),
+        script(),
+        nAmount(0)
+    {
+        try {
             CTxDestination dest = addrIn.Get();
             script = GetScriptForDestination(dest);
             nAmount = nAmountIn;
             fValid = true;
-        }
-        catch(std::exception& e)
-        {
+        } catch (std::exception& e) {
             LogPrintf("CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d, what = %s\n",
-                     addrIn.ToString(), nAmountIn, e.what());
-        }
-        catch(...)
-        {
+                addrIn.ToString(), nAmountIn, e.what());
+        } catch (...) {
             LogPrintf("CGovernancePayment Payment not valid: addrIn = %s, nAmountIn = %d\n",
-                      addrIn.ToString(), nAmountIn);
+                addrIn.ToString(), nAmountIn);
         }
     }
 
@@ -149,7 +145,6 @@ private:
     void ParsePaymentSchedule(const std::string& strPaymentAddresses, const std::string& strPaymentAmounts);
 
 public:
-
     CSuperblock();
     CSuperblock(uint256& nHash);
 
