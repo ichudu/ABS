@@ -125,6 +125,7 @@ testScripts = [
     'wallet-accounts.py',
     'wallet-dump.py',
     'listtransactions.py',
+    'multikeysporks.py',
     # vv Tests less than 60s vv
     'sendheaders.py', # NOTE: needs absolute_hash to pass
     'zapwallettxes.py',
