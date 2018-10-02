@@ -580,7 +580,7 @@ UniValue gobject_vote_many(const JSONRPCRequest& request)
     // management
     if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
         auto mnList = deterministicMNManager->GetListAtChainTip();
-        for (const auto &dmn : mnList.valid_range()) {
+        mnList.ForEachMN(true, [&](const CDeterministicMNCPtr& dmn) {
             bool found = false;
             for (const auto &mne : entries) {
                 uint256 nTxHash;
@@ -596,17 +596,15 @@ UniValue gobject_vote_many(const JSONRPCRequest& request)
                     break;
                 }
             }
-            if (found) {
-                continue;
+            if (!found) {
+                CKey ownerKey;
+                if (pwalletMain->GetKey(dmn->pdmnState->keyIDVoting, ownerKey)) {
+                    CBitcoinSecret secret(ownerKey);
+                    CMasternodeConfig::CMasternodeEntry mne(dmn->proTxHash.ToString(), dmn->pdmnState->addr.ToStringIPPort(false), secret.ToString(), dmn->proTxHash.ToString(), itostr(dmn->nCollateralIndex));
+                    entries.push_back(mne);
+                }
             }
-
-            CKey ownerKey;
-            if (pwalletMain->GetKey(dmn->pdmnState->keyIDVoting, ownerKey)) {
-                CBitcoinSecret secret(ownerKey);
-                CMasternodeConfig::CMasternodeEntry mne(dmn->proTxHash.ToString(), dmn->pdmnState->addr.ToStringIPPort(false), secret.ToString(), dmn->proTxHash.ToString(), itostr(dmn->nCollateralIndex));
-                entries.push_back(mne);
-            }
-        }
+        });
     }
 #endif
 
