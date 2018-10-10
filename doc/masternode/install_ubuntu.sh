@@ -42,6 +42,7 @@ echo "Step 1 : Updating packages"
 	sudo apt-get install libboost-all-dev -y -qq
 	sudo apt-get install libzmq3-dev -y -qq
 	sudo apt-get install libminiupnpc-dev -y -qq
+	sudo apt install virtualenv -y -qq
 
 	printf "Detect python version "
 	p_version="$(python -V)"
