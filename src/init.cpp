@@ -73,6 +73,8 @@
 #include <stdio.h>
 #include <memory>
 
+#include "bls/bls.h"
+
 #ifndef WIN32
 #include <signal.h>
 #endif

@@ -362,6 +362,8 @@ libabsolute_consensus_a_SOURCES = \
   amount.h \
   arith_uint256.cpp \
   arith_uint256.h \
+  bls/bls.cpp \
+  bls/bls.h \
   consensus/merkle.cpp \
   consensus/merkle.h \
   consensus/params.h \
@@ -420,10 +422,10 @@ libabsolute_common_a_SOURCES = \
 libabsolute_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libabsolute_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libabsolute_util_a_SOURCES = \
-  crypto/bls_ies.cpp \
-  crypto/bls_ies.h \
-  crypto/bls_worker.cpp \
-  crypto/bls_worker.h \
+  bls/bls_ies.cpp \
+  bls/bls_ies.h \
+  bls/bls_worker.cpp \
+  bls/bls_worker.h \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
