@@ -2,15 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CRYPTO_BLS_H
-#define DASH_CRYPTO_BLS_H
+#ifndef ABSOLUTE_CRYPTO_BLS_H
+#define ABSOLUTE_CRYPTO_BLS_H
 
 #include "hash.h"
 #include "serialize.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
 
-#undef ERROR // chia BLS uses relic, which defines ERROR, which in turn causes win32/win64 builds to print many warnings
 #include <chiabls/bls.hpp>
 #include <chiabls/privatekey.hpp>
 #include <chiabls/publickey.hpp>
@@ -301,4 +300,4 @@ typedef std::shared_ptr<BLSSignatureVector> BLSSignatureVectorPtr;
 
 bool BLSInit();
 
-#endif // DASH_CRYPTO_BLS_H
+#endif // ABSOLUTE_CRYPTO_BLS_H
