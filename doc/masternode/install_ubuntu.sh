@@ -33,6 +33,8 @@ printf  "\n\n******* Starting Absolute-Community Masternode installation *******
 printf " working directory is $(pwd)\n"
 {
 echo "Step 1 : Updating packages"
+	sudo apt-get update -y -qq
+	sudo apt-get upgrade -y -qq
 	sudo add-apt-repository ppa:bitcoin/bitcoin -y
 	sudo apt-get update -y -qq	
 	sudo apt-get install nano htop -y -qq
