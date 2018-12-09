@@ -307,10 +307,10 @@ int CPrivateSend::GetDenominations(const std::vector<CTxOut>& vecTxOut, bool fSi
 bool CPrivateSend::GetDenominationsBits(int nDenom, std::vector<int> &vecBitsRet)
 {
     // ( bit on if present, 4 denominations example )
-    // bit 0 - 100RACE+1
-    // bit 1 - 10RACE+1
-    // bit 2 - 1RACE+1
-    // bit 3 - .1RACE+1
+    // bit 0 - 100ABSOLUTE+1
+    // bit 1 - 10ABSOLUTE+1
+    // bit 2 - 1ABSOLUTE+1
+    // bit 3 - .1ABSOLUTE+1
 
     int nMaxDenoms = vecStandardDenominations.size();
 

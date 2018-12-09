@@ -11,7 +11,7 @@ import sys
 
 import shutil
 import tempfile
-import tabsoluteback
+import traceback
 
 from .util import (
     initialize_chain,
@@ -106,14 +106,14 @@ class BitcoinTestFramework(object):
                           help="Source directory containing absoluted/absolute-cli (default: %default)")
         parser.add_option("--tmpdir", dest="tmpdir", default=tempfile.mkdtemp(prefix="test"),
                           help="Root directory for datadirs")
-        parser.add_option("--tabsoluterpc", dest="tabsolute_rpc", default=False, action="store_true",
+        parser.add_option("--tracerpc", dest="trace_rpc", default=False, action="store_true",
                           help="Print out all RPC calls as they are made")
         parser.add_option("--coveragedir", dest="coveragedir",
                           help="Write tested RPC commands into this directory")
         self.add_options(parser)
         (self.options, self.args) = parser.parse_args()
 
-        if self.options.tabsolute_rpc:
+        if self.options.trace_rpc:
             import logging
             logging.basicConfig(level=logging.DEBUG)
 
@@ -138,13 +138,13 @@ class BitcoinTestFramework(object):
 
         except JSONRPCException as e:
             print("JSONRPC error: "+e.error['message'])
-            tabsoluteback.print_tb(sys.exc_info()[2])
+            traceback.print_tb(sys.exc_info()[2])
         except AssertionError as e:
             print("Assertion failed: "+ str(e))
-            tabsoluteback.print_tb(sys.exc_info()[2])
+            traceback.print_tb(sys.exc_info()[2])
         except Exception as e:
             print("Unexpected exception caught during testing: " + repr(e))
-            tabsoluteback.print_tb(sys.exc_info()[2])
+            traceback.print_tb(sys.exc_info()[2])
 
         if not self.options.noshutdown:
             print("Stopping nodes")

@@ -395,7 +395,7 @@ Command-line options:
 - `dbca89b` Trigger -alertnotify if network is upgrading without you
 - `ad96e7c` Make -reindex cope with out-of-order blocks
 - `16d5194` Skip reindexed blocks individually
-- `ec01243` --tabsoluterpc option for regression tests
+- `ec01243` --tracerpc option for regression tests
 - `f654f00` Change -genproclimit default to 1
 - `3c77714` Make -proxy set all network types, avoiding a connect leak
 - `57be955` Remove -printblock, -printblocktree, and -printblockindex

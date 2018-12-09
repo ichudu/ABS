@@ -8,7 +8,7 @@
 # TODO extend this test from the test framework (like all other tests)
 
 import tempfile
-import tabsoluteback
+import traceback
 
 from test_framework.util import *
 from test_framework.netutil import *
@@ -129,7 +129,7 @@ def main():
         print("Assertion failed: "+e.message)
     except Exception as e:
         print("Unexpected exception caught during testing: "+str(e))
-        tabsoluteback.print_tb(sys.exc_info()[2])
+        traceback.print_tb(sys.exc_info()[2])
 
     if not options.nocleanup:
         print("Cleaning up")

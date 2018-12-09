@@ -6,8 +6,8 @@ and the result is not very consistent. However, we're now trying to converge to
 a single style, so please use it in new code. Old code will be converted
 gradually.
 - Basic rules specified in src/.clang-format. Use a recent clang-format-3.5 to format automatically.
-  - Babsolutes on new lines for namespaces, classes, functions, methods.
-  - Babsolutes on the same line for everything else.
+  - Braces on new lines for namespaces, classes, functions, methods.
+  - Braces on the same line for everything else.
   - 4 space indentation (no tabs) for every block except namespaces.
   - No indentation for public/protected/private or for namespaces.
   - No extra spaces inside parenthesis; don't do ( this )
@@ -271,7 +271,7 @@ C++ data structures
 
   - *Rationale*: `[]` does an insert (of the default element) if the item doesn't
     exist in the map yet. This has resulted in memory leaks in the past, as well as
-    absolute conditions (expecting read-read behavior). Using `[]` is fine for *writing* to a map
+    race conditions (expecting read-read behavior). Using `[]` is fine for *writing* to a map
 
 - Do not compare an iterator from one data structure with an iterator of
   another data structure (even if of the same type)
@@ -334,7 +334,7 @@ Threads and synchronization
 
 - When using `LOCK`/`TRY_LOCK` be aware that the lock exists in the context of
   the current scope, so surround the statement and the code that needs the lock
-  with babsolutes
+  with braces
 
   OK:
 

@@ -1,4 +1,4 @@
-# Absolute 0.12.2.4a
+# Absolute 0.12.2.5a
 
 Absolute (ABS) is a digital currency inspired by solutions first used in Dash. 
 
@@ -9,17 +9,23 @@ The network is driven by ultra-low transaction fees, reliable and fast transacti
 Absolute Coin gives you the access to the wide range of options created by two-tier blockchain system (Standard and Proof of View nodes). InstaSend payments are near-instant and greatly practical for the network users. PrivateSend is designed and implemented to ensure that sources of payments cannot be tracked and identified. Additionally, MasterNode holders will soon be assigned voting rights to decide about the future of the network.
 
 
-## Absolute technical details
+## Absolute Technical Details
 
-| Area | Absolute setting |
+| Area | Absolute Setting |
 | ------ | ------ |
-| Block Time | 1.5 minutes |
+| Block Time | 2 minutes |
 | Block Reward | 30 ABS |
 | PoW Algorithm | Lyra2REv2 |
-| MN Collateral | 1000 ABS |
+| MN Collateral | 2500 ABS |
 | Rewards split | Miners 20% and MasterNodes 80% |
-| Maximum supply | 52.5 M |
-| Difficulty retatgeting algo | Dark Gravity Wave v3 | 
+| Maximum supply | 52.5 M - 20.35 M Block Rewards and 32.15 M PoV |
+| Difficulty retargeting algo | Dark Gravity Wave v3 | 
+
+| Area | Proof Of View Setting |
+| ------ | ------ |
+| Block Time | On Demand |
+| Block Reward | Max 5% Fee of Block Volume |
+| PoV Node / Escrow Node Collateral | TBA ABS |
 
 
 For building please see INSTALL / proper files in the doc subfolder.

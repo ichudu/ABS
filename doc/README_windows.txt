@@ -1,4 +1,4 @@
-Absolute Core 0.12.1
+Absolute Core 0.12.2.5
 =====================
 
 Intro

@@ -6,7 +6,7 @@ Dummy Socks5 server for testing.
 '''
 from __future__ import print_function, division, unicode_literals
 import socket, threading, Queue
-import tabsoluteback, sys
+import traceback, sys
 
 ### Protocol constants
 class Command:
@@ -118,7 +118,7 @@ class Socks5Connection(object):
             print('Proxy: ', cmdin)
             # Fall through to disconnect
         except Exception as e:
-            tabsoluteback.print_exc(file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
             self.serv.queue.put(e)
         finally:
             self.conn.close()
