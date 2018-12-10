@@ -974,6 +974,9 @@
            <property name="horizontalScrollBarPolicy">
             <enum>Qt::ScrollBarAsNeeded</enum>
            </property>
+           <property name="tabKeyNavigation">
+            <bool>false</bool>
+           </property>
            <property name="sortingEnabled">
             <bool>true</bool>
            </property>
@@ -1034,6 +1037,9 @@
            </property>
            <property name="horizontalScrollBarPolicy">
             <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <property name="tabKeyNavigation">
+            <bool>false</bool>
            </property>
            <property name="sortingEnabled">
             <bool>true</bool>
