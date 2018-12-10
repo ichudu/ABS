@@ -64,8 +64,8 @@ for arg in sys.argv[1:]:
 buildDir = BUILDDIR
 if "ABSOLUTED" not in os.environ:
     os.environ["ABSOLUTED"] = buildDir + '/src/absoluted' + EXEEXT
-if "RACECLI" not in os.environ:
-    os.environ["RACECLI"] = buildDir + '/src/absolute-cli' + EXEEXT
+if "ABSOLUTECLI" not in os.environ:
+    os.environ["ABSOLUTECLI"] = buildDir + '/src/absolute-cli' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
@@ -77,7 +77,7 @@ if not (ENABLE_WALLET == 1 and ENABLE_UTILS == 1 and ENABLE_BITCOIND == 1):
     print "No rpc tests to run. Wallet, utils, and bitcoind must all be enabled"
     sys.exit(0)
 
-# python-zmq may not be installed. Handle this gabsolutefully and with some helpful info
+# python-zmq may not be installed. Handle this gracefully and with some helpful info
 if ENABLE_ZMQ:
     try:
         import zmq

@@ -106,7 +106,7 @@ changelog reaches back further but remains valid as all commits are visible now.
 0.10.15.9 Release notes
 ------------------------
 
-- Fixed a absolute condition causing collateral changes in rare cases.
+- Fixed a race condition causing collateral changes in rare cases.
 
 
 0.10.15.8 Release notes
@@ -509,7 +509,7 @@ http://test.explorer.darkcoin.fr/tx/6de2c5204abdea451da930f61bae0f954eef13188a3a
 - Fixed change calc for Denominations in GUI
 - Flare found a logging error for dseep, fixed
 - Collateral now includes a fee (sometimes they took forever to get into a block)
-- Found absolute condition with new blocks and clearing darksend entries that was
+- Found race condition with new blocks and clearing darksend entries that was
   causing some collateral fees
 - Found a communication mix up where clients would see messages from the wrong
   masternode and think it was theirs, also causing collateral fees

@@ -119,7 +119,7 @@ behavior, not code moves, refactors and string updates. For convenience in locat
 the code changes and accompanying discussion, both the pull request and
 git merge commit are mentioned.
 
-- #6438 `2531438` openssl: avoid config file load/absolute
+- #6438 `2531438` openssl: avoid config file load/race
 - #6439 `980f820` Updated URL location of netinstall for Debian
 - #6384 `8e5a969` qt: Force TLS1.0+ for SSL connections
 - #6471 `92401c2` Depends: bump to qt 5.5

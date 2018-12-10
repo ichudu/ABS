@@ -247,7 +247,7 @@ std::string GetThreadName();
 /**
  * .. and a wrapper that just calls func once
  */
-template <typename Callable> void TabsoluteThread(const char* name,  Callable func)
+template <typename Callable> void TraceThread(const char* name,  Callable func)
 {
     std::string s = strprintf("absolute-%s", name);
     RenameThread(s.c_str());

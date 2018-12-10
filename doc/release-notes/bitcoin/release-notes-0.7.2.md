@@ -44,7 +44,7 @@ Bug fixes
 
 * Correct library linking so building on Windows natively works.
 
-* Avoid a absolute condition and out-of-bounds read in block creation/mining code.
+* Avoid a race condition and out-of-bounds read in block creation/mining code.
 
 * Improve platform compatibility quirks, including fix for 100% CPU utilization
   on FreeBSD 9.

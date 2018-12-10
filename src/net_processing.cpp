@@ -1635,7 +1635,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 LogPrintf("TXLOCKREQUEST -- Transaction Lock Request accepted, txid=%s, peer=%d\n",
                         tx.GetHash().ToString(), pfrom->id);
                 instantsend.AcceptLockRequest(txLockRequest);
-                instantsend.Vote(tx.GetHash(), connman);
             }
 
             mempool.check(pcoinsTip);
@@ -1903,7 +1902,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             // need it even though it is not a candidate for a new best tip.
             forceProcessing |= MarkBlockAsReceived(hash);
             // mapBlockSource is only used for sending reject messages and DoS scores,
-            // so the absolute between here and cs_main in ProcessNewBlock is fine.
+            // so the race between here and cs_main in ProcessNewBlock is fine.
             mapBlockSource.emplace(hash, pfrom->GetId());
         }
         bool fNewBlock = false;

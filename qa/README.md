@@ -36,7 +36,7 @@ Possible options:
   --srcdir=SRCDIR       Source directory containing absoluted/absolute-cli
                         (default: ../../src)
   --tmpdir=TMPDIR       Root directory for datadirs
-  --tabsoluterpc            Print out all RPC calls as they are made
+  --tracerpc            Print out all RPC calls as they are made
   --coveragedir=COVERAGEDIR
                         Write tested RPC commands into this directory
 ```

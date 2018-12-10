@@ -1036,7 +1036,7 @@ def wait_until(predicate, attempts=float('inf'), timeout=float('inf')):
 class NodeConnCB(object):
     def __init__(self):
         self.verack_received = False
-        # deliver_sleep_time is helpful for debugging absolute conditions in p2p
+        # deliver_sleep_time is helpful for debugging race conditions in p2p
         # tests; it causes message delivery to sleep for the specified time
         # before acquiring the global lock and delivering the next message.
         self.deliver_sleep_time = None
