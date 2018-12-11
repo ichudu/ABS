@@ -5,6 +5,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
+#include "config/dash-config.h"
+#endif
+
+
 #include "chainparamsbase.h"
 #include "clientversion.h"
 #include "rpc/client.h"
@@ -77,10 +82,10 @@ static int AppInitRPC(int argc, char* argv[])
     //
     ParseParameters(argc, argv);
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
-        std::string strUsage = _("Absolute Core RPC client version") + " " + FormatFullVersion() + "\n";
+        std::string strUsage = strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n";
         if (!mapArgs.count("-version")) {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  absolute-cli [options] <command> [params]  " + _("Send command to Absolute Core") + "\n" +
+                  "  absolute-cli [options] <command> [params]  " + strprintf(_("Send command to %s"), _(PACKAGE_NAME)) + "\n" +
                   "  absolute-cli [options] help                " + _("List commands") + "\n" +
                   "  absolute-cli [options] help <command>      " + _("Get help for a command") + "\n";
 
