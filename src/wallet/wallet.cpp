@@ -1747,7 +1747,7 @@ void CWallet::ReacceptWalletTransactions()
         CWalletTx& wtx = *(item.second);
 
         LOCK(mempool.cs);
-        wtx.AcceptToMemoryPool(false);
+        wtx.AcceptToMemoryPool(false, maxTxFee);
     }
 }
 
@@ -2764,7 +2764,7 @@ bool CWallet::SelectCoinsByDenominations(int nDenom, CAmount nValueMin, CAmount 
 
     // ( bit on if present )
     // bit 0 - 100ABS+1
-    // bit 1 - 10RABS+1
+    // bit 1 - 10ABS+1
     // bit 2 - 1ABS+1
     // bit 3 - .1ABS+1
 
@@ -3546,7 +3546,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey, CCon
         if (fBroadcastTransactions)
         {
             // Broadcast
-            if (!wtxNew.AcceptToMemoryPool(false))
+            if (!wtxNew.AcceptToMemoryPool(false, maxTxFee))
             {
                 // This must not fail. The transaction has already been signed and recorded.
                 LogPrintf("CommitTransaction(): Error: Transaction not valid\n");
@@ -4436,8 +4436,8 @@ int CMerkleTx::GetBlocksToMaturity() const
 }
 
 
-bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
+bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, CAmount nAbsurdFee)
 {
     CValidationState state;
-    return ::AcceptToMemoryPool(mempool, state, *this, fLimitFree, NULL, false, fRejectAbsurdFee);
+    return ::AcceptToMemoryPool(mempool, state, *this, fLimitFree, NULL, false, nAbsurdFee);
 }

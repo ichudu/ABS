@@ -248,8 +248,8 @@ public:
     int GetDepthInMainChain(bool enableIX = true) const { const CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet, enableIX); }
     bool IsInMainChain() const { const CBlockIndex *pindexRet; return GetDepthInMainChain(pindexRet) > 0; }
     int GetBlocksToMaturity() const;
-    /** Pass this transaction to the mempool. Fails if absolute fee exceeds maxTxFee. */
-    bool AcceptToMemoryPool(bool fLimitFree=true, bool fRejectAbsurdFee=true);
+    /** Pass this transaction to the mempool. Fails if absolute fee exceeds absurd fee. */
+    bool AcceptToMemoryPool(bool fLimitFree, const CAmount nAbsurdFee);
     bool hashUnset() const { return (hashBlock.IsNull() || hashBlock == ABANDON_HASH); }
     bool isAbandoned() const { return (hashBlock == ABANDON_HASH); }
     void setAbandoned() { hashBlock = ABANDON_HASH; }
@@ -768,7 +768,7 @@ public:
 
     bool SelectCoinsGrouppedByAddresses(std::vector<CompactTallyItem>& vecTallyRet, bool fSkipDenominated = true, bool fAnonymizable = true, bool fSkipUnconfirmed = true) const;
 
-    /// Get 1000RACE output and keys which can be used for the Masternode
+    /// Get 2500ABS output and keys which can be used for the Masternode
     bool GetMasternodeOutpointAndKeys(COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet, std::string strTxHash = "", std::string strOutputIndex = "");
     /// Extract txin information and keys from output
     bool GetOutpointAndKeysFromOutput(const COutput& out, COutPoint& outpointRet, CPubKey& pubKeyRet, CKey& keyRet);
