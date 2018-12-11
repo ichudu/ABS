@@ -118,7 +118,7 @@ static const int64_t BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 125000;
 
 static const unsigned int DEFAULT_LIMITFREERELAY = 15;
 static const bool DEFAULT_RELAYPRIORITY = true;
-static const int64_t DEFAULT_MAX_TIP_AGE = 6 * 60 * 60; // Twice as fast as BTC
+static const int64_t DEFAULT_MAX_TIP_AGE = 6 * 60 * 60; // Over 6 Hours 
 
 /** Default for -permitbaremultisig */
 static const bool DEFAULT_PERMIT_BAREMULTISIG = true;
@@ -137,6 +137,8 @@ static const bool DEFAULT_ENABLE_REPLACEMENT = false;
 /** Maximum number of headers to announce when relaying blocks with headers message.*/
 static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
+static const bool DEFAULT_PEERBLOOMFILTERS = true;
+static const bool DEFAULT_ENFORCENODEBLOOM = false;
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
