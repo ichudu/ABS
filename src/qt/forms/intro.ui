@@ -20,13 +20,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label_2">
-     <property name="minimumSize">
-      <size>
-       <width>385</width>
-       <height>100</height>
-      </size>
-     </property>
+    <widget class="QLabel" name="welcomeLabel">
      <property name="styleSheet">
       <string notr="true">QLabel { font-style:italic; }</string>
      </property>
