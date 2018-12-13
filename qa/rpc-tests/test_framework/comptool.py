@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-#
+# Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
@@ -9,7 +9,7 @@ from .blockstore import BlockStore, TxStore
 from .util import p2p_port
 
 '''
-This is a tool for comparing two or more absoluted daemons to each other
+This is a tool for comparing two or more absoluteds to each other
 using a script provided.
 
 To use, create a class that implements get_tests(), and pass it in
