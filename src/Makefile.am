@@ -367,7 +367,7 @@ libbitcoin_consensus_a_SOURCES = \
   primitives/transaction.h \
   pubkey.cpp \
   pubkey.h \
-  script/dashconsensus.cpp \
+  script/absoluteconsensus.cpp \
   script/interpreter.cpp \
   script/interpreter.h \
   script/script.cpp \
