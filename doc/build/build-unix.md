@@ -55,7 +55,7 @@ Memory Requirements
 --------------------
 
 C++ compilers are memory-hungry. It is recommended to have at least 1.5 GB of
-memory available when compiling Dash Core. On systems with less, gcc can be
+memory available when compiling Absolute Core. On systems with less, gcc can be
 tuned to conserve memory with additional CXXFLAGS:
 
 ./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768"

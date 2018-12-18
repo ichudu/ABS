@@ -1,6 +1,6 @@
 Mac OS X Build Instructions and Notes
 ====================================
-This guide will show you how to build Dash Core for OS X.
+This guide will show you how to build Absolute Core for OS X.
 
 Notes
 -----
@@ -131,4 +131,4 @@ installer over the brew version, you have to make several changes to
 the installed tree and its binaries (all these changes are contained
 in the brew version already). The changes needed are described in
 [#7714](https://github.com/bitcoin/bitcoin/issues/7714). We do not
-support building Dash Core this way though.
+support building Absolute Core this way though.
