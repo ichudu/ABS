@@ -138,7 +138,6 @@ static const bool DEFAULT_ENABLE_REPLACEMENT = false;
 static const unsigned int MAX_BLOCKS_TO_ANNOUNCE = 8;
 
 static const bool DEFAULT_PEERBLOOMFILTERS = true;
-static const bool DEFAULT_ENFORCENODEBLOOM = false;
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
