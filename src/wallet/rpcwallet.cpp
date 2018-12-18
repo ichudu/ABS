@@ -2723,14 +2723,17 @@ extern UniValue importaddress(const UniValue& params, bool fHelp);
 extern UniValue importpubkey(const UniValue& params, bool fHelp);
 extern UniValue dumpwallet(const UniValue& params, bool fHelp);
 extern UniValue importwallet(const UniValue& params, bool fHelp);
+extern UniValue importprunedfunds(const UniValue& params, bool fHelp);
+extern UniValue removeprunedfunds(const UniValue& params, bool fHelp);
 
 extern UniValue dumphdinfo(const UniValue& params, bool fHelp);
 extern UniValue importelectrumwallet(const UniValue& params, bool fHelp);
 
 extern UniValue instantsendtoaddress(const UniValue& params, bool fHelp);
+extern UniValue privatesend(const UniValue& params, bool fHelp);
 extern UniValue keepass(const UniValue& params, bool fHelp);
 
-const CRPCCommand vWalletRPCCommands[] =
+static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
     //  --------------------- ------------------------    -----------------------    ----------
     { "rawtransactions",    "fundrawtransaction",       &fundrawtransaction,       false },
@@ -2755,6 +2758,7 @@ const CRPCCommand vWalletRPCCommands[] =
     { "wallet",             "importprivkey",            &importprivkey,            true  },
     { "wallet",             "importwallet",             &importwallet,             true  },
     { "wallet",             "importaddress",            &importaddress,            true  },
+    { "wallet",             "importprunedfunds",        &importprunedfunds,        true  },
     { "wallet",             "importpubkey",             &importpubkey,             true  },
     { "wallet",             "keypoolrefill",            &keypoolrefill,            true  },
     { "wallet",             "listaccounts",             &listaccounts,             false },
@@ -2776,6 +2780,7 @@ const CRPCCommand vWalletRPCCommands[] =
     { "wallet",             "walletlock",               &walletlock,               true  },
     { "wallet",             "walletpassphrasechange",   &walletpassphrasechange,   true  },
     { "wallet",             "walletpassphrase",         &walletpassphrase,         true  },
+    { "wallet",             "removeprunedfunds",        &removeprunedfunds,        true  },
 
     { "wallet",             "keepass",                  &keepass,                  true },
     { "wallet",             "instantsendtoaddress",     &instantsendtoaddress,     false },
@@ -2785,7 +2790,7 @@ const CRPCCommand vWalletRPCCommands[] =
     { "absolute",               "privatesend",              &privatesend,              false },
 };
 
-void walletRegisterRPCCommands()
+void RegisterWalletRPCCommands(CRPCTable &tableRPC)
 {
     unsigned int vcidx;
     for (vcidx = 0; vcidx < ARRAYLEN(vWalletRPCCommands); vcidx++)
