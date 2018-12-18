@@ -557,7 +557,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         // Clear pindexPrev so future calls make a new block, despite any failures from here on
         pindexPrev = NULL;
 
-        // Store the chainActive.Tip() used before CreateNewBlock, to avoid absolutes
+        // Store the chainActive.Tip() used before CreateNewBlock, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
         CBlockIndex* pindexPrevNew = chainActive.Tip();
         nStart = GetTime();
@@ -934,4 +934,28 @@ UniValue estimatesmartpriority(const UniValue& params, bool fHelp)
     result.push_back(Pair("priority", priority));
     result.push_back(Pair("blocks", answerFound));
     return result;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "mining",             "getnetworkhashps",       &getnetworkhashps,       true  },
+    { "mining",             "getmininginfo",          &getmininginfo,          true  },
+    { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
+    { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
+    { "mining",             "submitblock",            &submitblock,            true  },
+
+    { "generating",         "generate",               &generate,               true  },
+    { "generating",         "generatetoaddress",      &generatetoaddress,      true  },
+
+    { "util",               "estimatefee",            &estimatefee,            true  },
+    { "util",               "estimatepriority",       &estimatepriority,       true  },
+    { "util",               "estimatesmartfee",       &estimatesmartfee,       true  },
+    { "util",               "estimatesmartpriority",  &estimatesmartpriority,  true  },
+};
+
+void RegisterMiningRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

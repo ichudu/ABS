@@ -36,6 +36,7 @@ UniValue CallRPC(string args)
     vArgs.erase(vArgs.begin());
     UniValue params = RPCConvertValues(strMethod, vArgs);
 
+    BOOST_CHECK(tableRPC[strMethod]);
     rpcfn_type method = tableRPC[strMethod]->actor;
     try {
         UniValue result = (*method)(params, false);
