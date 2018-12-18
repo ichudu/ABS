@@ -29,7 +29,7 @@ packages:
 - "fonts-tuffy"
 reference_datetime: "2017-01-01 00:00:00"
 remotes:
-- "url": "https://github.com/absolute-community/absolutecoin.git"
+- "url": "https://github.com/absolute-community/absolute.git"
   "dir": "absolute"
 files:
 - "MacOSX10.9.sdk.tar.gz"
