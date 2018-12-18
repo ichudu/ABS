@@ -11,6 +11,7 @@
 #include "test/test_absolute.h"
 
 #include <boost/algorithm/string.hpp>
+#include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include <univalue.h>
@@ -328,6 +329,29 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     o1 = ar[0].get_obj();
     adr = find_value(o1, "address");
     BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/128");
+}
+
+BOOST_AUTO_TEST_CASE(rpc_convert_values_generatetoaddress)
+{
+    UniValue result;
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("101")("TYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 101);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "TYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT");
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("101")("TTaetFTpoi3oQ3maZk5QadGaDWPiKnmDBc")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 101);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "TTaetFTpoi3oQ3maZk5QadGaDWPiKnmDBc");
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("1")("TbaNZyCiTYSFtDwEXt7jChV7tZVYX862ua")("9")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 1);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "TbaNZyCiTYSFtDwEXt7jChV7tZVYX862ua");
+    BOOST_CHECK_EQUAL(result[2].get_int(), 9);
+
+    BOOST_CHECK_NO_THROW(result = RPCConvertValues("generatetoaddress", boost::assign::list_of("1")("TNAmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT")("9")));
+    BOOST_CHECK_EQUAL(result[0].get_int(), 1);
+    BOOST_CHECK_EQUAL(result[1].get_str(), "TNAmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT");
+    BOOST_CHECK_EQUAL(result[2].get_int(), 9);
 }
 
 BOOST_AUTO_TEST_CASE(rpc_sentinel_ping)
