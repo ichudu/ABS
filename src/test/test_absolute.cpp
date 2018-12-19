@@ -63,7 +63,7 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
         bitdb.MakeMock();
-	RegisterWalletRPCCommands(tableRPC);
+        RegisterWalletRPCCommands(tableRPC);
 #endif
         ClearDatadirCache();
         pathTemp = GetTempPath() / strprintf("test_absolute_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
