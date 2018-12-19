@@ -312,7 +312,7 @@ Setting up the Gitian image
 -------------------------
 
 Gitian needs a virtual image of the operating system to build in.
-Currently this is Ubuntu Precise x86_64.
+Currently this is Ubuntu Trusty x86_64.
 This image will be copied and used every time that a build is started to
 make sure that the build is deterministic.
 Creating the image will take a while, but only has to be done once.
@@ -395,7 +395,7 @@ and inputs.
 
 For example:
 ```bash
-URL=https://github.com/crowning-/dash.git
+URL=https://github.com/crowning-/absolute.git
 COMMIT=b616fb8ef0d49a919b72b0388b091aaec5849b96
 ./bin/gbuild --commit absolute=${COMMIT} --url absolute=${URL} ../absolute/contrib/gitian-descriptors/gitian-linux.yml
 ./bin/gbuild --commit absolute=${COMMIT} --url absolute=${URL} ../absolute/contrib/gitian-descriptors/gitian-win.yml
@@ -445,7 +445,7 @@ Then when building, override the remote URLs that gbuild would otherwise pull fr
 ```bash
 
 cd /some/root/path/
-git clone https://github.com/absolute-community/absolute-detached-sigs
+git clone https://github.com/absolute-community/absolute-detached-sigs.git
 
 BTCPATH=/some/root/path/absolute.git
 SIGPATH=/some/root/path/absolute-detached-sigs.git

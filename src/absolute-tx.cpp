@@ -56,7 +56,7 @@ static int AppInitRawTx(int argc, char* argv[])
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help"))
     {
         // First part of help message is specific to this utility
-        std::string strUsage = strprintf(_("%s dash-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = strprintf(_("%s absolute-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
             _("Usage:") + "\n" +
               "  absolute-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded absolute transaction") + "\n" +
               "  absolute-tx [options] -create [commands]   " + _("Create hex-encoded absolute transaction") + "\n" +
