@@ -11,7 +11,7 @@ Check out the source code in the following directory hierarchy.
 
 	cd /path/to/your/toplevel/build
 	git clone https://github.com/absolute-community/gitian.signatures.git
-	git clone https://github.com/absolute-community/absolute-detached-signatures.git
+	git clone https://github.com/absolute-community/absolute.detached.signatures.git
 	git clone https://github.com/devrandom/gitian-builder.git
 	git clone https://github.com/absolute-community/absolute.git
 
