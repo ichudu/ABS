@@ -272,11 +272,11 @@ echo 'ip link set br0 up' >> /etc/rc.local
 echo 'firewall-cmd --zone=trusted --add-interface=br0' >> /etc/rc.local
 echo 'exit 0' >> /etc/rc.local
 chmod +x /etc/rc.local
-# make sure that USE_LXC is always set when logging in as gitianuser,
+# make sure that USE_LXC is always set when logging in as debian,
 # and configure LXC IP addresses
-echo 'export USE_LXC=1' >> /home/gitianuser/.profile
-echo 'export GITIAN_HOST_IP=10.0.3.1' >> /home/gitianuser/.profile
-echo 'export LXC_GUEST_IP=10.0.3.5' >> /home/gitianuser/.profile
+echo 'export USE_LXC=1' >> /home/debian/.profile
+echo 'export GITIAN_HOST_IP=10.0.3.1' >> /home/debian/.profile
+echo 'export LXC_GUEST_IP=10.0.3.5' >> /home/debian/.profile
 reboot
 ```
 
