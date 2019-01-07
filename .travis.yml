@@ -56,7 +56,8 @@ before_install:
     - travis_retry sudo add-apt-repository ppa:ubuntu-wine/ppa -y
     - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
     - chmod +rwx -R depends/
-    - chmod +rwx -R share/
+    - chmod +rwx -R qa/
+    - chmod +rwx -R src/
     - chmod +rwx autogen.sh
 install:
     - if [ "$PYZMQ" = "true" ]; then pip install pyzmq --user ; fi
