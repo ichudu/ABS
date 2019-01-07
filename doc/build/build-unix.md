@@ -11,7 +11,7 @@ for example, when specifying the the path of the dependency:
 
 	../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
 
-Here BDB_PREFIX must absolute path - it is defined using $(pwd) which ensures
+Here BDB_PREFIX must be an absolute path - it is defined using $(pwd) which ensures
 the usage of the absolute path.
 
 To Build
@@ -51,12 +51,14 @@ Optional dependencies:
 
 For the versions used in the release, see [release-process.md](release-process.md) under *Fetch and build inputs*.
 
-System requirements
+Memory Requirements
 --------------------
 
-C++ compilers are memory-hungry. It is recommended to have at least 1 GB of
-memory available when compiling Absolute Core. With 512MB of memory or less
-compilation will take much longer due to swap thrashing.
+C++ compilers are memory-hungry. It is recommended to have at least 1.5 GB of
+memory available when compiling Absolute Core. On systems with less, gcc can be
+tuned to conserve memory with additional CXXFLAGS:
+
+./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768"
 
 Dependency Build Instructions: Ubuntu & Debian
 ----------------------------------------------
@@ -64,13 +66,14 @@ Build requirements:
 
     sudo apt-get install build-essential libtool autotools-dev automake pkg-config libssl-dev libevent-dev bsdmainutils
 
-On at least Ubuntu 14.04+ and Debian 7+ there are generic names for the
+Options when installing required Boost library files:
+1. On at least Ubuntu 14.04+ and Debian 7+ there are generic names for the
 individual boost development packages, so the following can be used to only
 install necessary parts of boost:
 
     sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
 
-If that doesn't work, you can install all boost development packages with:
+2. If that doesn't work, you can install all boost development packages with:
 
     sudo apt-get install libboost-all-dev
 

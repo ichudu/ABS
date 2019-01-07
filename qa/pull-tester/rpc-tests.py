@@ -40,6 +40,15 @@ if 'ENABLE_UTILS' not in vars():
     ENABLE_UTILS=0
 if 'ENABLE_ZMQ' not in vars():
     ENABLE_ZMQ=0
+    
+# python-zmq may not be installed. Handle this gracefully and with some helpful info
+if ENABLE_ZMQ:
+    try:
+        import zmq
+    except ImportError:
+        print("WARNING: \"import zmq\" failed. Setting ENABLE_ZMQ=0. " \
+            "To run zmq tests, see dependency info in /qa/README.md.")
+        ENABLE_ZMQ=0
 
 ENABLE_COVERAGE=0
 
@@ -64,8 +73,8 @@ for arg in sys.argv[1:]:
 buildDir = BUILDDIR
 if "ABSOLUTED" not in os.environ:
     os.environ["ABSOLUTED"] = buildDir + '/src/absoluted' + EXEEXT
-if "RACECLI" not in os.environ:
-    os.environ["RACECLI"] = buildDir + '/src/absolute-cli' + EXEEXT
+if "ABSOLUTECLI" not in os.environ:
+    os.environ["ABSOLUTECLI"] = buildDir + '/src/absolute-cli' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
@@ -77,7 +86,7 @@ if not (ENABLE_WALLET == 1 and ENABLE_UTILS == 1 and ENABLE_BITCOIND == 1):
     print "No rpc tests to run. Wallet, utils, and bitcoind must all be enabled"
     sys.exit(0)
 
-# python-zmq may not be installed. Handle this gabsolutefully and with some helpful info
+# python-zmq may not be installed. Handle this gracefully and with some helpful info
 if ENABLE_ZMQ:
     try:
         import zmq
@@ -128,6 +137,7 @@ testScripts = [
     'invalidtxrequest.py', # NOTE: needs absolute_hash to pass
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
+    'importprunedfunds.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')
@@ -143,7 +153,6 @@ testScriptsExt = [
     'getblocktemplate_proposals.py',
     'txn_doublespend.py',
     'txn_clone.py --mineblock',
-    # 'pruning.py', # Prune mode is incompatible with -txindex.
     'forknotify.py',
     'invalidateblock.py',
 #    'rpcbind_test.py', #temporary, bug in libevent, see #6655
@@ -153,6 +162,8 @@ testScriptsExt = [
     'mempool_packages.py',
     'maxuploadtarget.py',
     # 'replace-by-fee.py', # RBF is disabled in Absolute Core
+    'p2p-feefilter.py',
+    # 'pruning.py', # leave pruning last as it takes a REALLY long time #### Prune mode is incompatible with -txindex.
 ]
 
 def runtests():

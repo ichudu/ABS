@@ -344,7 +344,8 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
     UniValue res(UniValue::VARR);
 
     vector<uint256> vMatch;
-    if (merkleBlock.txn.ExtractMatches(vMatch) != merkleBlock.header.hashMerkleRoot)
+    vector<unsigned int> vIndex;
+    if (merkleBlock.txn.ExtractMatches(vMatch, vIndex) != merkleBlock.header.hashMerkleRoot)
         return res;
 
     LOCK(cs_main);
@@ -394,7 +395,6 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"data\\\":\\\"00010203\\\"}\"")
         );
 
-    LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ)(UniValue::VNUM), true);
     if (params[0].isNull() || params[1].isNull())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, arguments 1 and 2 must be non-null");
@@ -497,7 +497,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"   (string) Absolute address\n"
+            "           \"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"   (string) Absolute address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -862,9 +862,9 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
     uint256 hashTx = tx.GetHash();
 
-    bool fOverrideFees = false;
-    if (params.size() > 1)
-        fOverrideFees = params[1].get_bool();
+    CAmount nMaxRawTxFee = maxTxFee;
+    if (params.size() > 1 && params[1].get_bool())
+        nMaxRawTxFee = 0;
 
     bool fInstantSend = false;
     if (params.size() > 2)
@@ -877,6 +877,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         fHaveChain = !existingCoin.IsSpent();
     }
     bool fHaveMempool = mempool.exists(hashTx);
+    CFeeRate txFeeRate = CFeeRate(0);
     if (!fHaveMempool && !fHaveChain) {
         // push to local node and sync with wallets
         if (fInstantSend && !instantsend.ProcessTxLockRequest(tx, *g_connman)) {
@@ -884,7 +885,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
         CValidationState state;
         bool fMissingInputs;
-        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
+        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, &txFeeRate, false, nMaxRawTxFee)) {
             if (state.IsInvalid()) {
                 throw JSONRPCError(RPC_TRANSACTION_REJECTED, strprintf("%i: %s", state.GetRejectCode(), state.GetRejectReason()));
             } else {
@@ -900,7 +901,27 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
     if(!g_connman)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
 
-    g_connman->RelayTransaction(tx);
+    g_connman->RelayTransaction(tx, txFeeRate);
 
     return hashTx.GetHex();
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true  },
+    { "rawtransactions",    "createrawtransaction",   &createrawtransaction,   true  },
+    { "rawtransactions",    "decoderawtransaction",   &decoderawtransaction,   true  },
+    { "rawtransactions",    "decodescript",           &decodescript,           true  },
+    { "rawtransactions",    "sendrawtransaction",     &sendrawtransaction,     false },
+    { "rawtransactions",    "signrawtransaction",     &signrawtransaction,     false }, /* uses wallet if enabled */
+
+    { "blockchain",         "gettxoutproof",          &gettxoutproof,          true  },
+    { "blockchain",         "verifytxoutproof",       &verifytxoutproof,       true  },
+};
+
+void RegisterRawTransactionRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

@@ -160,26 +160,25 @@ CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false)
     CAccount account;
     walletdb.ReadAccount(strAccount, account);
 
-    bool bKeyUsed = false;
-
-    // Check if the current key has been used
-    if (account.vchPubKey.IsValid())
-    {
-        CScript scriptPubKey = GetScriptForDestination(account.vchPubKey.GetID());
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin();
-             it != pwalletMain->mapWallet.end() && account.vchPubKey.IsValid();
-             ++it)
-        {
-            const CWalletTx& wtx = (*it).second;
-            BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-                if (txout.scriptPubKey == scriptPubKey)
-                    bKeyUsed = true;
+    if (!bForceNew) {
+        if (!account.vchPubKey.IsValid())
+            bForceNew = true;
+        else {
+            // Check if the current key has been used
+            CScript scriptPubKey = GetScriptForDestination(account.vchPubKey.GetID());
+            for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin();
+                 it != pwalletMain->mapWallet.end() && account.vchPubKey.IsValid();
+                 ++it)
+                BOOST_FOREACH(const CTxOut& txout, (*it).second.vout)
+                    if (txout.scriptPubKey == scriptPubKey) {
+                        bForceNew = true;
+                        break;
+                    }
         }
     }
 
     // Generate a new key
-    if (!account.vchPubKey.IsValid() || bForceNew || bKeyUsed)
-    {
+    if (bForceNew) {
         if (!pwalletMain->GetKeyFromPool(account.vchPubKey, false))
             throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
 
@@ -270,8 +269,8 @@ UniValue setaccount(const UniValue& params, bool fHelp)
             "1. \"absoluteaddress\"  (string, required) The absolute address to be associated with an account.\n"
             "2. \"account\"         (string, required) The account to assign the address to.\n"
             "\nExamples:\n"
-            + HelpExampleCli("setaccount", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" \"tabby\"")
-            + HelpExampleRpc("setaccount", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", \"tabby\"")
+            + HelpExampleCli("setaccount", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" \"tabby\"")
+            + HelpExampleRpc("setaccount", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", \"tabby\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -317,8 +316,8 @@ UniValue getaccount(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "\"accountname\"        (string) the account address\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaccount", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"")
-            + HelpExampleRpc("getaccount", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"")
+            + HelpExampleCli("getaccount", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"")
+            + HelpExampleRpc("getaccount", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -404,7 +403,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
     }
     if (!pwalletMain->CommitTransaction(wtxNew, reservekey, g_connman.get(), fUseInstantSend ? NetMsgType::TXLOCKREQUEST : NetMsgType::TX))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of the wallet and coins were spent in the copy but not marked as spent here.");
 }
 
 UniValue sendtoaddress(const UniValue& params, bool fHelp)
@@ -432,10 +431,10 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "\"transactionid\"  (string) The transaction id.\n"
             "\nExamples:\n"
-            + HelpExampleCli("sendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.1")
-            + HelpExampleCli("sendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.1 \"donation\" \"seans outpost\"")
-            + HelpExampleCli("sendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.1 \"\" \"\" true")
-            + HelpExampleRpc("sendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", 0.1, \"donation\", \"seans outpost\"")
+            + HelpExampleCli("sendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.1")
+            + HelpExampleCli("sendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("sendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.1 \"\" \"\" true")
+            + HelpExampleRpc("sendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", 0.1, \"donation\", \"seans outpost\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -497,10 +496,10 @@ UniValue instantsendtoaddress(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "\"transactionid\"  (string) The transaction id.\n"
             "\nExamples:\n"
-            + HelpExampleCli("instantsendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.1")
-            + HelpExampleCli("instantsendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.1 \"donation\" \"seans outpost\"")
-            + HelpExampleCli("instantsendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.1 \"\" \"\" true")
-            + HelpExampleRpc("instantsendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", 0.1, \"donation\", \"seans outpost\"")
+            + HelpExampleCli("instantsendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.1")
+            + HelpExampleCli("instantsendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("instantsendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.1 \"\" \"\" true")
+            + HelpExampleRpc("instantsendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", 0.1, \"donation\", \"seans outpost\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -602,11 +601,11 @@ UniValue signmessage(const UniValue& params, bool fHelp)
             "\nUnlock the wallet for 30 seconds\n"
             + HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
             "\nCreate the signature\n"
-            + HelpExampleCli("signmessage", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" \"my message\"") +
+            + HelpExampleCli("signmessage", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" \"my message\"") +
             "\nVerify the signature\n"
-            + HelpExampleCli("verifymessage", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" \"signature\" \"my message\"") +
+            + HelpExampleCli("verifymessage", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" \"signature\" \"my message\"") +
             "\nAs json rpc\n"
-            + HelpExampleRpc("signmessage", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", \"my message\"")
+            + HelpExampleRpc("signmessage", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", \"my message\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -656,13 +655,13 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
             "amount            (numeric) The total amount in " + CURRENCY_UNIT + " received at this address.\n"
             "\nExamples:\n"
             "\nThe amount from transactions with at least 1 confirmation\n"
-            + HelpExampleCli("getreceivedbyaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"") +
+            + HelpExampleCli("getreceivedbyaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"") +
             "\nThe amount including unconfirmed transactions, zero confirmations\n"
-            + HelpExampleCli("getreceivedbyaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0") +
+            + HelpExampleCli("getreceivedbyaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0") +
             "\nThe amount with at least 6 confirmation, very safe\n"
-            + HelpExampleCli("getreceivedbyaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 6") +
+            + HelpExampleCli("getreceivedbyaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 6") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("getreceivedbyaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", 6")
+            + HelpExampleRpc("getreceivedbyaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", 6")
        );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -981,11 +980,11 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
             "\"transactionid\"     (string) The transaction id.\n"
             "\nExamples:\n"
             "\nSend 0.01 " + CURRENCY_UNIT + " from the default account to the address, must have at least 1 confirmation\n"
-            + HelpExampleCli("sendfrom", "\"\" \"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.01") +
+            + HelpExampleCli("sendfrom", "\"\" \"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.01") +
             "\nSend 0.01 from the tabby account to the given address, funds must have at least 6 confirmations\n"
-            + HelpExampleCli("sendfrom", "\"tabby\" \"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 0.01 6 false \"donation\" \"seans outpost\"") +
+            + HelpExampleCli("sendfrom", "\"tabby\" \"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 0.01 6 false \"donation\" \"seans outpost\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendfrom", "\"tabby\", \"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", 0.01, 6, false, \"donation\", \"seans outpost\"")
+            + HelpExampleRpc("sendfrom", "\"tabby\", \"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", 0.01, 6, false, \"donation\", \"seans outpost\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1057,11 +1056,11 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "                                    the number of addresses.\n"
             "\nExamples:\n"
             "\nSend two amounts to two different addresses:\n"
-            + HelpExampleCli("sendmany", "\"tabby\" \"{\\\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\":0.02}\"") +
+            + HelpExampleCli("sendmany", "\"tabby\" \"{\\\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\":0.02}\"") +
             "\nSend two amounts to two different addresses setting the confirmation and comment:\n"
-            + HelpExampleCli("sendmany", "\"tabby\" \"{\\\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\":0.02}\" 6 false \"testing\"") +
+            + HelpExampleCli("sendmany", "\"tabby\" \"{\\\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\":0.02}\" 6 false \"testing\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendmany", "\"tabby\", \"{\\\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\":0.02}\", 6, false, \"testing\"")
+            + HelpExampleRpc("sendmany", "\"tabby\", \"{\\\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\\\":0.01,\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\":0.02}\", 6, false, \"testing\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1547,6 +1546,7 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "    \"vout\": n,                (numeric) the vout value\n"
             "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the \n"
             "                                         'send' category of transactions.\n"
+            "    \"abandoned\": xxx          (bool) 'true' if the transaction has been abandoned (inputs are respendable).\n"
             "    \"instantlock\" : true|false, (bool) Current transaction lock state. Available for 'send' and 'receive' category of transactions.\n"
             "    \"confirmations\": n,       (numeric) The number of blockchain confirmations for the transaction. Available for 'send' and \n"
             "                                         'receive' category of transactions. Negative confirmations indicate the\n"
@@ -1943,7 +1943,7 @@ UniValue backupwallet(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "backupwallet \"destination\"\n"
-            "\nSafely copies wallet.dat to destination, which can be a directory or a path with filename.\n"
+            "\nSafely copies current wallet file to destination, which can be a directory or a path with filename.\n"
             "\nArguments:\n"
             "1. \"destination\"   (string) The destination directory or file\n"
             "\nExamples:\n"
@@ -2133,7 +2133,7 @@ UniValue walletlock(const UniValue& params, bool fHelp)
             "\nSet the passphrase for 2 minutes to perform a transaction\n"
             + HelpExampleCli("walletpassphrase", "\"my pass phrase\" 120") +
             "\nPerform a send (requires passphrase set)\n"
-            + HelpExampleCli("sendtoaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" 1.0") +
+            + HelpExampleCli("sendtoaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" 1.0") +
             "\nClear the passphrase since we are done before 2 minutes is up\n"
             + HelpExampleCli("walletlock", "") +
             "\nAs json rpc call\n"
@@ -2221,16 +2221,17 @@ UniValue lockunspent(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "lockunspent unlock [{\"txid\":\"txid\",\"vout\":n},...]\n"
+            "lockunspent unlock ([{\"txid\":\"txid\",\"vout\":n},...])\n"
             "\nUpdates list of temporarily unspendable outputs.\n"
             "Temporarily lock (unlock=false) or unlock (unlock=true) specified transaction outputs.\n"
+            "If no transaction outputs are specified when unlocking then all current locked transaction outputs are unlocked.\n"
             "A locked transaction output will not be chosen by automatic coin selection, when spending absolutes.\n"
             "Locks are stored in memory only. Nodes start with zero locked outputs, and the locked output list\n"
             "is always cleared (by virtue of process exit) when a node stops or fails.\n"
             "Also see the listunspent call\n"
             "\nArguments:\n"
             "1. unlock            (boolean, required) Whether to unlock (true) or lock (false) the specified transactions\n"
-            "2. \"transactions\"  (string, required) A json array of objects. Each object the txid (string) vout (numeric)\n"
+            "2. \"transactions\"  (string, optional) A json array of objects. Each object the txid (string) vout (numeric)\n"
             "     [           (json array of json objects)\n"
             "       {\n"
             "         \"txid\":\"id\",    (string) The transaction id\n"
@@ -2571,8 +2572,8 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
             "\nExamples\n"
             + HelpExampleCli("listunspent", "")
-            + HelpExampleCli("listunspent", "6 9999999 \"[\\\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\\\",\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\"]\"")
-            + HelpExampleRpc("listunspent", "6, 9999999 \"[\\\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\\\",\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\"]\"")
+            + HelpExampleCli("listunspent", "6 9999999 \"[\\\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\\\",\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\"]\"")
+            + HelpExampleRpc("listunspent", "6, 9999999 \"[\\\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\\\",\\\"XuQQkwA4FYkq2XERzMY2CiAZhJTEDAbtcg\\\"]\"")
         );
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM)(UniValue::VNUM)(UniValue::VARR));
@@ -2714,4 +2715,83 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
     result.push_back(Pair("fee", ValueFromAmount(nFee)));
 
     return result;
+}
+
+extern UniValue dumpprivkey(const UniValue& params, bool fHelp); // in rpcdump.cpp
+extern UniValue importprivkey(const UniValue& params, bool fHelp);
+extern UniValue importaddress(const UniValue& params, bool fHelp);
+extern UniValue importpubkey(const UniValue& params, bool fHelp);
+extern UniValue dumpwallet(const UniValue& params, bool fHelp);
+extern UniValue importwallet(const UniValue& params, bool fHelp);
+extern UniValue importprunedfunds(const UniValue& params, bool fHelp);
+extern UniValue removeprunedfunds(const UniValue& params, bool fHelp);
+
+extern UniValue dumphdinfo(const UniValue& params, bool fHelp);
+extern UniValue importelectrumwallet(const UniValue& params, bool fHelp);
+
+extern UniValue instantsendtoaddress(const UniValue& params, bool fHelp);
+extern UniValue privatesend(const UniValue& params, bool fHelp);
+extern UniValue keepass(const UniValue& params, bool fHelp);
+
+static const CRPCCommand commands[] =
+{ //  category              name                        actor (function)           okSafeMode
+    //  --------------------- ------------------------    -----------------------    ----------
+    { "rawtransactions",    "fundrawtransaction",       &fundrawtransaction,       false },
+    { "hidden",             "resendwallettransactions", &resendwallettransactions, true  },
+    { "wallet",             "abandontransaction",       &abandontransaction,       false },
+    { "wallet",             "addmultisigaddress",       &addmultisigaddress,       true  },
+    { "wallet",             "backupwallet",             &backupwallet,             true  },
+    { "wallet",             "dumpprivkey",              &dumpprivkey,              true  },
+    { "wallet",             "dumpwallet",               &dumpwallet,               true  },
+    { "wallet",             "encryptwallet",            &encryptwallet,            true  },
+    { "wallet",             "getaccountaddress",        &getaccountaddress,        true  },
+    { "wallet",             "getaccount",               &getaccount,               true  },
+    { "wallet",             "getaddressesbyaccount",    &getaddressesbyaccount,    true  },
+    { "wallet",             "getbalance",               &getbalance,               false },
+    { "wallet",             "getnewaddress",            &getnewaddress,            true  },
+    { "wallet",             "getrawchangeaddress",      &getrawchangeaddress,      true  },
+    { "wallet",             "getreceivedbyaccount",     &getreceivedbyaccount,     false },
+    { "wallet",             "getreceivedbyaddress",     &getreceivedbyaddress,     false },
+    { "wallet",             "gettransaction",           &gettransaction,           false },
+    { "wallet",             "getunconfirmedbalance",    &getunconfirmedbalance,    false },
+    { "wallet",             "getwalletinfo",            &getwalletinfo,            false },
+    { "wallet",             "importprivkey",            &importprivkey,            true  },
+    { "wallet",             "importwallet",             &importwallet,             true  },
+    { "wallet",             "importaddress",            &importaddress,            true  },
+    { "wallet",             "importprunedfunds",        &importprunedfunds,        true  },
+    { "wallet",             "importpubkey",             &importpubkey,             true  },
+    { "wallet",             "keypoolrefill",            &keypoolrefill,            true  },
+    { "wallet",             "listaccounts",             &listaccounts,             false },
+    { "wallet",             "listaddressgroupings",     &listaddressgroupings,     false },
+    { "wallet",             "listlockunspent",          &listlockunspent,          false },
+    { "wallet",             "listreceivedbyaccount",    &listreceivedbyaccount,    false },
+    { "wallet",             "listreceivedbyaddress",    &listreceivedbyaddress,    false },
+    { "wallet",             "listsinceblock",           &listsinceblock,           false },
+    { "wallet",             "listtransactions",         &listtransactions,         false },
+    { "wallet",             "listunspent",              &listunspent,              false },
+    { "wallet",             "lockunspent",              &lockunspent,              true  },
+    { "wallet",             "move",                     &movecmd,                  false },
+    { "wallet",             "sendfrom",                 &sendfrom,                 false },
+    { "wallet",             "sendmany",                 &sendmany,                 false },
+    { "wallet",             "sendtoaddress",            &sendtoaddress,            false },
+    { "wallet",             "setaccount",               &setaccount,               true  },
+    { "wallet",             "settxfee",                 &settxfee,                 true  },
+    { "wallet",             "signmessage",              &signmessage,              true  },
+    { "wallet",             "walletlock",               &walletlock,               true  },
+    { "wallet",             "walletpassphrasechange",   &walletpassphrasechange,   true  },
+    { "wallet",             "walletpassphrase",         &walletpassphrase,         true  },
+    { "wallet",             "removeprunedfunds",        &removeprunedfunds,        true  },
+
+    { "wallet",             "keepass",                  &keepass,                  true },
+    { "wallet",             "instantsendtoaddress",     &instantsendtoaddress,     false },
+    { "wallet",             "dumphdinfo",               &dumphdinfo,               true  },
+    { "wallet",             "importelectrumwallet",     &importelectrumwallet,     true  },
+
+    { "absolute",               "privatesend",              &privatesend,              false },
+};
+
+void RegisterWalletRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

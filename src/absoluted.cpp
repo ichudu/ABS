@@ -5,6 +5,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
+#include "config/absolute-config.h"
+#endif
+
 #include "chainparams.h"
 #include "clientversion.h"
 #include "rpc/server.h"
@@ -15,6 +19,7 @@
 #include "masternodeconfig.h"
 #include "httpserver.h"
 #include "httprpc.h"
+#include "utilstrencodings.h"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
@@ -76,16 +81,16 @@ bool AppInit(int argc, char* argv[])
     // Process help and version before taking care about datadir
     if (mapArgs.count("-?") || mapArgs.count("-h") ||  mapArgs.count("-help") || mapArgs.count("-version"))
     {
-        std::string strUsage = _("Absolute Core Daemon") + " " + _("version") + " " + FormatFullVersion() + "\n";
+        std::string strUsage = strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n";
 
         if (mapArgs.count("-version"))
         {
-            strUsage += LicenseInfo();
+            strUsage += FormatParagraph(LicenseInfo());
         }
         else
         {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  absoluted [options]                     " + _("Start Absolute Core Daemon") + "\n";
+                  "  absoluted [options]                     " + strprintf(_("Start %s Daemon"), _(PACKAGE_NAME)) + "\n";
 
             strUsage += "\n" + HelpMessage(HMM_BITCOIND);
         }

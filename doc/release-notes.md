@@ -1,4 +1,4 @@
-Absolute Core version 0.12.2.4
+Absolute Core version 0.12.2.5
 ==========================
 
 Release is now available from:

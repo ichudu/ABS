@@ -157,7 +157,6 @@ void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-boost::filesystem::path GetTempPath();
 void OpenDebugLog();
 void ShrinkDebugFile();
 void runCommand(const std::string& strCommand);
@@ -247,7 +246,7 @@ std::string GetThreadName();
 /**
  * .. and a wrapper that just calls func once
  */
-template <typename Callable> void TabsoluteThread(const char* name,  Callable func)
+template <typename Callable> void TraceThread(const char* name,  Callable func)
 {
     std::string s = strprintf("absolute-%s", name);
     RenameThread(s.c_str());
@@ -272,6 +271,7 @@ template <typename Callable> void TabsoluteThread(const char* name,  Callable fu
     }
 }
 
+std::string CopyrightHolders(const std::string& strPrefix, unsigned int nStartYear, unsigned int nEndYear);
 
 /**
  * @brief Converts version strings to 4-byte unsigned integer

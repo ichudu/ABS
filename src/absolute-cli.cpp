@@ -5,6 +5,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
+#include "config/absolute-config.h"
+#endif
+
+
 #include "chainparamsbase.h"
 #include "clientversion.h"
 #include "rpc/client.h"
@@ -42,6 +47,7 @@ std::string HelpMessageCli()
     strUsage += HelpMessageOpt("-rpcuser=<user>", _("Username for JSON-RPC connections"));
     strUsage += HelpMessageOpt("-rpcpassword=<pw>", _("Password for JSON-RPC connections"));
     strUsage += HelpMessageOpt("-rpcclienttimeout=<n>", strprintf(_("Timeout during HTTP requests (default: %d)"), DEFAULT_HTTP_CLIENT_TIMEOUT));
+    strUsage += HelpMessageOpt("-stdin", _("Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases)"));
 
     return strUsage;
 }
@@ -76,10 +82,10 @@ static int AppInitRPC(int argc, char* argv[])
     //
     ParseParameters(argc, argv);
     if (argc<2 || mapArgs.count("-?") || mapArgs.count("-h") || mapArgs.count("-help") || mapArgs.count("-version")) {
-        std::string strUsage = _("Absolute Core RPC client version") + " " + FormatFullVersion() + "\n";
+        std::string strUsage = strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n";
         if (!mapArgs.count("-version")) {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  absolute-cli [options] <command> [params]  " + _("Send command to Absolute Core") + "\n" +
+                  "  absolute-cli [options] <command> [params]  " + strprintf(_("Send command to %s"), _(PACKAGE_NAME)) + "\n" +
                   "  absolute-cli [options] help                " + _("List commands") + "\n" +
                   "  absolute-cli [options] help <command>      " + _("Get help for a command") + "\n";
 
@@ -244,15 +250,17 @@ int CommandLineRPC(int argc, char *argv[])
             argc--;
             argv++;
         }
-
-        // Method
-        if (argc < 2)
-            throw runtime_error("too few parameters");
-        string strMethod = argv[1];
-
-        // Parameters default to strings
-        std::vector<std::string> strParams(&argv[2], &argv[argc]);
-        UniValue params = RPCConvertValues(strMethod, strParams);
+        std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
+        if (GetBoolArg("-stdin", false)) {
+            // Read one arg per line from stdin and append
+            std::string line;
+            while (std::getline(std::cin,line))
+                args.push_back(line);
+        }
+        if (args.size() < 1)
+            throw runtime_error("too few parameters (need at least command)");
+        std::string strMethod = args[0];
+        UniValue params = RPCConvertValues(strMethod, std::vector<std::string>(args.begin()+1, args.end()));
 
         // Execute and handle connection failures with -rpcwait
         const bool fWait = GetBoolArg("-rpcwait", false);

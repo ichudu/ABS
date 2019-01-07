@@ -1000,6 +1000,7 @@ bool CConnman::AttemptToEvictConnection()
     // Reduce to the network group with the most connections
     std::vector<NodeEvictionCandidate> vEvictionNodes = mapAddrCounts[naMostConnections];
 
+    // Do not disconnect peers if there is only 1 connection from their network group
     if(vEvictionNodes.empty()) {
         return false;
     }
@@ -1316,7 +1317,7 @@ void CConnman::ThreadSocketHandler()
                         }
                         else if (nBytes == 0)
                         {
-                            // socket closed gabsolutefully
+                            // socket closed gracefully
                             if (!pnode->fDisconnect)
                                 LogPrint("net", "socket closed\n");
                             pnode->CloseSocketDisconnect();
@@ -1497,7 +1498,7 @@ void MapPort(bool fUseUPnP)
             upnp_thread->join();
             delete upnp_thread;
         }
-        upnp_thread = new boost::thread(boost::bind(&TabsoluteThread<void (*)()>, "upnp", &ThreadMapPort));
+        upnp_thread = new boost::thread(boost::bind(&TraceThread<void (*)()>, "upnp", &ThreadMapPort));
     }
     else if (upnp_thread) {
         upnp_thread->interrupt();
@@ -2033,7 +2034,7 @@ bool CConnman::BindListenPort(const CService &addrBind, std::string& strError, b
     {
         int nErr = WSAGetLastError();
         if (nErr == WSAEADDRINUSE)
-            strError = strprintf(_("Unable to bind to %s on this computer. Absolute Core is probably already running."), addrBind.ToString());
+            strError = strprintf(_("Unable to bind to %s on this computer. %s is probably already running."), addrBind.ToString(), _(PACKAGE_NAME));
         else
             strError = strprintf(_("Unable to bind to %s on this computer (bind returned error %s)"), addrBind.ToString(), NetworkErrorString(nErr));
         LogPrintf("%s\n", strError);
@@ -2239,24 +2240,24 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
     }
 
     // Send and receive from sockets, accept connections
-    threadSocketHandler = std::thread(&TabsoluteThread<std::function<void()> >, "net", std::function<void()>(std::bind(&CConnman::ThreadSocketHandler, this)));
+    threadSocketHandler = std::thread(&TraceThread<std::function<void()> >, "net", std::function<void()>(std::bind(&CConnman::ThreadSocketHandler, this)));
 
     if (!GetBoolArg("-dnsseed", true))
         LogPrintf("DNS seeding disabled\n");
     else
-        threadDNSAddressSeed = std::thread(&TabsoluteThread<std::function<void()> >, "dnsseed", std::function<void()>(std::bind(&CConnman::ThreadDNSAddressSeed, this)));
+        threadDNSAddressSeed = std::thread(&TraceThread<std::function<void()> >, "dnsseed", std::function<void()>(std::bind(&CConnman::ThreadDNSAddressSeed, this)));
 
     // Initiate outbound connections from -addnode
-    threadOpenAddedConnections = std::thread(&TabsoluteThread<std::function<void()> >, "addcon", std::function<void()>(std::bind(&CConnman::ThreadOpenAddedConnections, this)));
+    threadOpenAddedConnections = std::thread(&TraceThread<std::function<void()> >, "addcon", std::function<void()>(std::bind(&CConnman::ThreadOpenAddedConnections, this)));
 
     // Initiate outbound connections
-    threadOpenConnections = std::thread(&TabsoluteThread<std::function<void()> >, "opencon", std::function<void()>(std::bind(&CConnman::ThreadOpenConnections, this)));
+    threadOpenConnections = std::thread(&TraceThread<std::function<void()> >, "opencon", std::function<void()>(std::bind(&CConnman::ThreadOpenConnections, this)));
 
     // Initiate masternode connections
-    threadMnbRequestConnections = std::thread(&TabsoluteThread<std::function<void()> >, "mnbcon", std::function<void()>(std::bind(&CConnman::ThreadMnbRequestConnections, this)));
+    threadMnbRequestConnections = std::thread(&TraceThread<std::function<void()> >, "mnbcon", std::function<void()>(std::bind(&CConnman::ThreadMnbRequestConnections, this)));
 
     // Process messages
-    threadMessageHandler = std::thread(&TabsoluteThread<std::function<void()> >, "msghand", std::function<void()>(std::bind(&CConnman::ThreadMessageHandler, this)));
+    threadMessageHandler = std::thread(&TraceThread<std::function<void()> >, "msghand", std::function<void()>(std::bind(&CConnman::ThreadMessageHandler, this)));
 
     // Dump network addresses
     scheduler.scheduleEvery(boost::bind(&CConnman::DumpData, this), DUMP_ADDRESSES_INTERVAL);
@@ -2474,7 +2475,7 @@ bool CConnman::DisconnectNode(NodeId id)
     return false;
 }
 
-void CConnman::RelayTransaction(const CTransaction& tx)
+void CConnman::RelayTransaction(const CTransaction& tx, CFeeRate feerate)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss.reserve(10000);
@@ -2488,10 +2489,10 @@ void CConnman::RelayTransaction(const CTransaction& tx)
     } else { // MSG_TX
         ss << tx;
     }
-    RelayTransaction(tx, ss);
+    RelayTransaction(tx, feerate, ss);
 }
 
-void CConnman::RelayTransaction(const CTransaction& tx, const CDataStream& ss)
+void CConnman::RelayTransaction(const CTransaction& tx, CFeeRate feerate, const CDataStream& ss)
 {
     uint256 hash = tx.GetHash();
     int nInv = static_cast<bool>(CPrivateSend::GetDSTX(hash)) ? MSG_DSTX :
@@ -2515,6 +2516,11 @@ void CConnman::RelayTransaction(const CTransaction& tx, const CDataStream& ss)
     {
         if(!pnode->fRelayTxes)
             continue;
+        {
+            LOCK(pnode->cs_feeFilter);
+            if (feerate.GetFeePerK() < pnode->minFeeFilter)
+                continue;
+        }
         LOCK(pnode->cs_filter);
         if (pnode->pfilter)
         {
@@ -2711,6 +2717,9 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     fPingQueued = false;
     fMasternode = false;
     nMinPingUsecTime = std::numeric_limits<int64_t>::max();
+    minFeeFilter = 0;
+    lastSentFeeFilter = 0;
+    nextSendTimeFeeFilter = 0;
     vchKeyedNetGroup = CalculateKeyedNetGroup(addr);
     id = idIn;
     nLocalServices = nLocalServicesIn;

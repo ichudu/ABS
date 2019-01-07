@@ -2,10 +2,28 @@ Contents
 ========
 This directory contains tools for developers working on this repository.
 
+check-doc.py
+============
+
+Check if all command line args are documented. The return value indicates the
+number of undocumented args.
+
 clang-format.py
 ===============
 
 A script to format cpp source code according to [.clang-format](../../src/.clang-format). This should only be applied to new files or files which are currently not actively developed on. Also, git subtrees are not subject to formatting.
+
+clang-format-diff.py
+===================
+
+A script to format unified git diffs according to [.clang-format](../../src/.clang-format).
+
+For instance, to format the last commit with 0 lines of context,
+the script should be called from the git root folder as follows.
+
+```
+git diff -U0 HEAD~1.. | ./contrib/devtools/clang-format-diff.py -p1 -i -v
+```
 
 fix-copyright-headers.py
 ========================
@@ -38,14 +56,14 @@ Usage: `git-subtree-check.sh DIR COMMIT`
 
 `COMMIT` may be omitted, in which case `HEAD` is used.
 
-github-merge.sh
+github-merge.py
 ===============
 
 A small script to automate merging pull-requests securely and sign them with GPG.
 
 For example:
 
-  ./github-merge.sh bitcoin/bitcoin 3077
+  ./github-merge.py 3077
 
 (in any git repository) will help you merge pull request #3077 for the
 bitcoin/bitcoin repository.
@@ -59,7 +77,7 @@ check or whatever).
 * Ask you whether to GPG sign the merge commit.
 * Ask you whether to push the result upstream.
 
-This means that there are no potential absolute conditions (where a
+This means that there are no potential race conditions (where a
 pullreq gets updated while you're reviewing it, but before you click
 merge), and when using GPG signatures, that even a compromised github
 couldn't mess with the sources.

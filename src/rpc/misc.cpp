@@ -300,8 +300,8 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
             "  \"hdchainid\" : \"<hash>\"        (string, optional) The ID of the HD chain\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("validateaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"")
-            + HelpExampleRpc("validateaddress", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"")
+            + HelpExampleCli("validateaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"")
+            + HelpExampleRpc("validateaddress", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"")
         );
 
 #ifdef ENABLE_WALLET
@@ -467,11 +467,11 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
             "\nUnlock the wallet for 30 seconds\n"
             + HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
             "\nCreate the signature\n"
-            + HelpExampleCli("signmessage", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" \"my message\"") +
+            + HelpExampleCli("signmessage", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" \"my message\"") +
             "\nVerify the signature\n"
-            + HelpExampleCli("verifymessage", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\" \"signature\" \"my message\"") +
+            + HelpExampleCli("verifymessage", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\" \"signature\" \"my message\"") +
             "\nAs json rpc\n"
-            + HelpExampleRpc("verifymessage", "\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\", \"signature\", \"my message\"")
+            + HelpExampleRpc("verifymessage", "\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\", \"signature\", \"my message\"")
         );
 
     LOCK(cs_main);
@@ -617,8 +617,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}'")
-            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}")
+            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}'")
+            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -682,13 +682,13 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "    \"txid\"  (string) The output txid\n"
             "    \"outputIndex\"  (number) The output index\n"
             "    \"script\"  (string) The script hex encoded\n"
-            "    \"satoshis\"  (number) The number of  of the output\n"
+            "    \"satoshis\"  (number) The number of nABS of the output\n"
             "    \"height\"  (number) The block height\n"
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}'")
-            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}")
+            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}'")
+            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -756,8 +756,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}'")
-            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}")
+            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}'")
+            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}")
         );
 
 
@@ -836,8 +836,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "  \"received\"  (string) The total number of  received (including change)\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}'")
-            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}")
+            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}'")
+            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -894,8 +894,8 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}'")
-            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"]}")
+            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}'")
+            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"AYVmoN6NUE5zEb6rg6tGZUrwk4toWYwqdT\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -1001,4 +1001,35 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("height", value.blockHeight));
 
     return obj;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "control",            "debug",                  &debug,                  true  },
+    { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
+    { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
+    { "util",               "createmultisig",         &createmultisig,         true  },
+    { "util",               "verifymessage",          &verifymessage,          true  },
+    { "blockchain",         "getspentinfo",           &getspentinfo,           false },
+
+    /* Address index */
+    { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
+    { "addressindex",       "getaddressutxos",        &getaddressutxos,        false },
+    { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
+    { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
+    { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },
+
+    /* Absolute features */
+    { "absolute",               "mnsync",                 &mnsync,                 true  },
+    { "absolute",               "spork",                  &spork,                  true  },
+
+    /* Not shown in help */
+    { "hidden",             "setmocktime",            &setmocktime,            true  },
+};
+
+void RegisterMiscRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

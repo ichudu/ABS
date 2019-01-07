@@ -133,9 +133,8 @@ OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) 
     currentWatchOnlyBalance(-1),
     currentWatchUnconfBalance(-1),
     currentWatchImmatureBalance(-1),
-    txdelegate(new TxViewDelegate(platformStyle, this)),
-    timer(nullptr)
- {
+    txdelegate(new TxViewDelegate(platformStyle, this))
+{
     ui->setupUi(this);
     QString theme = GUIUtil::getThemeName();
 
@@ -197,7 +196,7 @@ void OverviewPage::handleOutOfSyncWarningClicks()
 
 OverviewPage::~OverviewPage()
 {
-    if(timer) disconnect(timer, SIGNAL(timeout()), this, SLOT(privateSendStatus()));
+    if(!fLiteMode && !fMasterNode) disconnect(timer, SIGNAL(timeout()), this, SLOT(privateSendStatus()));
     delete ui;
 }
 
@@ -239,7 +238,6 @@ void OverviewPage::setBalance(const CAmount& balance, const CAmount& unconfirmed
         ui->listTransactions->update();
     }
 }
-
 
 // show/hide watch-only labels
 void OverviewPage::updateWatchOnlyLabels(bool showWatchOnly)

@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <univalue.h>
 
+UniValue masternodelist(const UniValue& params, bool fHelp);
 #ifdef ENABLE_WALLET
 void EnsureWalletIsUnlocked();
 
@@ -850,5 +851,25 @@ UniValue sentinelping(const UniValue& params, bool fHelp)
         );
     }
 
-    return activeMasternode.UpdateSentinelPing(StringVersionToInt(params[0].get_str()));
+    activeMasternode.UpdateSentinelPing(StringVersionToInt(params[0].get_str()));
+    return true;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+    /* Absolute features */
+    { "absolute",               "masternode",             &masternode,             true  },
+    { "absolute",               "masternodelist",         &masternodelist,         true  },
+    { "absolute",               "masternodebroadcast",    &masternodebroadcast,    true  },
+    { "absolute",               "getpoolinfo",            &getpoolinfo,            true  },
+    { "absolute",               "sentinelping",           &sentinelping,           true  },
+#ifdef ENABLE_WALLET
+    { "absolute",               "privatesend",            &privatesend,            false },
+#endif // ENABLE_WALLET
+};
+
+void RegisterMasternodeRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }
