@@ -314,7 +314,6 @@ crypto_libbitcoin_crypto_a_SOURCES += \
   crypto/Lyra2RE/sph_bmw.h \
   crypto/Lyra2RE/sph_types.h \
   crypto/Lyra2RE/blake.c \
-  crypto/Lyra2RE/blake.h \
   crypto/Lyra2RE/groestl.c \
   crypto/Lyra2RE/groestl.h \
   crypto/Lyra2RE/keccak.c \
