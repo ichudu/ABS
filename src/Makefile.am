@@ -322,9 +322,9 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/Lyra2RE/cubehash.c \
   crypto/Lyra2RE/bmw.c
 
-if USE_ASM
+
 crypto_libbitcoin_crypto_a_SOURCES += crypto/sha256_sse4.cpp
-endif
+
 
 
 # consensus: shared between all executables that validate any consensus rules.
