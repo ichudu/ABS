@@ -20,46 +20,7 @@
 
 typedef uint256 ChainCode;
 
-#ifdef GLOBALDEFINED
-#define GLOBAL
-#else
-#define GLOBAL extern
-#endif
 
-GLOBAL sph_blake512_context     z_blake;
-GLOBAL sph_bmw512_context       z_bmw;
-GLOBAL sph_groestl512_context   z_groestl;
-GLOBAL sph_jh512_context        z_jh;
-GLOBAL sph_keccak512_context    z_keccak;
-GLOBAL sph_skein512_context     z_skein;
-GLOBAL sph_luffa512_context     z_luffa;
-GLOBAL sph_cubehash512_context  z_cubehash;
-GLOBAL sph_shavite512_context   z_shavite;
-GLOBAL sph_simd512_context      z_simd;
-GLOBAL sph_echo512_context      z_echo;
-
-#define fillz() do { \
-    sph_blake512_init(&z_blake); \
-    sph_bmw512_init(&z_bmw); \
-    sph_groestl512_init(&z_groestl); \
-    sph_jh512_init(&z_jh); \
-    sph_keccak512_init(&z_keccak); \
-    sph_skein512_init(&z_skein); \
-    sph_luffa512_init(&z_luffa); \
-    sph_cubehash512_init(&z_cubehash); \
-    sph_shavite512_init(&z_shavite); \
-    sph_simd512_init(&z_simd); \
-    sph_echo512_init(&z_echo); \
-} while (0)
-
-#define ZBLAKE (memcpy(&ctx_blake, &z_blake, sizeof(z_blake)))
-#define ZBMW (memcpy(&ctx_bmw, &z_bmw, sizeof(z_bmw)))
-#define ZGROESTL (memcpy(&ctx_groestl, &z_groestl, sizeof(z_groestl)))
-#define ZJH (memcpy(&ctx_jh, &z_jh, sizeof(z_jh)))
-#define ZKECCAK (memcpy(&ctx_keccak, &z_keccak, sizeof(z_keccak)))
-#define ZSKEIN (memcpy(&ctx_skein, &z_skein, sizeof(z_skein)))
-
-/* ----------- Bitcoin Hash ------------------------------------------------- */
 /** A hasher class for Bitcoin's 256-bit hash (double SHA-256). */
 class CHash256 {
 private:
@@ -131,73 +92,7 @@ inline uint256 Hash(const T1 p1begin, const T1 p1end,
     return result;
 }
 
-/** Compute the 256-bit hash of the concatenation of three objects. */
-template<typename T1, typename T2, typename T3>
-inline uint256 Hash(const T1 p1begin, const T1 p1end,
-                    const T2 p2begin, const T2 p2end,
-                    const T3 p3begin, const T3 p3end) {
-    static const unsigned char pblank[1] = {};
-    uint256 result;
-    CHash256().Write(p1begin == p1end ? pblank : (const unsigned char*)&p1begin[0], (p1end - p1begin) * sizeof(p1begin[0]))
-              .Write(p2begin == p2end ? pblank : (const unsigned char*)&p2begin[0], (p2end - p2begin) * sizeof(p2begin[0]))
-              .Write(p3begin == p3end ? pblank : (const unsigned char*)&p3begin[0], (p3end - p3begin) * sizeof(p3begin[0]))
-              .Finalize((unsigned char*)&result);
-    return result;
-}
 
-/** Compute the 256-bit hash of the concatenation of three objects. */
-template<typename T1, typename T2, typename T3, typename T4>
-inline uint256 Hash(const T1 p1begin, const T1 p1end,
-                    const T2 p2begin, const T2 p2end,
-                    const T3 p3begin, const T3 p3end,
-                    const T4 p4begin, const T4 p4end) {
-    static const unsigned char pblank[1] = {};
-    uint256 result;
-    CHash256().Write(p1begin == p1end ? pblank : (const unsigned char*)&p1begin[0], (p1end - p1begin) * sizeof(p1begin[0]))
-              .Write(p2begin == p2end ? pblank : (const unsigned char*)&p2begin[0], (p2end - p2begin) * sizeof(p2begin[0]))
-              .Write(p3begin == p3end ? pblank : (const unsigned char*)&p3begin[0], (p3end - p3begin) * sizeof(p3begin[0]))
-              .Write(p4begin == p4end ? pblank : (const unsigned char*)&p4begin[0], (p4end - p4begin) * sizeof(p4begin[0]))
-              .Finalize((unsigned char*)&result);
-    return result;
-}
-
-/** Compute the 256-bit hash of the concatenation of three objects. */
-template<typename T1, typename T2, typename T3, typename T4, typename T5>
-inline uint256 Hash(const T1 p1begin, const T1 p1end,
-                    const T2 p2begin, const T2 p2end,
-                    const T3 p3begin, const T3 p3end,
-                    const T4 p4begin, const T4 p4end,
-                    const T5 p5begin, const T5 p5end) {
-    static const unsigned char pblank[1] = {};
-    uint256 result;
-    CHash256().Write(p1begin == p1end ? pblank : (const unsigned char*)&p1begin[0], (p1end - p1begin) * sizeof(p1begin[0]))
-              .Write(p2begin == p2end ? pblank : (const unsigned char*)&p2begin[0], (p2end - p2begin) * sizeof(p2begin[0]))
-              .Write(p3begin == p3end ? pblank : (const unsigned char*)&p3begin[0], (p3end - p3begin) * sizeof(p3begin[0]))
-              .Write(p4begin == p4end ? pblank : (const unsigned char*)&p4begin[0], (p4end - p4begin) * sizeof(p4begin[0]))
-              .Write(p5begin == p5end ? pblank : (const unsigned char*)&p5begin[0], (p5end - p5begin) * sizeof(p5begin[0]))
-              .Finalize((unsigned char*)&result);
-    return result;
-}
-
-/** Compute the 256-bit hash of the concatenation of three objects. */
-template<typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
-inline uint256 Hash(const T1 p1begin, const T1 p1end,
-                    const T2 p2begin, const T2 p2end,
-                    const T3 p3begin, const T3 p3end,
-                    const T4 p4begin, const T4 p4end,
-                    const T5 p5begin, const T5 p5end,
-                    const T6 p6begin, const T6 p6end) {
-    static const unsigned char pblank[1] = {};
-    uint256 result;
-    CHash256().Write(p1begin == p1end ? pblank : (const unsigned char*)&p1begin[0], (p1end - p1begin) * sizeof(p1begin[0]))
-              .Write(p2begin == p2end ? pblank : (const unsigned char*)&p2begin[0], (p2end - p2begin) * sizeof(p2begin[0]))
-              .Write(p3begin == p3end ? pblank : (const unsigned char*)&p3begin[0], (p3end - p3begin) * sizeof(p3begin[0]))
-              .Write(p4begin == p4end ? pblank : (const unsigned char*)&p4begin[0], (p4end - p4begin) * sizeof(p4begin[0]))
-              .Write(p5begin == p5end ? pblank : (const unsigned char*)&p5begin[0], (p5end - p5begin) * sizeof(p5begin[0]))
-              .Write(p6begin == p6end ? pblank : (const unsigned char*)&p6begin[0], (p6end - p6begin) * sizeof(p6begin[0]))
-              .Finalize((unsigned char*)&result);
-    return result;
-}
 
 /** Compute the 160-bit hash an object. */
 template<typename T1>
