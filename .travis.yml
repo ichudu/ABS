@@ -56,8 +56,6 @@ before_install:
     - travis_retry sudo add-apt-repository ppa:ubuntu-wine/ppa -y
     - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
     - chmod +rwx -R depends/
-    - chmod +rwx -R hosts/
-    - chmod +rwx -R builders/
 install:
     - if [ "$PYZMQ" = "true" ]; then pip install pyzmq --user ; fi
     - if [ -n "$PPA" ]; then travis_retry sudo add-apt-repository "$PPA" -y; fi
