@@ -55,7 +55,7 @@ before_install:
     - travis_retry sudo apt-get install python-dev
     - travis_retry sudo add-apt-repository ppa:ubuntu-wine/ppa -y
     - export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
-    - chmod +rwx config.*
+    - chmod +rwx -R depends/
     - chmod +rwx -R hosts/
     - chmod +rwx -R builders/
 install:
