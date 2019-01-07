@@ -311,42 +311,26 @@ crypto_libbitcoin_crypto_a_SOURCES += \
   crypto/Lyra2RE/Lyra2.h \
   crypto/Lyra2RE/Sponge.c \
   crypto/Lyra2RE/Sponge.h \
-  crypto/Lyra2RE/sph_blake.h \
+
   crypto/Lyra2RE/sph_bmw.h \
-  crypto/Lyra2RE/sph_cubehash.h \
-  crypto/Lyra2RE/sph_groestl.h \
-  crypto/Lyra2RE/sph_keccak.h \
-  crypto/Lyra2RE/sph_skein.h \
+
+
+
+
   crypto/Lyra2RE/sph_types.h \
   crypto/Lyra2RE/blake.c \
+  crypto/Lyra2RE/blake.h \
   crypto/Lyra2RE/groestl.c \
+  crypto/Lyra2RE/groestl.h \
   crypto/Lyra2RE/keccak.c \
+  crypto/Lyra2RE/keccak.h \
   crypto/Lyra2RE/skein.c \
+  crypto/Lyra2RE/skein.h \
   crypto/Lyra2RE/cubehash.c \
+  crypto/Lyra2RE/cubehash.h \
   crypto/Lyra2RE/bmw.c \
-  crypto/blake.c \
-  crypto/bmw.c \
-  crypto/cubehash.c \
-  crypto/echo.c \
-  crypto/groestl.c \
-  crypto/jh.c \
-  crypto/keccak.c \
-  crypto/luffa.c \
-  crypto/shavite.c \
-  crypto/simd.c \
-  crypto/skein.c \
-  crypto/sph_blake.h \
-  crypto/sph_bmw.h \
-  crypto/sph_cubehash.h \
-  crypto/sph_echo.h \
-  crypto/sph_groestl.h \
-  crypto/sph_jh.h \
-  crypto/sph_keccak.h \
-  crypto/sph_luffa.h \
-  crypto/sph_shavite.h \
-  crypto/sph_simd.h \
-  crypto/sph_skein.h \
-  crypto/sph_types.h
+  crypto/Lyra2RE/bmw.h
+
 
 # consensus: shared between all executables that validate any consensus rules.
 libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
