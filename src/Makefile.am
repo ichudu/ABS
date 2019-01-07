@@ -322,7 +322,7 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/Lyra2RE/cubehash.c \
   crypto/Lyra2RE/bmw.c
 
-x11
+# x11
 crypto_libbitcoin_crypto_a_SOURCES += \
   crypto/blake.c \
   crypto/bmw.c \
