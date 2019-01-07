@@ -311,12 +311,7 @@ crypto_libbitcoin_crypto_a_SOURCES += \
   crypto/Lyra2RE/Lyra2.h \
   crypto/Lyra2RE/Sponge.c \
   crypto/Lyra2RE/Sponge.h \
-
   crypto/Lyra2RE/sph_bmw.h \
-
-
-
-
   crypto/Lyra2RE/sph_types.h \
   crypto/Lyra2RE/blake.c \
   crypto/Lyra2RE/blake.h \
