@@ -2558,10 +2558,10 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "    \"account\" : \"account\",    (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\",   (string) the script key\n"
             "    \"amount\" : x.xxx,         (numeric) the transaction amount in " + CURRENCY_UNIT + "\n"
-            "    \"confirmations\" : n       (numeric) The number of confirmations\n"
-            "    \"ps_rounds\" : n           (numeric) The number of PS round\n"
+            "    \"confirmations\" : n,      (numeric) The number of confirmations\n"
             "    \"spendable\" : xxx,        (bool) Whether we have the private keys to spend this output\n"
-            "    \"solvable\" : xxx          (bool) Whether we know how to spend this output, ignoring the lack of keys\n"
+            "    \"solvable\" : xxx,         (bool) Whether we know how to spend this output, ignoring the lack of keys\n"
+            "    \"ps_rounds\" : n           (numeric) The number of PS round\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -2667,7 +2667,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
                             "1. \"hexstring\"           (string, required) The hex string of the raw transaction\n"
                             "2. options               (object, optional)\n"
                             "   {\n"
-                            "     \"changeAddress\"     (string, optional, default pool address) The dash address to receive the change\n"
+                            "     \"changeAddress\"     (string, optional, default pool address) The absolute address to receive the change\n"
                             "     \"changePosition\"    (numeric, optional, default random) The index of the change output\n"
                             "     \"includeWatching\"   (boolean, optional, default false) Also select inputs which are watch only\n"
                             "     \"lockUnspents\"      (boolean, optional, default false) Lock selected unspent outputs\n"
@@ -2714,7 +2714,7 @@ UniValue fundrawtransaction(const UniValue& params, bool fHelp)
             CBitcoinAddress address(options["changeAddress"].get_str());
 
             if (!address.IsValid())
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "changeAddress must be a valid dash address");
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "changeAddress must be a valid absolute address");
 
             changeAddress = address.Get();
         }
