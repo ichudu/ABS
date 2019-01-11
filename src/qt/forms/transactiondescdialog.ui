@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>Transaction details</string>
+   <string notr="true">Transaction details</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
