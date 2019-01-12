@@ -54,5 +54,6 @@ static const int MAX_URI_LENGTH = 255;
 #define QAPP_ORG_DOMAIN "absolutecoin.net"
 #define QAPP_APP_NAME_DEFAULT "Absolute-Qt"
 #define QAPP_APP_NAME_TESTNET "Absolute-Qt-testnet"
+#define QAPP_APP_NAME_POVNET "Absolute-Qt-%s"
 
 #endif // BITCOIN_QT_GUICONSTANTS_H
