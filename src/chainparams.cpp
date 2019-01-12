@@ -388,8 +388,8 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x00000d8cfc345deda15f4897bb9ed59878fb4c84f02c478dc1165ee8fbaede56"));
         assert(genesis.hashMerkleRoot == uint256S("0x12844a9cbf517654e272975506ab56af4d5c8dde0332a0ee48ba159c72daae03"));
 
-        vFixedSeeds.clear(); //! Regtest mode doesn't have any fixed seeds.
-        vSeeds.clear();  //! Regtest mode doesn't have any DNS seeds.
+        vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
+        vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
 
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = true;

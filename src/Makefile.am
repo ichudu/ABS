@@ -154,6 +154,7 @@ BITCOIN_CORE_H = \
   script/sigcache.h \
   script/sign.h \
   script/standard.h \
+  script/ismine.h \
   spork.h \
   streams.h \
   support/allocators/secure.h \
@@ -179,7 +180,6 @@ BITCOIN_CORE_H = \
   wallet/db.h \
   wallet/rpcwallet.h \
   wallet/wallet.h \
-  wallet/wallet_ismine.h \
   wallet/walletdb.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
@@ -243,12 +243,14 @@ libbitcoin_server_a_SOURCES = \
   rpc/rawtransaction.cpp \
   rpc/server.cpp \
   script/sigcache.cpp \
+  script/ismine.cpp \
   sendalert.cpp \
   spork.cpp \
   timedata.cpp \
   torcontrol.cpp \
   txdb.cpp \
   txmempool.cpp \
+  ui_interface.cpp \
   validation.cpp \
   validationinterface.cpp \
   versionbits.cpp \
@@ -279,7 +281,6 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/rpcdump.cpp \
   wallet/rpcwallet.cpp \
   wallet/wallet.cpp \
-  wallet/wallet_ismine.cpp \
   wallet/walletdb.cpp \
   policy/rbf.cpp \
   $(BITCOIN_CORE_H)
@@ -301,36 +302,52 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.cpp \
   crypto/sha256.h \
   crypto/sha512.cpp \
-  crypto/sha512.h
-
-# Lyra2RE
-crypto_libbitcoin_crypto_a_SOURCES += \
+  crypto/sha512.h \
   crypto/Lyra2RE/Lyra2RE.c \
   crypto/Lyra2RE/Lyra2RE.h \
   crypto/Lyra2RE/Lyra2.c \
   crypto/Lyra2RE/Lyra2.h \
   crypto/Lyra2RE/Sponge.c \
   crypto/Lyra2RE/Sponge.h \
-
+  crypto/Lyra2RE/sph_blake.h \
   crypto/Lyra2RE/sph_bmw.h \
-
-
-
-
+  crypto/Lyra2RE/sph_cubehash.h \
+  crypto/Lyra2RE/sph_groestl.h \
+  crypto/Lyra2RE/sph_keccak.h \
+  crypto/Lyra2RE/sph_skein.h \
   crypto/Lyra2RE/sph_types.h \
   crypto/Lyra2RE/blake.c \
-  crypto/Lyra2RE/blake.h \
   crypto/Lyra2RE/groestl.c \
-  crypto/Lyra2RE/groestl.h \
   crypto/Lyra2RE/keccak.c \
-  crypto/Lyra2RE/keccak.h \
   crypto/Lyra2RE/skein.c \
-  crypto/Lyra2RE/skein.h \
   crypto/Lyra2RE/cubehash.c \
-  crypto/Lyra2RE/cubehash.h \
-  crypto/Lyra2RE/bmw.c \
-  crypto/Lyra2RE/bmw.h
+  crypto/Lyra2RE/bmw.c
 
+# x11
+crypto_libbitcoin_crypto_a_SOURCES += \
+  crypto/blake.c \
+  crypto/bmw.c \
+  crypto/cubehash.c \
+  crypto/echo.c \
+  crypto/groestl.c \
+  crypto/jh.c \
+  crypto/keccak.c \
+  crypto/luffa.c \
+  crypto/shavite.c \
+  crypto/simd.c \
+  crypto/skein.c \
+  crypto/sph_blake.h \
+  crypto/sph_bmw.h \
+  crypto/sph_cubehash.h \
+  crypto/sph_echo.h \
+  crypto/sph_groestl.h \
+  crypto/sph_jh.h \
+  crypto/sph_keccak.h \
+  crypto/sph_luffa.h \
+  crypto/sph_shavite.h \
+  crypto/sph_simd.h \
+  crypto/sph_skein.h \
+  crypto/sph_types.h
 
 # consensus: shared between all executables that validate any consensus rules.
 libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -498,7 +515,20 @@ absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 # absoluteconsensus library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/absoluteconsensus.h
-libabsoluteconsensus_la_SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) $(libbitcoin_consensus_a_SOURCES)
+libabsoluteconsensus_la_SOURCES = \
+  crypto/hmac_sha512.cpp \
+  crypto/ripemd160.cpp \
+  crypto/sha1.cpp \
+  crypto/sha256.cpp \
+  crypto/sha512.cpp \
+  hash.cpp \
+  primitives/transaction.cpp \
+  pubkey.cpp \
+  script/absoluteconsensus.cpp \
+  script/interpreter.cpp \
+  script/script.cpp \
+  uint256.cpp \
+  utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
   libabsoluteconsensus_la_SOURCES += compat/glibc_compat.cpp
@@ -512,8 +542,8 @@ libabsoluteconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 endif
 #
 
-CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a
-CLEANFILES += $(EXTRA_LIBRARIES)
+
+CLEANFILES = $(EXTRA_LIBRARIES)
 CLEANFILES += *.gcda *.gcno
 CLEANFILES += compat/*.gcda compat/*.gcno
 CLEANFILES += consensus/*.gcda consensus/*.gcno
@@ -529,14 +559,14 @@ CLEANFILES += zmq/*.gcda zmq/*.gcno
 
 DISTCLEANFILES = obj/build.h
 
-EXTRA_DIST = leveldb
+EXTRA_DIST = $(CTAES_DIST)
 
 clean-local:
-	-$(MAKE) -C leveldb clean
 	-$(MAKE) -C secp256k1 clean
 	-$(MAKE) -C univalue clean
 	-rm -f leveldb/*/*.gcda leveldb/*/*.gcno leveldb/helpers/memenv/*.gcda leveldb/helpers/memenv/*.gcno
 	-rm -f config.h
+	-rm -rf test/__pycache__
 
 .rc.o:
 	@test -f $(WINDRES)
