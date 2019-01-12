@@ -12,6 +12,7 @@
 
 const std::string CBaseChainParams::MAIN = "main";
 const std::string CBaseChainParams::TESTNET = "test";
+const std::string CBaseChainParams::POVNET = "pov";
 const std::string CBaseChainParams::REGTEST = "regtest";
 
 void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp)
@@ -51,6 +52,19 @@ public:
 };
 static CBaseTestNetParams testNetParams;
 
+/**
+ * PoVNET
+ */
+class CBasePoVNETParams : public CBaseChainParams
+{
+public:
+    CBasePoVNETParams(const std::string &dataDir)
+    {
+        nRPCPort = 18890;
+        strDataDir = dataDir;
+    }
+};
+static CBasePoVNETParams *PoVNETParams;
 /*
  * Regression test
  */
@@ -79,7 +93,10 @@ CBaseChainParams& BaseParams(const std::string& chain)
         return mainParams;
     else if (chain == CBaseChainParams::TESTNET)
         return testNetParams;
-    else if (chain == CBaseChainParams::REGTEST)
+    else if (chain == CBaseChainParams::POVNET) {
+        assert(PoVNETParams);
+        return *PoVNETParams;
+    } else if (chain == CBaseChainParams::REGTEST)
         return regTestParams;
     else
         throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
@@ -87,21 +104,39 @@ CBaseChainParams& BaseParams(const std::string& chain)
 
 void SelectBaseParams(const std::string& chain)
 {
+    if (chain == CBaseChainParams::POVNET) {
+        std::string PoVNETName = GetPoVNETName();
+        assert(!PoVNETName.empty());
+        PoVNETParams = new CBasePoVNETParams(PoVNETName);
+    }
     pCurrentBaseParams = &BaseParams(chain);
 }
 
 std::string ChainNameFromCommandLine()
 {
     bool fRegTest = GetBoolArg("-regtest", false);
+    bool fPoVNET = mapArgs.count("-povnet") != 0;
     bool fTestNet = GetBoolArg("-testnet", false);
 
-    if (fTestNet && fRegTest)
-        throw std::runtime_error("Invalid combination of -regtest and -testnet.");
+    int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNET ? 1 : 0) + (fTestNet ? 1 : 0);
+    if (nameParamsCount > 1)
+        throw std::runtime_error("Only one of -regtest, -testnet or -povnet can be used.");
+
+    if (fPoVNET)
+        return CBaseChainParams::POVNET;
     if (fRegTest)
         return CBaseChainParams::REGTEST;
     if (fTestNet)
         return CBaseChainParams::TESTNET;
     return CBaseChainParams::MAIN;
+}
+
+std::string GetPoVNETName()
+{
+    // This function should never be called for non-povnets
+    assert(mapArgs.count("-povnet"));
+    std::string PoVNETName = GetArg("-dpovnet", "");
+    return "povnet" + (PoVNETName.empty() ? "" : "-" + PoVNETName);
 }
 
 bool AreBaseParamsConfigured()
