@@ -1,5 +1,5 @@
-#!/usr/bin/env python2
-# Copyright (c) 2014-2015 The Bitcoin Core developers
+#!/usr/bin/env python3
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -140,7 +140,7 @@ class BitcoinTestFramework(object):
             print("JSONRPC error: "+e.error['message'])
             traceback.print_tb(sys.exc_info()[2])
         except AssertionError as e:
-            print("Assertion failed: "+ str(e))
+            print("Assertion failed: " + str(e))
             traceback.print_tb(sys.exc_info()[2])
         except KeyError as e:
             print("key not found: "+ str(e))
@@ -156,7 +156,7 @@ class BitcoinTestFramework(object):
         else:
             print("Note: absoluteds were not stopped and may still be running")
 
-        if not self.options.nocleanup and not self.options.noshutdown:
+        if not self.options.nocleanup and not self.options.noshutdown and success:
             print("Cleaning up")
             shutil.rmtree(self.options.tmpdir)
 
@@ -188,9 +188,6 @@ class ComparisonTestFramework(BitcoinTestFramework):
                           default=os.getenv("ABSOLUTED", "absoluted"),
                           help="bitcoind binary to use for reference nodes (if any)")
 
-    def setup_chain(self):
-        print "Initializing test directory "+self.options.tmpdir
-        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
     def setup_network(self):
         self.nodes = start_nodes(

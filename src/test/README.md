@@ -27,9 +27,9 @@ example, to run just the getarg_tests verbosely:
 
     test_absolute --log_level=all --run_test=getarg_tests
 
-... or to run just the doubledash test:
+... or to run just the doubleabsolute test:
 
-    test_absolute --run_test=getarg_tests/doubledash
+    test_absolute --run_test=getarg_tests/doubleabsolute
 
 Run  test_absolute --help   for the full list.
 
