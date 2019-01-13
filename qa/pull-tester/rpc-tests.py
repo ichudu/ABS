@@ -146,6 +146,7 @@ testScripts = [
     'abandonconflict.py',
     'p2p-versionbits-warning.py',
     'importprunedfunds.py',
+    'signmessages.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')
