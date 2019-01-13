@@ -1188,6 +1188,17 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         if (pfrom->fInbound)
             PushNodeVersion(pfrom, connman, GetAdjustedTime());
 
+        if (Params().NetworkIDString() == CBaseChainParams::POVNET) {
+            if (strSubVer.find(strprintf("povnet=%s", GetPoVNETName())) == std::string::npos) {
+                LogPrintf("connected to wrong PoVNET. Reported version is %s, expected povnet name is %s\n", strSubVer, GetPoVNETName());
+                if (!pfrom->fInbound)
+                    Misbehaving(pfrom->GetId(), 100); // don't try to connect again
+                else
+                    Misbehaving(pfrom->GetId(), 1); // whover connected, might just have made a mistake, don't ban him immediately
+                pfrom->fDisconnect = true;
+                return true;
+            }
+        }
         connman.PushMessageWithVersion(pfrom, INIT_PROTO_VERSION, NetMsgType::VERACK);
 
         pfrom->nServices = nServices;
