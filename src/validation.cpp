@@ -2635,8 +2635,7 @@ void ReprocessBlocks(int nBlocks)
                 CBlockIndex* pindex = (*mi).second;
                 LogPrintf("ReprocessBlocks -- %s\n", (*it).first.ToString());
 
-                CValidationState state;
-                ReconsiderBlock(state, pindex);
+                ResetBlockFailureFlags(pindex);
             }
         }
         ++it;
@@ -2916,7 +2915,7 @@ bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, C
     return true;
 }
 
-bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
+bool ResetBlockFailureFlags(CBlockIndex *pindex) {
     AssertLockHeld(cs_main);
 
     int nHeight = pindex->nHeight;
