@@ -108,6 +108,7 @@ if ENABLE_ZMQ:
 
 #Tests
 testScripts = [
+    'walletbackup.py',
     'bip68-112-113-p2p.py',
     'wallet.py',
     'wallet-hd.py',
@@ -130,7 +131,6 @@ testScripts = [
     'fundrawtransaction.py',
     'fundrawtransaction-hd.py',
     'signrawtransactions.py',
-    'walletbackup.py',
     'nodehandling.py',
     'reindex.py',
     'addressindex.py',
