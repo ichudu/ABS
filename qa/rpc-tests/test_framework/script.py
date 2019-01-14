@@ -6,6 +6,7 @@
 # script.py
 #
 # This file is modified from python-bitcoinlib.
+#
 
 """Scripts
 
