@@ -29,7 +29,6 @@ import subprocess
 import tempfile
 import re
 
-sys.path.append("qa/pull-tester/")
 from tests_config import *
 BOLD = ("","")
 if os.name == 'posix':
@@ -236,6 +235,54 @@ def runtests():
         print("Cleaning up coverage data")
         coverage.cleanup()
 
+    sys.exit(not all_passed)
+
+
+class RPCTestHandler:
+    """
+    Trigger the testscrips passed in via the list.
+    """
+
+    def __init__(self, num_tests_parallel, test_list=None, flags=None):
+        assert(num_tests_parallel >= 1)
+        self.num_jobs = num_tests_parallel
+        self.test_list = test_list
+        self.flags = flags
+        self.num_running = 0
+        self.jobs = []
+
+    def get_next(self):
+        while self.num_running < self.num_jobs and self.test_list:
+            # Add tests
+            self.num_running += 1
+            t = self.test_list.pop(0)
+            port_seed = ["--portseed=%s" % len(self.test_list)]
+            log_stdout = tempfile.SpooledTemporaryFile(max_size=2**16)
+            log_stderr = tempfile.SpooledTemporaryFile(max_size=2**16)
+            self.jobs.append((t,
+                              time.time(),
+                              subprocess.Popen((RPC_TESTS_DIR + t).split() + self.flags + port_seed,
+                                               universal_newlines=True,
+                                               stdout=log_stdout,
+                                               stderr=log_stderr),
+                              log_stdout,
+                              log_stderr))
+        if not self.jobs:
+            raise IndexError('%s from empty list' % __name__)
+        while True:
+            # Return first proc that finishes
+            time.sleep(.5)
+            for j in self.jobs:
+                (name, time0, proc, log_out, log_err) = j
+                if proc.poll() is not None:
+                    log_out.seek(0), log_err.seek(0)
+                    [stdout, stderr] = [l.read().decode('utf-8') for l in (log_out, log_err)]
+                    log_out.close(), log_err.close()
+                    passed = stderr == "" and proc.returncode == 0
+                    self.num_running -= 1
+                    self.jobs.remove(j)
+                    return name, stdout, stderr, passed, int(time.time() - time0)
+            print('.', end='', flush=True)
 
 class RPCCoverage(object):
     """
@@ -254,7 +301,7 @@ class RPCCoverage(object):
     """
     def __init__(self):
         self.dir = tempfile.mkdtemp(prefix="coverage")
-        self.flag = '--coveragedir %s' % self.dir
+        self.flag = '--coveragedir=%s' % self.dir
 
     def report_rpc_coverage(self):
         """
