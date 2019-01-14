@@ -37,7 +37,7 @@ if os.name == 'posix':
     # terminal via ANSI escape sequences:
     BOLD = ('\033[0m', '\033[1m')
 
-RPC_TESTS_DIR = SRCDIR + '/qa/rpc-tests/'
+RPC_TESTS_DIR = BUILDDIR + '/qa/rpc-tests/'
 
 #If imported values are not defined then set to zero (or disabled)
 if 'ENABLE_WALLET' not in vars():
@@ -60,29 +60,33 @@ if ENABLE_ZMQ:
 
 ENABLE_COVERAGE=0
 
-#Create a set to store arguments and create the passOn string
+#Create a set to store arguments and create the passon string
 opts = set()
-passOn = ""
-p = re.compile("^--")
+passon_args = []
+PASSON_REGEX = re.compile("^--")
+PARALLEL_REGEX = re.compile('^-parallel=')
 
-bold = ("","")
-if (os.name == 'posix'):
-    bold = ('\033[0m', '\033[1m')
+print_help = False
+run_parallel = 4
 
 for arg in sys.argv[1:]:
+    if arg == "--help" or arg == "-h" or arg == "-?":
+        print_help = True
+        break
     if arg == '--coverage':
         ENABLE_COVERAGE = 1
-    elif (p.match(arg) or arg == "-h"):
-        passOn += " " + arg
+    elif PASSON_REGEX.match(arg):
+        passon_args.append(arg)
+    elif PARALLEL_REGEX.match(arg):
+        run_parallel = int(arg.split(sep='=', maxsplit=1)[1])
     else:
         opts.add(arg)
 
 #Set env vars
-buildDir = BUILDDIR
 if "ABSOLUTED" not in os.environ:
-    os.environ["ABSOLUTED"] = buildDir + '/src/absoluted' + EXEEXT
+    os.environ["ABSOLUTED"] = BUILDDIR + '/src/absoluted' + EXEEXT
 if "ABSOLUTECLI" not in os.environ:
-    os.environ["ABSOLUTECLI"] = buildDir + '/src/absolute-cli' + EXEEXT
+    os.environ["ABSOLUTECLI"] = BUILDDIR + '/src/absolute-cli' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9
@@ -175,50 +179,56 @@ testScriptsExt = [
     # 'pruning.py', # leave pruning last as it takes a REALLY long time #### Prune mode is incompatible with -txindex.
 ]
 
+
 def runtests():
+    test_list = []
+    if '-extended' in opts:
+        test_list = testScripts + testScriptsExt
+    elif len(opts) == 0 or (len(opts) == 1 and "-win" in opts):
+        test_list = testScripts
+    else:
+        for t in testScripts + testScriptsExt:
+            if t in opts or re.sub(".py$", "", t) in opts:
+                test_list.append(t)
+
+    if print_help:
+        # Only print help of the first script and exit
+        subprocess.check_call((RPC_TESTS_DIR + test_list[0]).split() + ['-h'])
+        sys.exit(0)
+
     coverage = None
 
     if ENABLE_COVERAGE:
         coverage = RPCCoverage()
         print("Initializing coverage directory at %s\n" % coverage.dir)
+    flags = ["--srcdir=%s/src" % BUILDDIR] + passon_args
+    if coverage:
+        flags.append(coverage.flag)
 
-    rpcTestDir = buildDir + '/qa/rpc-tests/'
-    run_extended = '-extended' in opts
-    cov_flag = coverage.flag if coverage else ''
-    flags = " --srcdir %s/src %s %s" % (buildDir, cov_flag, passOn)
+    if len(test_list) > 1:
+        # Populate cache
+        subprocess.check_output([RPC_TESTS_DIR + 'create_cache.py'] + flags)
 
     #Run Tests
-    for i in range(len(testScripts)):
-        if (len(opts) == 0
-                or (len(opts) == 1 and "-win" in opts )
-                or run_extended
-                or testScripts[i] in opts
-                or re.sub(".py$", "", testScripts[i]) in opts ):
+    max_len_name = len(max(test_list, key=len))
+    time_sum = 0
+    time0 = time.time()
+    job_queue = RPCTestHandler(run_parallel, test_list, flags)
+    results = BOLD[1] + "%s | %s | %s\n\n" % ("TEST".ljust(max_len_name), "PASSED", "DURATION") + BOLD[0]
+    all_passed = True
+    for _ in range(len(test_list)):
+        (name, stdout, stderr, passed, duration) = job_queue.get_next()
+        all_passed = all_passed and passed
+        time_sum += duration
 
-            print("Running testscript %s%s%s ..." % (bold[1], testScripts[i], bold[0]))
-            time0 = time.time()
-            subprocess.check_call(
-                rpcTestDir + testScripts[i] + flags, shell=True)
-            print("Duration: %s s\n" % (int(time.time() - time0)))
-
-            # exit if help is called so we print just one set of
-            # instructions
-            p = re.compile(" -h| --help")
-            if p.match(passOn):
-                sys.exit(0)
-
-    # Run Extended Tests
-    for i in range(len(testScriptsExt)):
-        if (run_extended or testScriptsExt[i] in opts
-                or re.sub(".py$", "", testScriptsExt[i]) in opts):
-
-            print(
-                "Running 2nd level testscript "
-                + "%s%s%s ..." % (bold[1], testScriptsExt[i], bold[0]))
-            time0 = time.time()
-            subprocess.check_call(
-                rpcTestDir + testScriptsExt[i] + flags, shell=True)
-            print("Duration: %s s\n" % (int(time.time() - time0)))
+        print('\n' + BOLD[1] + name + BOLD[0] + ":")
+        print(stdout)
+        print('stderr:\n' if not stderr == '' else '', stderr)
+        results += "%s | %s | %s s\n" % (name.ljust(max_len_name), str(passed).ljust(6), duration)
+        print("Pass: %s%s%s, Duration: %s s\n" % (BOLD[1], passed, BOLD[0], duration))
+    results += BOLD[1] + "\n%s | %s | %s s (accumulated)" % ("ALL".ljust(max_len_name), str(all_passed).ljust(6), time_sum) + BOLD[0]
+    print(results)
+    print("\nRuntime: %s s" % (int(time.time() - time0)))
 
     if coverage:
         coverage.report_rpc_coverage()
