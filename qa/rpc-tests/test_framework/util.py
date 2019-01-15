@@ -157,6 +157,8 @@ def sync_mempools(rpc_connections, wait=1, timeout=60):
         if num_match == len(rpc_connections):
             return True
         time.sleep(wait)
+        timeout -= wait
+    raise AssertionError("Mempool sync failed")
 
 def sync_masternodes(rpc_connections):
     for node in rpc_connections:
