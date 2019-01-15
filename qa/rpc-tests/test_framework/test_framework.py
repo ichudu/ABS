@@ -9,7 +9,6 @@ import logging
 import optparse
 import os
 import sys
-
 import shutil
 import tempfile
 import traceback
@@ -36,6 +35,7 @@ class BitcoinTestFramework(object):
         self.num_nodes = 4
         self.setup_clean_chain = False
         self.nodes = None
+
     def run_test(self):
         raise NotImplementedError
 
@@ -120,6 +120,7 @@ class BitcoinTestFramework(object):
         (self.options, self.args) = parser.parse_args()
 
         self.options.tmpdir += '/' + str(self.options.port_seed)
+
         if self.options.trace_rpc:
             logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
@@ -127,6 +128,7 @@ class BitcoinTestFramework(object):
             enable_coverage(self.options.coveragedir)
 
         PortSeed.n = self.options.port_seed
+
         os.environ['PATH'] = self.options.srcdir+":"+self.options.srcdir+"/qt:"+os.environ['PATH']
 
         check_json_precision()
@@ -199,7 +201,6 @@ class ComparisonTestFramework(BitcoinTestFramework):
         parser.add_option("--refbinary", dest="refbinary",
                           default=os.getenv("ABSOLUTED", "absoluted"),
                           help="bitcoind binary to use for reference nodes (if any)")
-
 
     def setup_network(self):
         self.nodes = start_nodes(
