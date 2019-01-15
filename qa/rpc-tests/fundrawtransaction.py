@@ -199,7 +199,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         try:
             self.nodes[2].fundrawtransaction(rawtx, {'foo': 'bar'})
             raise AssertionError("Accepted invalid option foo")
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             assert("Unexpected key foo" in e.error['message'])
 
 
@@ -224,7 +224,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         try:
             self.nodes[2].fundrawtransaction(rawtx, {'changeAddress': 'foobar'})
             raise AssertionError("Accepted invalid absolute address")
-        except JSONRPCException,e:
+        except JSONRPCException as e:
             assert("changeAddress must be a valid absolute address" in e.error['message'])
 
 
