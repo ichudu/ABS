@@ -53,6 +53,10 @@ The Absolute Core repo's [root README](/README.md) contains relevant information
 - [Shared Libraries](shared-libraries.md)
 - [BIPS](bips.md)
 - [Dnsseed Policy](dnsseed-policy.md)
+- [Benchmarking](benchmarking.md)
+
+### Resources
+* Discuss on the Absolute Discord Server if advice is needed 
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)
