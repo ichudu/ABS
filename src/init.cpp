@@ -43,9 +43,7 @@
 #include "utilmoneystr.h"
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
-#include "wallet/db.h"
 #include "wallet/wallet.h"
-#include "wallet/walletdb.h"
 #endif
 
 #include "activemasternode.h"
@@ -160,7 +158,7 @@ static const char* FEE_ESTIMATES_FILENAME="fee_estimates.dat";
 // shutdown thing.
 //
 
-volatile bool fRequestShutdown = false;
+volatile sig_atomic_t fRequestShutdown = false;
 
 void StartShutdown()
 {
@@ -171,6 +169,11 @@ bool ShutdownRequested()
     return fRequestShutdown || fRestartRequested;
 }
 
+/**
+ * This is a minimally invasive approach to shutdown on LevelDB read errors from the
+ * chainstate, while keeping user interface out of the common library, which is shared
+ * between bitcoind, and bitcoin-qt and non-server tools.
+*/
 class CCoinsViewErrorCatcher : public CCoinsViewBacked
 {
 public:
@@ -587,7 +590,7 @@ std::string HelpMessage(HelpMessageMode mode)
 std::string LicenseInfo()
 {
     // todo: remove urls from translations on next change
-    return CopyrightHolders(_("Copyright (C)"), 2018, COPYRIGHT_YEAR) + "\n" +
+    return CopyrightHolders(_("Copyright (C)"), 2019, COPYRIGHT_YEAR) + "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
            "\n" +
@@ -1179,9 +1182,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (fPrintToDebugLog)
         OpenDebugLog();
 
-#ifdef ENABLE_WALLET
-    LogPrintf("Using BerkeleyDB version %s\n", DbEnv::version(0, 0, 0));
-#endif
     if (!fLogTimestamps)
         LogPrintf("Startup time: %s\n", DateTimeStrFormat("%Y-%m-%d %H:%M:%S", GetTime()));
     LogPrintf("Default data directory %s\n", GetDefaultDataDir().string());
@@ -1490,6 +1490,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
+                if (chainparams.NetworkIDString() == CBaseChainParams::POVNET && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.PoVNETGenesisBlock().GetHash()) == 0)
+                    return InitError(_("Incorrect or no povnet genesis block found. Wrong datadir for povnet specified?"));
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex(chainparams)) {
                     strLoadError = _("Error initializing block database");
@@ -1511,8 +1513,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 uiInterface.InitMessage(_("Verifying blocks..."));
                 if (fHavePruned && GetArg("-checkblocks", DEFAULT_CHECKBLOCKS) > MIN_BLOCKS_TO_KEEP) {
-                    LogPrintf("Prune: pruned datadir may not have more than %d blocks; -checkblocks=%d may fail\n",
-                        MIN_BLOCKS_TO_KEEP, GetArg("-checkblocks", DEFAULT_CHECKBLOCKS));
+                    LogPrintf("Prune: pruned datadir may not have more than %d blocks; only checking available blocks",
+                        MIN_BLOCKS_TO_KEEP);
                 }
 
                 {
@@ -1617,10 +1619,17 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             vImportFiles.push_back(strFile);
     }
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
-    if (chainActive.Tip() == NULL) {
-        LogPrintf("Waiting for genesis block to be imported...\n");
-        while (!fRequestShutdown && chainActive.Tip() == NULL)
+    // Wait for genesis block to be processed
+    bool fHaveGenesis = false;
+    while (!fHaveGenesis && !fRequestShutdown) {
+        {
+            LOCK(cs_main);
+            fHaveGenesis = (chainActive.Tip() != NULL);
+        }
+
+        if (!fHaveGenesis) {
             MilliSleep(10);
+        }
     }
 
     // ********************************************************* Step 11a: setup PrivateSend
@@ -1764,8 +1773,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!strErrors.str().empty())
         return InitError(strErrors.str());
 
-    RandAddSeedPerfmon();
-
     //// debug print
     LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
     LogPrintf("chainActive.Height() = %d\n",   chainActive.Height());
@@ -1803,7 +1810,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (!connman.Start(scheduler, strNodeError, connOptions))
         return InitError(strNodeError);
-
 
     // ********************************************************* Step 13: finished
 
