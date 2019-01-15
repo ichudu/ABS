@@ -19,8 +19,8 @@ Sanity checks:
 
 Once you've got the right hardware and software:
 
-    git clone git://github.com/absolute-community/absolute/issues
-    git clone git://github.com/devrandom/gitian-builder.git
+    git clone git://github.com/absolute-community/absolute
+    git clone git://github.com/devrandom/gitian-builder
     mkdir gitian-builder/inputs
     cd gitian-builder/inputs
 
