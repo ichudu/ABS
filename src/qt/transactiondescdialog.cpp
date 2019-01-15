@@ -18,6 +18,7 @@ TransactionDescDialog::TransactionDescDialog(const QModelIndex &idx, QWidget *pa
 {
     ui->setupUi(this);
 
+    setWindowTitle(tr("Details for %1").arg(idx.data(TransactionTableModel::TxIDRole).toString()));
     /* Open CSS when configured */
     this->setStyleSheet(GUIUtil::loadStyleSheet());
 
