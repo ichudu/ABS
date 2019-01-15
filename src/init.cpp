@@ -590,7 +590,7 @@ std::string HelpMessage(HelpMessageMode mode)
 std::string LicenseInfo()
 {
     // todo: remove urls from translations on next change
-    return CopyrightHolders(_("Copyright (C)"), 2018, COPYRIGHT_YEAR) + "\n" +
+    return CopyrightHolders(_("Copyright (C)"), 2019, COPYRIGHT_YEAR) + "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
            "\n" +
@@ -1490,6 +1490,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
+                if (chainparams.NetworkIDString() == CBaseChainParams::POVNET && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.PoVNETGenesisBlock().GetHash()) == 0)
+                    return InitError(_("Incorrect or no povnet genesis block found. Wrong datadir for povnet specified?"));
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex(chainparams)) {
                     strLoadError = _("Error initializing block database");
