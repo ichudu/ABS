@@ -252,6 +252,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         dec_tx  = self.nodes[2].decoderawtransaction(rawtxfund['hex'])
         out = dec_tx['vout'][0];
         assert_equal(change, out['scriptPubKey']['addresses'][0])
+
+
+
         #########################################################################
         # test a fundrawtransaction with a VIN smaller than the required amount #
         #########################################################################
@@ -572,7 +575,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         # make sure funds are received at node1
         assert_equal(oldBalance+Decimal('511.0000000'), self.nodes[0].getbalance())
-
 
         ###############################################
         # multiple (~19) inputs tx test | Compare fee #

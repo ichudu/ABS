@@ -30,6 +30,7 @@ import tempfile
 import re
 
 from tests_config import *
+
 BOLD = ("","")
 if os.name == 'posix':
     # primitive formatting on supported
@@ -283,6 +284,7 @@ class RPCTestHandler:
                     self.jobs.remove(j)
                     return name, stdout, stderr, passed, int(time.time() - time0)
             print('.', end='', flush=True)
+
 
 class RPCCoverage(object):
     """
