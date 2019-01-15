@@ -432,9 +432,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
 
             "\nExamples:\n"
             "\nCreate a multisig address from 2 addresses\n"
-            + HelpExampleCli("createmultisig", "2 \"[\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\",\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\"]\"") +
+            + HelpExampleCli("createmultisig", "2 \"[\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\",\\\"ARqZAt8WGwcoe8NX8SeFA2GpLQpwVNWQsU\\\"]\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("createmultisig", "2, \"[\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\",\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\"]\"")
+            + HelpExampleRpc("createmultisig", "2, \"[\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\",\\\"ARqZAt8WGwcoe8NX8SeFA2GpLQpwVNWQsU\\\"]\"")
         ;
         throw runtime_error(msg);
     }
