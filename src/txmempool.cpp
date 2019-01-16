@@ -916,13 +916,18 @@ void CTxMemPool::queryHashes(vector<uint256>& vtxid)
     vtxid.clear();
 
     LOCK(cs);
-    vtxid.reserve(mapTx.size());
-    for (indexed_transaction_set::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi)
-        vtxid.push_back(mi->GetTx().GetHash());
-    std::sort(vtxid.begin(), vtxid.end(), DepthAndScoreComparator(this));
+    auto iters = GetSortedDepthAndScore();
+
+    std::vector<TxMempoolInfo> ret;
+    ret.reserve(mapTx.size());
+    for (auto it : iters) {
+        ret.push_back(TxMempoolInfo{it->GetSharedTx(), it->GetTime(), CFeeRate(it->GetFee(), it->GetTxSize())});
+    }
+
+    return ret;
 }
 
-bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
+std::shared_ptr<const CTransaction> CTxMemPool::get(const uint256& hash) const
 {
     LOCK(cs);
     indexed_transaction_set::const_iterator i = mapTx.find(hash);
@@ -931,7 +936,7 @@ bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
     return true;
 }
 
-bool CTxMemPool::lookupFeeRate(const uint256& hash, CFeeRate& feeRate) const
+TxMempoolInfo CTxMemPool::info(const uint256& hash) const
 {
     LOCK(cs);
     indexed_transaction_set::const_iterator i = mapTx.find(hash);

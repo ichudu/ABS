@@ -644,8 +644,9 @@ public:
         return (it != mapTx.end() && outpoint.n < it->GetTx().vout.size());
     }
 
-    bool lookup(uint256 hash, CTransaction& result) const;
-    bool lookupFeeRate(const uint256& hash, CFeeRate& feeRate) const;
+    std::shared_ptr<const CTransaction> get(const uint256& hash) const;
+    TxMempoolInfo info(const uint256& hash) const;
+    std::vector<TxMempoolInfo> infoAll() const;
 
     /** Estimate fee rate needed to get into the next nBlocks
      *  If no answer can be given at nBlocks, return an estimate
