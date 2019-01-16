@@ -572,7 +572,6 @@ extern bool fDiscover;
 extern bool fListen;
 extern bool fRelayTxes;
 
-
 extern limitedmap<uint256, int64_t> mapAlreadyAskedFor;
 
 /** Subversion as sent to the P2P network in `version` messages */
