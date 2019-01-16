@@ -7,12 +7,14 @@
 #define BITCOIN_TXMEMPOOL_H
 
 #include <list>
+#include <memory>
 #include <set>
 
 #include "addressindex.h"
 #include "spentindex.h"
 #include "amount.h"
 #include "coins.h"
+#include "indirectmap.h"
 #include "primitives/transaction.h"
 #include "sync.h"
 
@@ -306,18 +308,19 @@ struct ancestor_score {};
 
 class CBlockPolicyEstimator;
 
-/** An inpoint - a combination of a transaction and an index n into its vin */
-class CInPoint
+/**
+ * Information about a mempool transaction.
+ */
+struct TxMempoolInfo
 {
-public:
-    const CTransaction* ptx;
-    uint32_t n;
+    /** The transaction itself */
+    std::shared_ptr<const CTransaction> tx;
 
-    CInPoint() { SetNull(); }
-    CInPoint(const CTransaction* ptxIn, uint32_t nIn) { ptx = ptxIn; n = nIn; }
-    void SetNull() { ptx = NULL; n = (uint32_t) -1; }
-    bool IsNull() const { return (ptx == NULL && n == (uint32_t) -1); }
-    size_t DynamicMemoryUsage() const { return 0; }
+    /** Time the transaction entered the mempool. */
+    int64_t nTime;
+
+    /** Feerate of the transaction. */
+    CFeeRate feeRate;
 };
 
 class SaltedTxidHasher
@@ -503,8 +506,10 @@ private:
     void UpdateParent(txiter entry, txiter parent, bool add);
     void UpdateChild(txiter entry, txiter child, bool add);
 
+    std::vector<indexed_transaction_set::const_iterator> GetSortedDepthAndScore() const;
+
 public:
-    std::map<COutPoint, CInPoint> mapNextTx;
+    indirectmap<COutPoint, const CTransaction*> mapNextTx;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
     /** Create a new CTxMemPool.
