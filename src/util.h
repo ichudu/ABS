@@ -21,6 +21,7 @@
 #include "utiltime.h"
 #include "amount.h"
 
+#include <atomic>
 #include <exception>
 #include <map>
 #include <stdint.h>
@@ -32,7 +33,7 @@
 #include <boost/thread/exceptions.hpp>
 
 
-#include <signal.h>
+
 
 // Debugging macros
 
@@ -75,7 +76,7 @@ extern bool fLogTimestamps;
 extern bool fLogTimeMicros;
 extern bool fLogThreadNames;
 extern bool fLogIPs;
-extern volatile sig_atomic_t fReopenDebugLog;
+extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
 
 extern const char * const BITCOIN_CONF_FILENAME;
