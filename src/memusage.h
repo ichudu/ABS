@@ -74,6 +74,14 @@ private:
     X x;
 };
 
+struct stl_shared_counter
+{
+    /* Various platforms use different sized counters here.
+     * Conservatively assume that they won't be larger than size_t. */
+    void* class_type;
+    size_t use_count;
+    size_t weak_count;
+};
 template<typename X>
 static inline size_t DynamicUsage(const std::vector<X>& v)
 {
