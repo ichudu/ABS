@@ -1512,11 +1512,6 @@ void MapPort(bool)
 }
 #endif
 
-
-
-
-
-
 void CConnman::ThreadDNSAddressSeed()
 {
     // goal: only query DNS seeds if address need is acute
@@ -1569,17 +1564,6 @@ void CConnman::ThreadDNSAddressSeed()
 
     LogPrintf("%d addresses found from DNS seeds\n", found);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 void CConnman::DumpAddresses()
 {
