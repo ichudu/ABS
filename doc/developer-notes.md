@@ -286,10 +286,9 @@ C++ data structures
   - *Rationale*: Behavior is undefined. In C++ parlor this means "may reformat
     the universe", in practice this has resulted in at least one hard-to-debug crash bug
 
-- Watch out for vector out-of-bounds exceptions. `&vch[0]` is illegal for an
-  empty vector, `&vch[vch.size()]` is always illegal. Use `begin_ptr(vch)` and
-  `end_ptr(vch)` to get the begin and end pointer instead (defined in
-  `serialize.h`)
+- Watch out for out-of-bounds vector access. `&vch[vch.size()]` is illegal,
+  including `&vch[0]` for an empty vector. Use `vch.data()` and `vch.data() +
+  vch.size()` instead.
 
 - Vector bounds checking is only enabled in debug mode. Do not rely on it
 
