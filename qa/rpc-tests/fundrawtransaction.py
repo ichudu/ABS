@@ -58,7 +58,6 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 10)
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 50)
 
-        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
@@ -569,7 +568,6 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[1].walletpassphrase("test", 100)
         signedTx = self.nodes[1].signrawtransaction(fundedTx['hex'])
         txId = self.nodes[1].sendrawtransaction(signedTx['hex'])
-        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
@@ -588,7 +586,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         for i in range(0,20):
             self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.01)
-        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
@@ -619,7 +616,6 @@ class RawTransactionsTest(BitcoinTestFramework):
 
         for i in range(0,20):
             self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.01)
-        self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
