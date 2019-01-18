@@ -904,7 +904,7 @@ void InitLogging()
     fLogIPs = GetBoolArg("-logips", DEFAULT_LOGIPS);
 
     LogPrintf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-    LogPrintf("Absolute Core version %s (%s)\n", FormatFullVersion(), CLIENT_DATE);
+    LogPrintf("Absolute Core version %s\n", FormatFullVersion());
 }
 
 /** Initialize Absolute Core.
