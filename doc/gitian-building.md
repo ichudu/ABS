@@ -261,7 +261,6 @@ adduser debian sudo
 Then set up LXC and the rest with the following, which is a complex jumble of settings and workarounds:
 
 ```bash
-sudo -s
 # the version of lxc-start in Debian needs to run as root, so make sure
 # that the build script can execute it without providing a password
 echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-start" > /etc/sudoers.d/gitian-lxc
