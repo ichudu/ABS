@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[absolute.qt-translation-012x]
+file_filter = src/qt/locale/absolute_<lang>.ts
+source_file = src/qt/locale/absolute_en.ts
+source_lang = en
