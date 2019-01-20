@@ -105,6 +105,9 @@ CTxMemPool mempool(::minRelayTxFee);
 FeeFilterRounder filterRounder(::minRelayTxFee);
 map<uint256, int64_t> mapRejectedBlocks GUARDED_BY(cs_main);
 
+// TODO temporary hack for backporting
+void LoopMapOrphanTransactionsByPrev(const CTransaction &tx, std::vector<uint256> &vOrphanErase);
+int EraseOrphanTx(uint256 hash);
 /**
  * Returns true if there are nRequired or more blocks of minVersion or above
  * in the last Consensus::Params::nMajorityWindow blocks, starting at pstart and going backwards.
@@ -2142,7 +2145,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
             //        vOrphanErase.push_back(orphanHash);
             //    }
             //}
-            // TODO This is a temporary solution while backporting Bitcoin 0.13 changes into Dash
+            // TODO This is a temporary solution while backporting Bitcoin 0.13 changes into Absolute
             //      It is needed because the splitting of main.cpp into validation.cpp/net_processing.cpp was done out of order
             //      When we catch up with backporting, the above loop will be at the correct place in net_processing.cpp
             //      and this hack can be removed
