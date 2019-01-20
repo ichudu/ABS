@@ -31,7 +31,7 @@ remotes:
 - "url": "https://github.com/absolute-community/absolute.git"
   "dir": "absolute"
 files:
-- "MacOSX10.9.sdk.tar.gz"
+- "MacOSX10.11.sdk.tar.gz"
 script: |
   WRAP_DIR=$HOME/wrapped
   HOSTS="x86_64-apple-darwin11"
@@ -76,24 +76,27 @@ script: |
     done
   done
   }
-  export PATH=${WRAP_DIR}:${PATH}
   # Faketime for depends so intermediate results are comparable
+  export PATH_orig=${PATH}
   create_global_faketime_wrappers "2000-01-01 12:00:00"
   create_per-host_faketime_wrappers "2000-01-01 12:00:00"
+  export PATH=${WRAP_DIR}:${PATH}
 
   cd absolute
   BASEPREFIX=`pwd`/depends
 
   mkdir -p ${BASEPREFIX}/SDKs
-  tar -C ${BASEPREFIX}/SDKs -xf ${BUILD_DIR}/MacOSX10.9.sdk.tar.gz
+  tar -C ${BASEPREFIX}/SDKs -xf ${BUILD_DIR}/MacOSX10.11.sdk.tar.gz
 
   # Build dependencies for each host
   for i in $HOSTS; do
     make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
   done
   # Faketime for binaries
+  export PATH=${PATH_orig}
   create_global_faketime_wrappers "${REFERENCE_DATETIME}"
   create_per-host_faketime_wrappers "${REFERENCE_DATETIME}"
+  export PATH=${WRAP_DIR}:${PATH}
 
   # Create the release tarball using (arbitrarily) the first host
   ./autogen.sh
