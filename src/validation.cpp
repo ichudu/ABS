@@ -216,7 +216,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
         return true;
     if ((int64_t)tx.nLockTime < ((int64_t)tx.nLockTime < LOCKTIME_THRESHOLD ? (int64_t)nBlockHeight : nBlockTime))
         return true;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+    for (const auto& txin : tx.vin) {
         if (!(txin.nSequence == CTxIn::SEQUENCE_FINAL))
             return false;
     }
@@ -430,11 +430,11 @@ bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp, bool 
 unsigned int GetLegacySigOpCount(const CTransaction& tx)
 {
     unsigned int nSigOps = 0;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    for (const auto& txin : tx.vin)
     {
         nSigOps += txin.scriptSig.GetSigOpCount(false);
     }
-    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    for (const auto& txout : tx.vout)
     {
         nSigOps += txout.scriptPubKey.GetSigOpCount(false);
     }
@@ -497,7 +497,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 
     // Check for negative or overflow output values
     CAmount nValueOut = 0;
-    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    for (const auto& txout : tx.vout)
     {
         if (txout.nValue < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative");
@@ -512,7 +512,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     set<COutPoint> vInOutPoints;
 
 /** DISABLE PREMINE **/	
-	BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    for (const auto& txin : tx.vin)
     {
         CTransaction txPrev;
         uint256 hash;
@@ -538,7 +538,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     }
 	
 /** END DISABLE PREMINE **/
-/*    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+/*    for (const auto& txin : tx.vin)
     {
         if (vInOutPoints.count(txin.prevout))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
@@ -553,7 +553,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state)
     }
     else
     {
-        BOOST_FOREACH(const CTxIn& txin, tx.vin)
+        for (const auto& txin : tx.vin)
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
     }
@@ -3244,13 +3244,13 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
     // END ABSOLUTE
 
     // Check transactions
-    BOOST_FOREACH(const CTransaction& tx, block.vtx)
+    for (const auto& tx : block.vtx)
         if (!CheckTransaction(tx, state))
             return state.Invalid(false, state.GetRejectCode(), state.GetRejectReason(),
                                  strprintf("Transaction check failed (tx hash %s) %s", tx.GetHash().ToString(), state.GetDebugMessage()));
 
     unsigned int nSigOps = 0;
-    BOOST_FOREACH(const CTransaction& tx, block.vtx)
+    for (const auto& tx : block.vtx)
     {
         nSigOps += GetLegacySigOpCount(tx);
     }
@@ -3335,7 +3335,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     // Check that all transactions are finalized and not over-sized
     // Also count sigops
     unsigned int nSigOps = 0;
-    BOOST_FOREACH(const CTransaction& tx, block.vtx) {
+    for (const auto& tx : block.vtx) {
         if (!IsFinalTx(tx, nHeight, nLockTimeCutoff)) {
             return state.DoS(10, false, REJECT_INVALID, "bad-txns-nonfinal", false, "non-final transaction");
         }
