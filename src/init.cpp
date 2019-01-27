@@ -620,6 +620,20 @@ static void BlockNotifyCallback(bool initialSync, const CBlockIndex *pBlockIndex
     boost::thread t(runCommand, strCmd); // thread runs free
 }
 
+static bool fHaveGenesis = false;
+static boost::mutex cs_GenesisWait;
+static CConditionVariable condvar_GenesisWait;
+
+static void BlockNotifyGenesisWait(bool, const CBlockIndex *pBlockIndex)
+{
+    if (pBlockIndex != NULL) {
+        {
+            boost::unique_lock<boost::mutex> lock_GenesisWait(cs_GenesisWait);
+            fHaveGenesis = true;
+        }
+        condvar_GenesisWait.notify_all();
+    }
+}
 struct CImportingNow
 {
     CImportingNow() {
@@ -1442,7 +1456,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // cache size calculations
     int64_t nTotalCache = (GetArg("-dbcache", nDefaultDbCache) << 20);
     nTotalCache = std::max(nTotalCache, nMinDbCache << 20); // total cache cannot be less than nMinDbCache
-    nTotalCache = std::min(nTotalCache, nMaxDbCache << 20); // total cache cannot be greated than nMaxDbcache
+    nTotalCache = std::min(nTotalCache, nMaxDbCache << 20); // total cache cannot be greater than nMaxDbcache
     int64_t nBlockTreeDBCache = nTotalCache / 8;
     nBlockTreeDBCache = std::min(nBlockTreeDBCache, (GetBoolArg("-txindex", DEFAULT_TXINDEX) ? nMaxBlockDBAndTxIndexCache : nMaxBlockDBCache) << 20);
     nTotalCache -= nBlockTreeDBCache;
@@ -1620,6 +1634,16 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 10: import blocks
 
+    if (!CheckDiskSpace())
+        return false;
+
+    // Either install a handler to notify us when genesis activates, or set fHaveGenesis directly.
+    // No locking, as this happens before any background thread is started.
+    if (chainActive.Tip() == NULL) {
+        uiInterface.NotifyBlockTip.connect(BlockNotifyGenesisWait);
+    } else {
+        fHaveGenesis = true;
+    }
     if (mapArgs.count("-blocknotify"))
         uiInterface.NotifyBlockTip.connect(BlockNotifyCallback);
 
@@ -1631,16 +1655,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
     // Wait for genesis block to be processed
-    bool fHaveGenesis = false;
-    while (!fHaveGenesis && !fRequestShutdown) {
-        {
-            LOCK(cs_main);
-            fHaveGenesis = (chainActive.Tip() != NULL);
+    {
+        boost::unique_lock<boost::mutex> lock(cs_GenesisWait);
+        while (!fHaveGenesis) {
+            condvar_GenesisWait.wait(lock);
         }
 
-        if (!fHaveGenesis) {
-            MilliSleep(10);
-        }
+        uiInterface.NotifyBlockTip.disconnect(BlockNotifyGenesisWait);
     }
 
     // ********************************************************* Step 11a: setup PrivateSend
@@ -1777,12 +1798,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 #endif // ENABLE_WALLET
 
     // ********************************************************* Step 12: start node
-
-    if (!CheckDiskSpace())
-        return false;
-
-    if (!strErrors.str().empty())
-        return InitError(strErrors.str());
 
     //// debug print
     LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());

@@ -2186,6 +2186,7 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
         DumpBanlist();
     }
 
+    uiInterface.InitMessage(_("Starting network threads..."));
     fAddressesInitialized = true;
 
     if (semOutbound == NULL) {
