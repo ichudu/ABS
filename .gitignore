@@ -103,7 +103,7 @@ coverage_percent.txt
 
 #build tests
 qa/tmp
-cache/
+qa/cache/*
 share/BitcoindComparisonTool.jar
 
 !src/leveldb*/Makefile
