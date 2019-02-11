@@ -47,9 +47,9 @@ OSX_PACKAGING = $(OSX_DEPLOY_SCRIPT) $(OSX_FANCY_PLIST) $(OSX_INSTALLER_ICONS) \
   $(top_srcdir)/contrib/macdeploy/detached-sig-apply.sh \
   $(top_srcdir)/contrib/macdeploy/detached-sig-create.sh
 
-COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
+COVERAGE_INFO = baseline_filtered_combined.info baseline.info \
   leveldb_baseline.info test_absolute_filtered.info total_coverage.info \
-  baseline_filtered.info block_test_filtered.info rpc_test.info rpc_test_filtered.info \
+  baseline_filtered.info rpc_test.info rpc_test_filtered.info \
   leveldb_baseline_filtered.info test_absolute_coverage.info test_absolute.info
 
 dist-hook:
@@ -197,8 +197,8 @@ rpc_test_filtered.info: rpc_test.info
 test_absolute_coverage.info: baseline_filtered_combined.info test_absolute_filtered.info
 	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_absolute_filtered.info -o $@
 
-total_coverage.info: baseline_filtered_combined.info test_absolute_filtered.info block_test_filtered.info rpc_test_filtered.info
-	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_absolute_filtered.info -a block_test_filtered.info -a rpc_test_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
+total_coverage.info: baseline_filtered_combined.info test_absolute_filtered.info rpc_test_filtered.info
+	$(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_absolute_filtered.info -a rpc_test_filtered.info -o $@ | $(GREP) "\%" | $(AWK) '{ print substr($$3,2,50) "/" $$5 }' > coverage_percent.txt
 
 test_absolute.coverage/.dirstamp:  test_absolute_coverage.info
 	$(GENHTML) -s $< -o $(@D)
