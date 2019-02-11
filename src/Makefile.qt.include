@@ -229,7 +229,6 @@ RES_ICONS = \
   qt/res/icons/base/verify.png \
   qt/res/icons/base/fontbigger.png \
   qt/res/icons/base/fontsmaller.png \
-
   qt/res/icons/base/network_disabled.png
 
 BITCOIN_QT_CPP = \
