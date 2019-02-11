@@ -219,8 +219,6 @@ RES_ICONS = \
   qt/res/icons/base/transaction_abandoned.png \
   qt/res/icons/base/transaction0.png \
   qt/res/icons/base/transaction2.png \
-
-
   qt/res/icons/base/transaction_conflicted.png \
   qt/res/icons/base/tx_inout.png \
   qt/res/icons/base/tx_input.png \
