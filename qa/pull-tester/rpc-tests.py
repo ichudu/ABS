@@ -86,8 +86,6 @@ for arg in sys.argv[1:]:
 #Set env vars
 if "ABSOLUTED" not in os.environ:
     os.environ["ABSOLUTED"] = BUILDDIR + '/src/absoluted' + EXEEXT
-if "ABSOLUTECLI" not in os.environ:
-    os.environ["ABSOLUTECLI"] = BUILDDIR + '/src/absolute-cli' + EXEEXT
 
 if EXEEXT == ".exe" and "-win" not in opts:
     # https://github.com/bitcoin/bitcoin/commit/d52802551752140cf41f0d9a225a43e84404d3e9

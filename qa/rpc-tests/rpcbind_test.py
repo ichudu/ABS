@@ -6,9 +6,9 @@
 # Test for -rpcbind, as well as -rpcallowip and -rpcconnect
 
 from test_framework.test_framework import BitcoinTestFramework
-
 from test_framework.util import *
 from test_framework.netutil import *
+
 
 class RPCBindTest(BitcoinTestFramework):
 
