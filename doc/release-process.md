@@ -82,16 +82,16 @@ The gbuild invocations below <b>DO NOT DO THIS</b> by default.
 
 ### Build and sign Absolute Core for Linux, Windows, and OS X:
 
-	./bin/gbuild --commit absolute=v${VERSION} ../absolute/contrib/gitian-descriptors/gitian-linux.yml
+	./bin/gbuild --memory 3000 --commit absolute=v${VERSION} ../absolute/contrib/gitian-descriptors/gitian-linux.yml
 	./bin/gsign --signer $SIGNER --release ${VERSION}-linux --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-linux.yml
 	mv build/out/absolute-*.tar.gz build/out/src/absolute-*.tar.gz ../
 
-	./bin/gbuild --commit absolute=v${VERSION} ../absolute/contrib/gitian-descriptors/gitian-win.yml
+	./bin/gbuild --memory 3000 --commit absolute=v${VERSION} ../absolute/contrib/gitian-descriptors/gitian-win.yml
 	./bin/gsign --signer $SIGNER --release ${VERSION}-win-unsigned --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-win.yml
 	mv build/out/absolute-*-win-unsigned.tar.gz inputs/absolute-win-unsigned.tar.gz
 	mv build/out/absolute-*.zip build/out/absolute-*.exe ../
 
-	./bin/gbuild --commit absolute=v${VERSION} ../absolute/contrib/gitian-descriptors/gitian-osx.yml
+	./bin/gbuild --memory 3000 --commit absolute=v${VERSION} ../absolute/contrib/gitian-descriptors/gitian-osx.yml
 	./bin/gsign --signer $SIGNER --release ${VERSION}-osx-unsigned --destination ../gitian.signatures/ ../absolute/contrib/gitian-descriptors/gitian-osx.yml
 	mv build/out/absolute-*-osx-unsigned.tar.gz inputs/absolute-osx-unsigned.tar.gz
 	mv build/out/absolute-*.tar.gz build/out/absolute-*.dmg ../
