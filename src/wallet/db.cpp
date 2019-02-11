@@ -390,7 +390,7 @@ bool CDB::Rewrite(const string& strFile, const char* pszSkip)
                             if (ret1 == DB_NOTFOUND) {
                                 pcursor->close();
                                 break;
-                            } else if (ret != 0) {
+                            } else if (ret1 != 0) {
                                 pcursor->close();
                                 fSuccess = false;
                                 break;
