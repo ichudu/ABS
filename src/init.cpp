@@ -1293,6 +1293,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<string> uacomments;
+    if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
+        // Add povnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own povnet
+        uacomments.push_back(strprintf("povnet=%s", GetPoVNETName()));
+    }
     BOOST_FOREACH(string cmt, mapMultiArgs["-uacomment"])
     {
         if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
