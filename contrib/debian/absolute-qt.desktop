@@ -1,7 +1,8 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=Absolute
+Name=Absolute Core
 Comment=Absolute P2P Cryptocurrency
+Comment[de]=Verbinde mit dem Absolute peer-to-peer Netzwerk
 Comment[fr]=Absolute, monnaie virtuelle cryptographique pair à pair
 Comment[tr]=Absolute, eşten eşe kriptografik sanal para birimi
 Exec=absolute-qt %u
