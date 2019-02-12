@@ -1412,7 +1412,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             if (inv.type == MSG_BLOCK) {
                 UpdateBlockAvailability(pfrom->GetId(), inv.hash);
                 if (!fAlreadyHave && !fImporting && !fReindex && !mapBlocksInFlight.count(inv.hash)) {
-                    if (chainparams.DelayGetHeadersTime() != 0 && pindexBestHeader->GetBlockTime() < GetAdjustedTime() - chainparams.DelayGetHeadersTime()) {
+                    // Always send GETHEADERS when we are still on the povnet genesis block. Otherwise we'll never sync.
+                    // This is because after startup of the node, we are in IBD mode, which will only be left when recent
+                    // blocks arrive. At the same time, we won't get any blocks from peers because we keep delaying
+                    // GETHEADERS
+                    bool fPoVNETGenesis = chainparams.NetworkIDString() == CBaseChainParams::POVNET && pindexBestHeader->GetBlockHash() == chainparams.PoVNETGenesisBlock().GetHash();
+
+                    if (!fPoVNETGenesis && chainparams.DelayGetHeadersTime() != 0 && pindexBestHeader->GetBlockTime() < GetAdjustedTime() - chainparams.DelayGetHeadersTime()) {
                         // We are pretty far from being completely synced at the moment. If we would initiate a new
                         // chain of GETHEADERS/HEADERS now, we may end up downnloading the full chain from multiple
                         // peers at the same time, slowing down the initial sync. At the same time, we don't know
