@@ -345,7 +345,7 @@ UniValue removeprunedfunds(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Transaction does not exist in wallet.");
     }
 
-    ThreadFlushWalletDB(pwalletMain->strWalletFile);
+
 
     return NullUniValue;
 }
