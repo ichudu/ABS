@@ -4782,10 +4782,12 @@ bool CWallet::ParameterInteraction()
     if (mapArgs.count("-mintxfee"))
     {
         CAmount n = 0;
-        if (ParseMoney(mapArgs["-mintxfee"], n) && n > 0)
-            CWallet::minTxFee = CFeeRate(n);
-        else
+        if (!ParseMoney(mapArgs["-mintxfee"], n))
             return InitError(AmountErrMsg("mintxfee", mapArgs["-mintxfee"]));
+        if (n > HIGH_TX_FEE_PER_KB)
+            InitWarning(AmountHighWarn("-mintxfee") + " " +
+                        _("This is the minimum transaction fee you pay on every transaction."));
+        CWallet::minTxFee = CFeeRate(n);
     }
     if (mapArgs.count("-fallbackfee"))
     {
@@ -4793,7 +4795,8 @@ bool CWallet::ParameterInteraction()
         if (!ParseMoney(mapArgs["-fallbackfee"], nFeePerK))
             return InitError(strprintf(_("Invalid amount for -fallbackfee=<amount>: '%s'"), mapArgs["-fallbackfee"]));
         if (nFeePerK > HIGH_TX_FEE_PER_KB)
-            InitWarning(_("-fallbackfee is set very high! This is the transaction fee you may pay when fee estimates are not available."));
+            InitWarning(AmountHighWarn("-fallbackfee") + " " +
+                        _("This is the transaction fee you may pay when fee estimates are not available."));
         CWallet::fallbackFee = CFeeRate(nFeePerK);
     }
     if (mapArgs.count("-paytxfee"))
@@ -4802,7 +4805,8 @@ bool CWallet::ParameterInteraction()
         if (!ParseMoney(mapArgs["-paytxfee"], nFeePerK))
             return InitError(AmountErrMsg("paytxfee", mapArgs["-paytxfee"]));
         if (nFeePerK > HIGH_TX_FEE_PER_KB)
-            InitWarning(_("-paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
+            InitWarning(AmountHighWarn("-paytxfee") + " " +
+                        _("This is the transaction fee you will pay if you send a transaction."));
         payTxFee = CFeeRate(nFeePerK, 1000);
         if (payTxFee < ::minRelayTxFee)
         {
