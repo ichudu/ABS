@@ -126,3 +126,4 @@ absolute-cli
 absoluted
 absolute-qt
 make
+/docker/bin
