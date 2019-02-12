@@ -15,8 +15,8 @@ src/qt/test/test_absolute-qt
 src/bench/bench_absolute
 
 # autoreconf
-#Makefile.in
-#aclocal.m4
+Makefile.in
+aclocal.m4
 autom4te.cache/
 build-aux/config.guess
 build-aux/config.sub
@@ -102,9 +102,13 @@ total.coverage/
 coverage_percent.txt
 
 #build tests
-qa/tmp
+linux-coverage-build
+linux-build
+win32-build
+qa/pull-tester/run-bitcoind-for-test.sh
+qa/pull-tester/tests_config.py
 qa/cache/*
-share/BitcoindComparisonTool.jar
+
 
 !src/leveldb*/Makefile
 
