@@ -1113,9 +1113,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     RegisterAllCoreRPCCommands(tableRPC);
 #ifdef ENABLE_WALLET
-    bool fDisableWallet = GetBoolArg("-disablewallet", false);
-    if (!fDisableWallet)
-        RegisterWalletRPCCommands(tableRPC);
+    RegisterWalletRPCCommands(tableRPC);
 #endif
 
     nConnectTimeout = GetArg("-timeout", DEFAULT_CONNECT_TIMEOUT);
