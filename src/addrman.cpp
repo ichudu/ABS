@@ -251,6 +251,10 @@ bool CAddrMan::Add_(const CAddress& addr, const CNetAddr& source, int64_t nTimeP
     bool fNew = false;
     int nId;
     CAddrInfo* pinfo = Find(addr, &nId);
+    // Do not set a penality for a source's self-announcement
+    if (addr == source) {
+        nTimePenalty = 0;
+    }
 
     if (pinfo) {
         // periodically update nTime
