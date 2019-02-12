@@ -17,11 +17,11 @@
 #include <QApplication>
 #include <QClipboard>
 
-SendCoinsEntry::SendCoinsEntry(const PlatformStyle *platformStyle, QWidget *parent) :
+SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *parent) :
     QStackedWidget(parent),
     ui(new Ui::SendCoinsEntry),
     model(0),
-    platformStyle(platformStyle)
+    platformStyle(_platformStyle)
 {
     ui->setupUi(this);
 
@@ -38,9 +38,9 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *platformStyle, QWidget *pare
     // These icons are needed on Mac also!
     ui->addressBookButton->setIcon(QIcon(":/icons/" + theme + "/address-book"));
     ui->pasteButton->setIcon(QIcon(":/icons/" + theme + "/editpaste"));
-    ui->deleteButton->setIcon(QIcon(":/icons/" + theme + "/remove2"));
-    ui->deleteButton_is->setIcon(QIcon(":/icons/" + theme + "/remove2"));
-    ui->deleteButton_s->setIcon(QIcon(":/icons/" + theme + "/remove2"));
+    ui->deleteButton->setIcon(QIcon(":/icons/" + theme + "/remove"));
+    ui->deleteButton_is->setIcon(QIcon(":/icons/" + theme + "/remove"));
+    ui->deleteButton_s->setIcon(QIcon(":/icons/" + theme + "/remove"));
       
     // normal absolute address field
     GUIUtil::setupAddressWidget(ui->payTo, this);
@@ -84,12 +84,12 @@ void SendCoinsEntry::on_payTo_textChanged(const QString &address)
     updateLabel(address);
 }
 
-void SendCoinsEntry::setModel(WalletModel *model)
+void SendCoinsEntry::setModel(WalletModel *_model)
 {
-    this->model = model;
+    this->model = _model;
 
-    if (model && model->getOptionsModel())
-        connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
+    if (_model && _model->getOptionsModel())
+        connect(_model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
     clear();
 }

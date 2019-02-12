@@ -94,8 +94,8 @@ class QtRPCTimerBase: public QObject, public RPCTimerBase
 {
     Q_OBJECT
 public:
-    QtRPCTimerBase(boost::function<void(void)>& func, int64_t millis):
-        func(func)
+    QtRPCTimerBase(boost::function<void(void)>& _func, int64_t millis):
+        func(_func)
     {
         timer.setSingleShot(true);
         connect(&timer, SIGNAL(timeout()), this, SLOT(timeout()));
