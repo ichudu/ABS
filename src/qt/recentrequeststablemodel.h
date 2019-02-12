@@ -31,7 +31,7 @@ public:
         unsigned int nDate = date.toTime_t();
 
         READWRITE(this->nVersion);
-        nVersion = this->nVersion;
+
         READWRITE(id);
         READWRITE(nDate);
         READWRITE(recipient);
