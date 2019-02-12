@@ -83,7 +83,7 @@ void RPCNestedTests::rpcNestedTests()
     QVERIFY(result == result2);
 
     RPCConsole::RPCExecuteCommandLine(result, "getblock(getbestblockhash())[tx][0]");
-    QVERIFY(result == "e0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7");
+    QVERIFY(result == "12844a9cbf517654e272975506ab56af4d5c8dde0332a0ee48ba159c72daae03");
 
     delete pcoinsTip;
     delete pcoinsdbview;
