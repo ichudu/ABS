@@ -135,10 +135,7 @@ BitcoinGUI::BitcoinGUI(const PlatformStyle *platformStyle, const NetworkStyle *n
 
     QString windowTitle = tr(PACKAGE_NAME) + " - ";
 #ifdef ENABLE_WALLET
-    /* if compiled with wallet support, -disablewallet can still disable the wallet */
-    enableWallet = !GetBoolArg("-disablewallet", false);
-#else
-    enableWallet = false;
+    enableWallet = WalletModel::isWalletEnabled();
 #endif // ENABLE_WALLET
     if(enableWallet)
     {
