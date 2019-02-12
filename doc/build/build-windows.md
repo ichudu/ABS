@@ -10,6 +10,18 @@ Windows. This is also used to build the release binaries.
 * On Windows using [Windows
 Subsystem for Linux (WSL)](https://msdn.microsoft.com/commandline/wsl/about) and the Mingw-w64 cross compiler tool chain.
 
+Cross-compilation
+-------------------
+These steps can be performed on, for example, an Ubuntu VM. The depends system
+will also work on other Linux distributions, however the commands for
+installing the toolchain will be different.
+
+Make sure you install the build requirements mentioned in
+[build-unix.md](/doc/build-unix.md).
+Then, install the toolchains and curl:|
+
+    sudo apt-get install g++-mingw-w64-i686 mingw-w64-i686-dev g++-mingw-w64-x86-64 mingw-w64-x86-64-dev curl
+
 
 Installing Windows Subsystem for Linux
 ---------------------------------------

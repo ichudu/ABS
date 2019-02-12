@@ -192,5 +192,6 @@ bool StartRPC();
 void InterruptRPC();
 void StopRPC();
 std::string JSONRPCExecBatch(const UniValue& vReq);
+void RPCNotifyBlockChange(bool ibd, const CBlockIndex *);
 
 #endif // BITCOIN_RPCSERVER_H
