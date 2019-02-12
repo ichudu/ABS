@@ -7,7 +7,7 @@ Preparation
 -----------
 Install the OS X command line tools:
 
-O`xcode-select --install`
+`xcode-select --install`
 
 When the popup appears, click `Install`.
 
