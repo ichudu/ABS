@@ -7,6 +7,7 @@
 
 #include "amount.h"
 #include "uint256.h"
+#include "random.h"
 
 #include <map>
 #include <string>
@@ -297,5 +298,6 @@ public:
 
 private:
     std::set<double> feeset;
+    FastRandomContext insecure_rand;
 };
 #endif /*BITCOIN_POLICYESTIMATOR_H */

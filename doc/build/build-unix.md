@@ -7,7 +7,7 @@ Some notes on how to build Absolute Core in Unix.
 Note
 ---------------------
 Always use absolute paths to configure and compile Absolute Core and the dependencies,
-for example, when specifying the the path of the dependency:
+for example, when specifying the path of the dependency:
 
 	../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
 
@@ -58,7 +58,7 @@ C++ compilers are memory-hungry. It is recommended to have at least 1.5 GB of
 memory available when compiling Absolute Core. On systems with less, gcc can be
 tuned to conserve memory with additional CXXFLAGS:
 
-./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768"
+    ./configure CXXFLAGS="--param ggc-min-expand=1 --param ggc-min-heapsize=32768"
 
 Dependency Build Instructions: Ubuntu & Debian
 ----------------------------------------------
@@ -71,15 +71,18 @@ Options when installing required Boost library files:
 individual boost development packages, so the following can be used to only
 install necessary parts of boost:
 
-    sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
+        sudo apt-get install libboost-system-dev libboost-filesystem-dev libboost-chrono-dev libboost-program-options-dev libboost-test-dev libboost-thread-dev
 
 2. If that doesn't work, you can install all boost development packages with:
 
-    sudo apt-get install libboost-all-dev
+        sudo apt-get install libboost-all-dev
 
-BerkeleyDB is required for the wallet. db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
+BerkeleyDB is required for the wallet.
+
+**For Ubuntu only:** db4.8 packages are available [here](https://launchpad.net/~bitcoin/+archive/bitcoin).
 You can add the repository and install using the following commands:
 
+    sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:bitcoin/bitcoin
     sudo apt-get update
     sudo apt-get install libdb4.8-dev libdb4.8++-dev
@@ -305,3 +308,34 @@ To build executables for ARM:
 
 
 For further documentation on the depends system see [README.md](../depends/README.md) in the depends directory.
+Building on FreeBSD
+--------------------
+
+(Updated as of FreeBSD 10.3)
+
+Clang is installed by default as `cc` compiler, this makes it easier to get
+started than on [OpenBSD](build-openbsd.md). Installing dependencies:
+
+    pkg install autoconf automake libtool pkgconf
+    pkg install boost-libs openssl libevent2
+
+(`libressl` instead of `openssl` will also work)
+
+For the wallet (optional):
+
+    pkg install db5
+
+This will give a warning "configure: WARNING: Found Berkeley DB other
+than 4.8; wallets opened by this build will not be portable!", but as FreeBSD never
+had a binary release, this may not matter. If backwards compatibility
+with 4.8-built Dash Core is needed follow the steps under "Berkeley DB" above.
+
+Then build using:
+
+    ./autogen.sh
+    ./configure --with-incompatible-bdb CPPFLAGS=-I/usr/local/include/db5 LDFLAGS=-L/usr/local/lib/db5
+    make
+
+*Note on debugging*: The version of `gdb` installed by default is [ancient and considered harmful](https://wiki.freebsd.org/GdbRetirement).
+It is not suitable for debugging a multi-threaded C++ program, not even for getting backtraces. Please install the package `gdb` and
+use the versioned gdb command e.g. `gdb7111`.
