@@ -59,7 +59,7 @@ check or whatever).
 * Ask you whether to GPG sign the merge commit.
 * Ask you whether to push the result upstream.
 
-This means that there are no potential race conditions (where a
+This means that there are no potential absolute conditions (where a
 pullreq gets updated while you're reviewing it, but before you click
 merge), and when using GPG signatures, that even a compromised github
 couldn't mess with the sources.
@@ -98,10 +98,10 @@ If only supported symbols are used the return value will be 0 and the output wil
 
 If there are 'unsupported' symbols, the return value will be 1 a list like this will be printed:
 
-    .../64/test_dash: symbol memcpy from unsupported version GLIBC_2.14
-    .../64/test_dash: symbol __fdelt_chk from unsupported version GLIBC_2.15
-    .../64/test_dash: symbol std::out_of_range::~out_of_range() from unsupported version GLIBCXX_3.4.15
-    .../64/test_dash: symbol _ZNSt8__detail15_List_nod from unsupported version GLIBCXX_3.4.15
+    .../64/test_absolute: symbol memcpy from unsupported version GLIBC_2.14
+    .../64/test_absolute: symbol __fdelt_chk from unsupported version GLIBC_2.15
+    .../64/test_absolute: symbol std::out_of_range::~out_of_range() from unsupported version GLIBCXX_3.4.15
+    .../64/test_absolute: symbol _ZNSt8__detail15_List_nod from unsupported version GLIBCXX_3.4.15
 
 update-translations.py
 ======================

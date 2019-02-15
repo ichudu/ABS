@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2017 The Dash Core developers
+// Copyright (c) 2018 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,9 +28,10 @@ class CKeyHolderStorage
 {
 private:
     std::vector<std::unique_ptr<CKeyHolder> > storage;
+    mutable CCriticalSection cs_storage;
 
 public:
-    const CKeyHolder& AddKey(CWallet* pwalletIn);
+    CScript AddKey(CWallet* pwalletIn);
     void KeepAll();
     void ReturnAll();
 

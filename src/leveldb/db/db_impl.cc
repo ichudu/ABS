@@ -240,7 +240,7 @@ void DBImpl::DeleteObsoleteFiles() {
           break;
         case kDescriptorFile:
           // Keep my manifest file, and any newer incarnations'
-          // (in case there is a race that allows other incarnations)
+          // (in case there is a absolute that allows other incarnations)
           keep = (number >= versions_->ManifestFileNumber());
           break;
         case kTableFile:

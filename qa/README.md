@@ -1,7 +1,7 @@
 The [pull-tester](/qa/pull-tester/) folder contains a script to call
 multiple tests from the [rpc-tests](/qa/rpc-tests/) folder.
 
-Every pull request to the Dash Core repository is built and run through
+Every pull request to the Absolute Core repository is built and run through
 the regression test suite. You can also run all or only individual
 tests locally.
 
@@ -31,12 +31,12 @@ Possible options:
 
 ```
   -h, --help            show this help message and exit
-  --nocleanup           Leave dashds and test.* datadir on exit or error
-  --noshutdown          Don't stop dashds after the test execution
-  --srcdir=SRCDIR       Source directory containing dashd/dash-cli
+  --nocleanup           Leave absoluteds and test.* datadir on exit or error
+  --noshutdown          Don't stop absoluteds after the test execution
+  --srcdir=SRCDIR       Source directory containing absoluted/absolute-cli
                         (default: ../../src)
   --tmpdir=TMPDIR       Root directory for datadirs
-  --tracerpc            Print out all RPC calls as they are made
+  --tabsoluterpc            Print out all RPC calls as they are made
   --coveragedir=COVERAGEDIR
                         Write tested RPC commands into this directory
 ```
@@ -47,7 +47,7 @@ output (example: `PYTHON_DEBUG=1 qa/pull-tester/rpc-tests.py wallet`).
 A 200-block -regtest blockchain and wallets for four nodes
 is created the first time a regression test is run and
 is stored in the cache/ directory. Each node has 25 mature
-blocks (25*500=12500 DASH) in its wallet.
+blocks (25*500=12500 ABS) in its wallet.
 
 After the first run, the cache/ blockchain and wallets are
 copied into a temporary directory and used as the initial
@@ -58,7 +58,7 @@ to recover with:
 
 ```bash
 rm -rf cache
-killall dashd
+killall absoluted
 ```
 
 Writing tests

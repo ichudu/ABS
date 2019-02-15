@@ -136,7 +136,7 @@ Detailed [change log](https://github.com/dashpay/dash/compare/v0.12.1.x...dashpa
 - [`b39c518d5`](https://github.com/dashpay/dash/commit/b39c518d5) Backport Bitcoin PR#7749: Enforce expected outbound services (#1508)
 - [`9268a336d`](https://github.com/dashpay/dash/commit/9268a336d) Backport Bitcoin PR#7917: Optimize reindex (#1515)
 - [`b47984f30`](https://github.com/dashpay/dash/commit/b47984f30) Remove non-determinism which is breaking net_tests #8069 (#1517)
-- [`9a8a290b8`](https://github.com/dashpay/dash/commit/9a8a290b8) fix race that could fail to persist a ban (#1518)
+- [`9a8a290b8`](https://github.com/dashpay/dash/commit/9a8a290b8) fix absolute that could fail to persist a ban (#1518)
 - [`5a1961e5e`](https://github.com/dashpay/dash/commit/5a1961e5e) Backport Bitcoin PR#7906: net: prerequisites for p2p encapsulation changes (#1521)
 - [`7b5556a29`](https://github.com/dashpay/dash/commit/7b5556a29) Backport Bitcoin PR#8084: Add recently accepted blocks and txn to AttemptToEvictConnection (#1522)
 - [`9ce2b966c`](https://github.com/dashpay/dash/commit/9ce2b966c) Backport Bitcoin PR#8113: Rework addnode behaviour (#1525)

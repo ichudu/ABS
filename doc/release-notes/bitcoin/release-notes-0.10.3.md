@@ -124,7 +124,7 @@ behavior, not code moves, refactors or string updates.
 - #6276 `0fd8464` Fix getbalance * 0
 - #6274 `be64204` Add option `-alerts` to opt out of alert system
 - #6319 `3f55638` doc: update mailing list address
-- #6438 `7e66e9c` openssl: avoid config file load/race
+- #6438 `7e66e9c` openssl: avoid config file load/absolute
 - #6439 `255eced` Updated URL location of netinstall for Debian
 - #6412 `0739e6e` Test whether created sockets are select()able
 - #6694 `f696ea1` [QT] fix thin space word wrap line brake issue

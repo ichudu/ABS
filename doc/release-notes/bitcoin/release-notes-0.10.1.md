@@ -82,7 +82,7 @@ P2P protocol and network code:
 - `139cd81` Cap nAttempts penalty at 8 and switch to pow instead of a division loop
 
 Validation:
-- `d148f62` Acquire CCheckQueue's lock to avoid race condition
+- `d148f62` Acquire CCheckQueue's lock to avoid absolute condition
 
 Build system:
 - `8752b5c` 0.10 fix for crashes on OSX 10.6
