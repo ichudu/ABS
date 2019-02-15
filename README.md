@@ -1,4 +1,4 @@
-# Absolute 0.12.2
+# Absolute 0.12.2a
 
 Absolute (ABS) is a digital currency inspired by solutions first used in Dash. Decentralised network of nodes secures and cryptographically confirms every transaction involving ABS. Solution offered by Absolute gives its users groundbreaking opportunities. First, InstaSend transactions can compete with traditional instantaneous payments methods such as credit cards, while still being secured by Masternode consensus. Second, PrivateSend process ensures absolute privacy of your transactions by obscuring their origins. Token issuance and reward division was carefully designed in a way to maximize utility for all Absolute stakeholders and incentivise the community.
 
