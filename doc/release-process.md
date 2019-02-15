@@ -165,8 +165,6 @@ Commit your signature for the signed OS X/Windows binaries:
 	git commit -a
 	git push  # Assuming you can push to the gitian.signatures tree
 	popd
-<<<<<<< HEAD
-=======
 
 -------------------------------------------------------------------------
 
@@ -181,25 +179,10 @@ rm SHA256SUMS
 (the digest algorithm is forced to sha256 to avoid confusion of the `Hash:` header that GPG adds with the SHA256 used for the files)
 Note: check that SHA256SUMS itself doesn't end up in SHA256SUMS, which is a spurious/nonsensical entry.
 
-- Upload zips and installers, as well as `SHA256SUMS.asc` from last step, to the dash.org server
-
-- Update dash.org
+- Upload zips and installers, as well as `SHA256SUMS.asc` from last step, to the Absolute.org server
 
 - Announce the release:
 
-  - Release on Dash forum: https://www.dash.org/forum/topic/official-announcements.54/
-
-  - Dash-development mailing list
-
-  - Update title of #dashpay on Freenode IRC
-
-  - Optionally reddit /r/Dashpay, ... but this will usually sort out itself
-
-  - Notify flare so that he can start building [the PPAs](https://launchpad.net/~dash.org/+archive/ubuntu/dash)
+  - Absolute-development mailing list
 
   - Archive release notes for the new version to `doc/release-notes/` (branch `master` and branch of the release)
-
-  - Create a [new GitHub release](https://github.com/dashpay/dash/releases/new) with a link to the archived release notes.
-
-  - Celebrate
->>>>>>> 1188dd28a... Merge #9093: [doc] release-process: Mention GitHub release and archived release notes
