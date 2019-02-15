@@ -10,6 +10,11 @@
     <height>126</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Edit Address</string>
   </property>

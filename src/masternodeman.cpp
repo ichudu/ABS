@@ -585,9 +585,9 @@ masternode_info_t CMasternodeMan::FindRandomNotInVec(const std::vector<COutPoint
         vpMasternodesShuffled.push_back(&mnpair.second);
     }
 
-    InsecureRand insecureRand;
+    FastRandomContext insecure_rand;
     // shuffle pointers
-    std::random_shuffle(vpMasternodesShuffled.begin(), vpMasternodesShuffled.end(), insecureRand);
+    std::random_shuffle(vpMasternodesShuffled.begin(), vpMasternodesShuffled.end(), insecure_rand);
     bool fExclude;
 
     // loop through
@@ -1045,7 +1045,7 @@ bool CMasternodeMan::SendVerifyRequest(const CAddress& addr, const std::vector<C
         return false;
     }
 
-    CNode* pnode = connman.ConnectNode(addr, NULL, true);
+    CNode* pnode = connman.ConnectNode(addr, NULL, false, true);
     if(pnode == NULL) {
         LogPrintf("CMasternodeMan::SendVerifyRequest -- can't connect to node to verify it, addr=%s\n", addr.ToString());
         return false;

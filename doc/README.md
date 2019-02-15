@@ -1,4 +1,4 @@
-Absolute 0.12.1
+Absolute 0.12.2
 =====================
 
 You may find below instructions for setting up Absolute wallet.
@@ -24,7 +24,7 @@ Drag Absolute-Qt to your applications folder, and then run Absolute-Qt.
 
 ### Need Help?
 
-* See the [Absolute documentation](https://github.com/absolutecrypto/absolute/wiki)
+* See the [Absolute documentation](https://github.com/absolute-community/absolute/wiki)
 for help and more information.
 
 Building
@@ -42,26 +42,32 @@ Development
 The Absolute Core repo's [root README](/README.md) contains relevant information on the development process and automated testing.
 
 - [Developer Notes](developer-notes.md)
-- [Multiwallet Qt Development](multiwallet-qt.md)
 - [Release Notes](release-notes.md)
 - [Release Process](release-process.md)
 - Source Code Documentation ***TODO***
 - [Translation Process](translation_process.md)
 - [Translation Strings Policy](translation_strings_policy.md)
 - [Unit Tests](unit-tests.md)
+- [Travis CI](travis-ci.md)
 - [Unauthenticated REST Interface](REST-interface.md)
 - [Shared Libraries](shared-libraries.md)
 - [BIPS](bips.md)
 - [Dnsseed Policy](dnsseed-policy.md)
+- [Benchmarking](benchmarking.md)
+
+### Resources
+* Discuss on the Absolute Discord Server if advice is needed 
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)
 - [Files](files.md)
+- [Reduce Traffic](reduce-traffic.md)
 - [Tor Support](tor.md)
 - [Init Scripts (systemd/upstart/openrc)](init.md)
+- [ZMQ](zmq.md)
 
 License
 ---------------------
-Distributed under the [MIT software license](http://www.opensource.org/licenses/mit-license.php).
+Distributed under the [MIT software license](/COPYING).
 This product includes software developed by the OpenSSL Project for use in the [OpenSSL Toolkit](https://www.openssl.org/). This product includes
 cryptographic software written by Eric Young ([eay@cryptsoft.com](mailto:eay@cryptsoft.com)), and UPnP software written by Thomas Bernard.

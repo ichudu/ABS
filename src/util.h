@@ -21,6 +21,7 @@
 #include "utiltime.h"
 #include "amount.h"
 
+#include <atomic>
 #include <exception>
 #include <map>
 #include <stdint.h>
@@ -30,6 +31,9 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
+
+
+
 
 // Debugging macros
 
@@ -72,7 +76,7 @@ extern bool fLogTimestamps;
 extern bool fLogTimeMicros;
 extern bool fLogThreadNames;
 extern bool fLogIPs;
-extern volatile bool fReopenDebugLog;
+extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
 
 extern const char * const BITCOIN_CONF_FILENAME;
@@ -98,46 +102,23 @@ int LogPrintStr(const std::string &str);
 
 #define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
 
-/**
- * When we switch to C++11, this can be switched to variadic templates instead
- * of this macro-based construction (see tinyformat.h).
- */
-#define MAKE_ERROR_AND_LOG_FUNC(n)                                        \
-    /**   Print to debug.log if -debug=category switch is given OR category is NULL. */ \
-    template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline int LogPrint(const char* category, const char* format, TINYFORMAT_VARARGS(n))  \
-    {                                                                         \
-        if(!LogAcceptCategory(category)) return 0;                            \
-        return LogPrintStr(tfm::format(format, TINYFORMAT_PASSARGS(n))); \
-    }                                                                         \
-    /**   Log error and return false */                                        \
-    template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline bool error(const char* format, TINYFORMAT_VARARGS(n))                     \
-    {                                                                         \
-        LogPrintStr("ERROR: " + tfm::format(format, TINYFORMAT_PASSARGS(n)) + "\n"); \
-        return false;                                                         \
-    }
-
-TINYFORMAT_FOREACH_ARGNUM(MAKE_ERROR_AND_LOG_FUNC)
-
-/**
- * Zero-arg versions of logging and error, these are not covered by
- * TINYFORMAT_FOREACH_ARGNUM
- */
-static inline int LogPrint(const char* category, const char* format)
+template<typename... Args>
+static inline int LogPrint(const char* category, const char* fmt, const Args&... args)
 {
-    if(!LogAcceptCategory(category)) return 0;
-    return LogPrintStr(format);
+    if(!LogAcceptCategory(category)) return 0;                            \
+    return LogPrintStr(tfm::format(fmt, args...));
 }
-static inline bool error(const char* format)
+
+template<typename... Args>
+bool error(const char* fmt, const Args&... args)
 {
-    LogPrintStr(std::string("ERROR: ") + format + "\n");
+    LogPrintStr("ERROR: " + tfm::format(fmt, args...) + "\n");
     return false;
 }
 
 void PrintExceptionContinue(const std::exception *pex, const char* pszThread);
 void ParseParameters(int argc, const char*const argv[]);
-void FileCommit(FILE *fileout);
+void FileCommit(FILE *file);
 bool TruncateFile(FILE *file, unsigned int length);
 int RaiseFileDescriptorLimit(int nMinFD);
 void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length);
@@ -147,17 +128,16 @@ boost::filesystem::path GetDefaultDataDir();
 const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 const boost::filesystem::path &GetBackupsDir();
 void ClearDatadirCache();
-boost::filesystem::path GetConfigFile();
+boost::filesystem::path GetConfigFile(const std::string& confPath);
 boost::filesystem::path GetMasternodeConfigFile();
 #ifndef WIN32
 boost::filesystem::path GetPidFile();
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
 #endif
-void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
+void ReadConfigFile(const std::string& confPath, std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-boost::filesystem::path GetTempPath();
 void OpenDebugLog();
 void ShrinkDebugFile();
 void runCommand(const std::string& strCommand);
@@ -240,14 +220,13 @@ std::string HelpMessageOpt(const std::string& option, const std::string& message
  */
 int GetNumCores();
 
-void SetThreadPriority(int nPriority);
 void RenameThread(const char* name);
 std::string GetThreadName();
 
 /**
  * .. and a wrapper that just calls func once
  */
-template <typename Callable> void TabsoluteThread(const char* name,  Callable func)
+template <typename Callable> void TraceThread(const char* name,  Callable func)
 {
     std::string s = strprintf("absolute-%s", name);
     RenameThread(s.c_str());
@@ -272,6 +251,7 @@ template <typename Callable> void TabsoluteThread(const char* name,  Callable fu
     }
 }
 
+std::string CopyrightHolders(const std::string& strPrefix, unsigned int nStartYear, unsigned int nEndYear);
 
 /**
  * @brief Converts version strings to 4-byte unsigned integer

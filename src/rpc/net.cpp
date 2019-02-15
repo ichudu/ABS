@@ -214,7 +214,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
     if (strCommand == "onetry")
     {
         CAddress addr;
-        g_connman->OpenNetworkConnection(addr, NULL, strNode.c_str());
+        g_connman->OpenNetworkConnection(addr, false, NULL, strNode.c_str());
         return NullUniValue;
     }
 
@@ -257,14 +257,13 @@ UniValue disconnectnode(const UniValue& params, bool fHelp)
 
 UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getaddednodeinfo dummy ( \"node\" )\n"
+            "getaddednodeinfo ( \"node\" )\n"
             "\nReturns information about the given added node, or all added nodes\n"
             "(note that onetry addnodes are not listed here)\n"
             "\nArguments:\n"
-            "1. dummy      (boolean, required) Kept for historical purposes but ignored\n"
-            "2. \"node\"   (string, optional) If provided, return information about this specific node, otherwise all nodes are returned.\n"
+            "1. \"node\"   (string, optional) If provided, return information about this specific node, otherwise all nodes are returned.\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -290,10 +289,10 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
 
     std::vector<AddedNodeInfo> vInfo = g_connman->GetAddedNodeInfo();
 
-    if (params.size() == 2) {
+    if (params.size() == 1) {
         bool found = false;
         for (const AddedNodeInfo& info : vInfo) {
-            if (info.strAddedNode == params[1].get_str()) {
+            if (info.strAddedNode == params[0].get_str()) {
                 vInfo.assign(1, info);
                 found = true;
                 break;
@@ -481,7 +480,7 @@ UniValue setban(const UniValue& params, bool fHelp)
                             "\nExamples:\n"
                             + HelpExampleCli("setban", "\"192.168.0.6\" \"add\" 86400")
                             + HelpExampleCli("setban", "\"192.168.0.0/24\" \"add\"")
-                            + HelpExampleRpc("setban", "\"192.168.0.6\", \"add\" 86400")
+                            + HelpExampleRpc("setban", "\"192.168.0.6\", \"add\", 86400")
                             );
     if(!g_connman)
         throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
@@ -594,4 +593,27 @@ UniValue setnetworkactive(const UniValue& params, bool fHelp)
     g_connman->SetNetworkActive(params[0].get_bool());
 
     return g_connman->GetNetworkActive();
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "network",            "getconnectioncount",     &getconnectioncount,     true  },
+    { "network",            "ping",                   &ping,                   true  },
+    { "network",            "getpeerinfo",            &getpeerinfo,            true  },
+    { "network",            "addnode",                &addnode,                true  },
+    { "network",            "disconnectnode",         &disconnectnode,         true  },
+    { "network",            "getaddednodeinfo",       &getaddednodeinfo,       true  },
+    { "network",            "getnettotals",           &getnettotals,           true  },
+    { "network",            "getnetworkinfo",         &getnetworkinfo,         true  },
+    { "network",            "setban",                 &setban,                 true  },
+    { "network",            "listbanned",             &listbanned,             true  },
+    { "network",            "clearbanned",            &clearbanned,            true  },
+    { "network",            "setnetworkactive",       &setnetworkactive,       true, },
+};
+
+void RegisterNetRPCCommands(CRPCTable &t)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

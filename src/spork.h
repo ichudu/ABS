@@ -33,12 +33,12 @@ static const int SPORK_14_REQUIRE_SENTINEL_FLAG                         = 10013;
 static const int64_t SPORK_2_INSTANTSEND_ENABLED_DEFAULT                = 0;            // ON
 static const int64_t SPORK_3_INSTANTSEND_BLOCK_FILTERING_DEFAULT        = 0;            // ON
 static const int64_t SPORK_5_INSTANTSEND_MAX_VALUE_DEFAULT              = 1000;         // 1000 ABS
-static const int64_t SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT_DEFAULT     = 1518732000   ;// Payments start on 2/15/2018 22:00 CET
-static const int64_t SPORK_9_SUPERBLOCKS_ENABLED_DEFAULT                = 4070908800ULL;// OFF
+static const int64_t SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT_DEFAULT     = 1518732000;   // Payments start on 2/15/2018 22:00 CET
+static const int64_t SPORK_9_SUPERBLOCKS_ENABLED_DEFAULT                = 1527811200;   // Friday 1 June 2018 00:00:00
 static const int64_t SPORK_10_MASTERNODE_PAY_UPDATED_NODES_DEFAULT      = 4070908800ULL;// OFF
 static const int64_t SPORK_12_RECONSIDER_BLOCKS_DEFAULT                 = 0;            // 0 BLOCKS
 static const int64_t SPORK_13_OLD_SUPERBLOCK_FLAG_DEFAULT               = 4070908800ULL;// OFF
-static const int64_t SPORK_14_REQUIRE_SENTINEL_FLAG_DEFAULT             = 4070908800ULL;// OFF
+static const int64_t SPORK_14_REQUIRE_SENTINEL_FLAG_DEFAULT             = 1532476800;   // Wednesday, July 25, 2018 12:00:00 AM
 
 extern std::map<uint256, CSporkMessage> mapSporks;
 extern CSporkManager sporkManager;

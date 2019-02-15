@@ -1,7 +1,5 @@
-#!/usr/bin/env python2
-# coding=utf-8
-# ^^^^^^^^^^^^ TODO remove when supporting only Python3
-# Copyright (c) 2014-2015 The Bitcoin Core developers
+#!/usr/bin/env python3
+# Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,20 +11,17 @@ class WalletTest (BitcoinTestFramework):
     def check_fee_amount(self, curr_balance, balance_with_fee, fee_per_byte, tx_size):
         """Return curr_balance after asserting the fee was in range"""
         fee = balance_with_fee - curr_balance
-        target_fee = fee_per_byte * tx_size
-        if fee < target_fee:
-            raise AssertionError("Fee of %s ABS too low! (Should be %s ABS)"%(str(fee), str(target_fee)))
-        # allow the node's estimation to be at most 2 bytes off
-        if fee > fee_per_byte * (tx_size + 2):
-            raise AssertionError("Fee of %s ABS too high! (Should be %s ABS)"%(str(fee), str(target_fee)))
+        assert_fee_amount(fee, tx_size, fee_per_byte * 1000)
         return curr_balance
 
-    def setup_chain(self):
-        print("Initializing test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+    def __init__(self):
+        super().__init__()
+        self.setup_clean_chain = True
+        self.num_nodes = 4
+        self.extra_args = [['-usehd={:d}'.format(i%2==0)] for i in range(4)]
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir)
+        self.nodes = start_nodes(3, self.options.tmpdir, self.extra_args[:3], redirect_stderr=True)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -40,7 +35,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(len(self.nodes[1].listunspent()), 0)
         assert_equal(len(self.nodes[2].listunspent()), 0)
 
-        print "Mining blocks..."
+        print("Mining blocks...")
 
         self.nodes[0].generate(1)
 
@@ -161,7 +156,7 @@ class WalletTest (BitcoinTestFramework):
         txid2 = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 1)
         sync_mempools(self.nodes)
 
-        self.nodes.append(start_node(3, self.options.tmpdir))
+        self.nodes.append(start_node(3, self.options.tmpdir, self.extra_args[3], redirect_stderr=True))
         connect_nodes_bi(self.nodes, 0, 3)
         sync_blocks(self.nodes)
 
@@ -205,7 +200,6 @@ class WalletTest (BitcoinTestFramework):
 
         #do some -walletbroadcast tests
         stop_nodes(self.nodes)
-        wait_bitcoinds()
         self.nodes = start_nodes(3, self.options.tmpdir, [["-walletbroadcast=0"],["-walletbroadcast=0"],["-walletbroadcast=0"]])
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -231,7 +225,6 @@ class WalletTest (BitcoinTestFramework):
 
         #restart the nodes with -walletbroadcast=1
         stop_nodes(self.nodes)
-        wait_bitcoinds()
         self.nodes = start_nodes(3, self.options.tmpdir)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
@@ -300,7 +293,15 @@ class WalletTest (BitcoinTestFramework):
                            {"address": address_to_import},
                            {"spendable": True})
 
-        #check if wallet or blochchain maintenance changes the balance
+        # Mine a block from node0 to an address from node1
+        cbAddr = self.nodes[1].getnewaddress()
+        blkHash = self.nodes[0].generatetoaddress(1, cbAddr)[0]
+        cbTxId = self.nodes[0].getblock(blkHash)['tx'][0]
+        self.sync_all()
+
+        # Check that the txid and balance is found by node1
+        self.nodes[1].gettransaction(cbTxId)
+        # check if wallet or blockchain maintenance changes the balance
         self.sync_all()
         blocks = self.nodes[0].generate(2)
         self.sync_all()
@@ -326,12 +327,12 @@ class WalletTest (BitcoinTestFramework):
             '-reindex',
             '-zapwallettxes=1',
             '-zapwallettxes=2',
-            '-salvagewallet',
+            # disabled until issue is fixed: https://github.com/bitcoin/bitcoin/issues/7463
+            # '-salvagewallet',
         ]
         for m in maintenance:
-            print "check " + m
+            print("check " + m)
             stop_nodes(self.nodes)
-            wait_bitcoinds()
             self.nodes = start_nodes(3, self.options.tmpdir, [[m]] * 3)
             while m == '-reindex' and [block_count] * 3 != [self.nodes[i].getblockcount() for i in range(3)]:
                 # reindex will leave rpc warm up "early"; Wait for it to finish
@@ -346,4 +347,4 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(len(self.nodes[0].listsinceblock(blocks[1])["transactions"]), 0)
 
 if __name__ == '__main__':
-    WalletTest ().main ()
+    WalletTest().main()

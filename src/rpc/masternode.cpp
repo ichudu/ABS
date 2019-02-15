@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <univalue.h>
 
+UniValue masternodelist(const UniValue& params, bool fHelp);
 #ifdef ENABLE_WALLET
 void EnsureWalletIsUnlocked();
 
@@ -138,7 +139,7 @@ UniValue masternode(const UniValue& params, bool fHelp)
                 "  current      - Print info on current masternode winner to be paid the next block (calculated locally)\n"
                 "  genkey       - Generate new masternodeprivkey\n"
 #ifdef ENABLE_WALLET
-                "  outputs      - Print masternode compatible outputs\n"
+                "  outputs      - Print masternode compatible (unlocked) outputs\n"
                 "  start-alias  - Start single remote masternode by assigned alias configured in masternode.conf\n"
                 "  start-<mode> - Start remote masternodes configured in masternode.conf (<mode>: 'all', 'missing', 'disabled')\n"
 #endif // ENABLE_WALLET
@@ -372,10 +373,13 @@ UniValue masternode(const UniValue& params, bool fHelp)
     if (strCommand == "outputs") {
         // Find possible candidates
         std::vector<COutput> vPossibleCoins;
-        pwalletMain->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_1000);
+        pwalletMain->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_MN_COLLATERAL);
 
         UniValue obj(UniValue::VOBJ);
         BOOST_FOREACH(COutput& out, vPossibleCoins) {
+	    // Do not add locked coins
+	    if(pwalletMain->IsLockedCoin(out.tx->GetHash(), out.i))
+	        continue;
             obj.push_back(Pair(out.tx->GetHash().ToString(), strprintf("%d", out.i)));
         }
 
@@ -849,4 +853,23 @@ UniValue sentinelping(const UniValue& params, bool fHelp)
 
     activeMasternode.UpdateSentinelPing(StringVersionToInt(params[0].get_str()));
     return true;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+    /* Absolute features */
+    { "absolute",               "masternode",             &masternode,             true  },
+    { "absolute",               "masternodelist",         &masternodelist,         true  },
+    { "absolute",               "masternodebroadcast",    &masternodebroadcast,    true  },
+    { "absolute",               "getpoolinfo",            &getpoolinfo,            true  },
+    { "absolute",               "sentinelping",           &sentinelping,           true  },
+#ifdef ENABLE_WALLET
+    { "absolute",               "privatesend",            &privatesend,            false },
+#endif // ENABLE_WALLET
+};
+
+void RegisterMasternodeRPCCommands(CRPCTable &t)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

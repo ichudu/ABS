@@ -1,3 +1,7 @@
+# Copyright (c) 2013-2016 The Bitcoin Core developers
+# Copyright (c) 2014-2018 The Dash Core developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
 TESTS += test/test_absolute
 bin_PROGRAMS += test/test_absolute
 TEST_SRCDIR = test
@@ -17,7 +21,9 @@ EXTRA_DIST += \
 	test/data/txcreate2.hex \
 	test/data/txcreatedata1.hex \
 	test/data/txcreatedata2.hex \
-	test/data/txcreatesign.hex
+	test/data/txcreatesign.hex \
+	test/data/txcreatedata_seq0.hex \
+	test/data/txcreatedata_seq1.hex
 
 JSON_TEST_FILES = \
   test/data/script_tests.json \
@@ -38,6 +44,7 @@ BITCOIN_TESTS =\
   test/scriptnum10.h \
   test/addrman_tests.cpp \
   test/alert_tests.cpp \
+  test/amount_tests.cpp \
   test/allocator_tests.cpp \
   test/base32_tests.cpp \
   test/base58_tests.cpp \
@@ -48,7 +55,6 @@ BITCOIN_TESTS =\
   test/bswap_tests.cpp \
   test/cachemap_tests.cpp \
   test/cachemultimap_tests.cpp \
-  test/checkblock_tests.cpp \
   test/coins_tests.cpp \
   test/compress_tests.cpp \
   test/crypto_tests.cpp \
@@ -86,6 +92,8 @@ BITCOIN_TESTS =\
   test/streams_tests.cpp \
   test/test_absolute.cpp \
   test/test_absolute.h \
+  test/testutil.cpp \
+  test/testutil.h \
   test/timedata_tests.cpp \
   test/transaction_tests.cpp \
   test/txvalidationcache_tests.cpp \
@@ -96,21 +104,23 @@ BITCOIN_TESTS =\
 
 if ENABLE_WALLET
 BITCOIN_TESTS += \
-  test/accounting_tests.cpp \
+  wallet/test/wallet_test_fixture.cpp \
+  wallet/test/wallet_test_fixture.h \
+  wallet/test/accounting_tests.cpp \
   wallet/test/wallet_tests.cpp \
-  test/rpc_wallet_tests.cpp
+  wallet/test/crypto_tests.cpp
 endif
 
 test_test_absolute_SOURCES = $(BITCOIN_TESTS) $(JSON_TEST_FILES) $(RAW_TEST_FILES)
 test_test_absolute_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) -I$(builddir)/test/ $(TESTDEFS) $(EVENT_CFLAGS)
-test_test_absolute_LDADD = $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
+test_test_absolute_LDADD = $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CONSENSUS) $(LIBBITCOIN_CRYPTO) $(LIBUNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
 test_test_absolute_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 if ENABLE_WALLET
 test_test_absolute_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-test_test_absolute_LDADD += $(LIBBITCOIN_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
+test_test_absolute_LDADD += $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS)
 test_test_absolute_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
 if ENABLE_ZMQ
@@ -124,6 +134,8 @@ $(BITCOIN_TESTS): $(GENERATED_TEST_FILES)
 CLEAN_BITCOIN_TEST = test/*.gcda test/*.gcno $(GENERATED_TEST_FILES)
 
 CLEANFILES += $(CLEAN_BITCOIN_TEST)
+# This file is problematic for out-of-tree builds if it exists.
+DISTCLEANFILES += test/buildenv.pyc
 
 absolute_test: $(TEST_BINARY)
 
@@ -135,7 +147,7 @@ absolute_test_clean : FORCE
 
 check-local:
 	@echo "Running test/bitcoin-util-test.py..."
-	$(AM_V_at)srcdir=$(srcdir) PYTHONPATH=$(builddir)/test $(srcdir)/test/bitcoin-util-test.py
+	$(AM_V_at)srcdir=$(srcdir) PYTHONPATH=$(builddir)/test $(PYTHON) $(srcdir)/test/bitcoin-util-test.py
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
 if EMBEDDED_UNIVALUE
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check

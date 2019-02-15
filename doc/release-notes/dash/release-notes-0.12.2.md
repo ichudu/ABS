@@ -1,15 +1,15 @@
-Dash Core version 0.12.2
+Absolute Core version 0.12.2
 ========================
 
 Release is now available from:
 
-  <https://www.dash.org/downloads/#wallets>
+  https://github.com/absolute-community/absolute/releases
 
 This is a new major version release, bringing new features and other improvements.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/dashpay/dash/issues>
+  <https://github.com/absolute-community/absolute/issues>
 
 Upgrading and downgrading
 =========================
@@ -19,8 +19,8 @@ How to Upgrade
 
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
-installer (on Windows) or just copy over /Applications/Dash-Qt (on Mac) or
-dashd/dash-qt (on Linux).
+installer (on Windows) or just copy over /Applications/Absolute-Qt (on Mac) or
+absoluted/absolute-qt (on Linux).
 
 Downgrade warning
 -----------------
@@ -39,15 +39,15 @@ Notable changes
 DIP0001
 -------
 
-We outline an initial scaling mechanism for Dash. After deployment and activation, Dash will be able to handle double the transactions it can currently handle. Together with the faster block times, Dash we will be prepared to handle eight times the traffic of Bitcoin.
+We outline an initial scaling mechanism for Absolute. After deployment and activation, Absolute will be able to handle double the transactions it can currently handle. Together with the faster block times, Absolute we will be prepared to handle eight times the traffic of Bitcoin.
 
-https://github.com/dashpay/dips/blob/master/dip-0001.md
+https://github.com/absolute-community/absolute/dips/dip-0001.md
 
 
 Fee reduction
 -------------
 
-All transaction fees are reduced 10x (from 10K per Kb to 1K per Kb), including fees for InstantSend (from 0.001 DASH per input to 0.0001 per input)
+All transaction fees are reduced 10x (from 10K per Kb to 1K per Kb), including fees for InstantSend (from 0.001 ABS per input to 0.0001 per input)
 
 InstantSend fix
 ---------------
@@ -58,7 +58,7 @@ RPC changes
 -----------
 
 There are few changes in existing RPC in this release:
-- There is no more `bcconfirmations` field in RPC output and `confirmations` shows blockchain only confirmations by default now. You can change this behaviour by switching new `addlockconf` param to `true`. There is a new rpc field `instantlock` which indicates whether a given transaction is locked via InstantSend. For more info and examples please see https://github.com/dashpay/dash/blob/v0.12.2.x/doc/instantsend.md;
+- There is no more `bcconfirmations` field in RPC output and `confirmations` shows blockchain only confirmations by default now. You can change this behaviour by switching new `addlockconf` param to `true`. There is a new rpc field `instantlock` which indicates whether a given transaction is locked via InstantSend.
 - `gobject list` and `gobject diff` accept `funding`, `delete` and `endorsed` filtering options now, in addition to `valid` and `all` currently available;
 - `vin` field in `masternode` commands is renamed to `outpoint` and shows data in short format now;
 - `getblocktemplate` output is extended with versionbits-related information;
@@ -78,12 +78,12 @@ New: `assumevalid`, `blocksonly`, `reindex-chainstate`
 
 Experimental: `usehd`, `mnemonic`, `mnemonicpassphrase`, `hdseed`
 
-See `Help -> Command-line options` in Qt wallet or `dashd --help` for more info.
+See `Help -> Command-line options` in Qt wallet or `absoluted --help` for more info.
 
 PrivateSend improvements
 ------------------------
 
-Algorithm for selecting inputs was slightly changed in [`6067896ae`](https://github.com/dashpay/dash/commit/6067896ae) ([#1248](https://github.com/dashpay/dash/pull/1248)). This should allow user to get some mixed funds much faster.
+Algorithm for selecting inputs was slightly changed in [`6067896ae`](https://github.com/absolute-community/absolute) ([#1248](https://github.com/absolute-community/absolute)). This should allow user to get some mixed funds much faster.
 
 Lots of backports, refactoring and bug fixes
 --------------------------------------------
@@ -136,7 +136,7 @@ Detailed [change log](https://github.com/dashpay/dash/compare/v0.12.1.x...dashpa
 - [`b39c518d5`](https://github.com/dashpay/dash/commit/b39c518d5) Backport Bitcoin PR#7749: Enforce expected outbound services (#1508)
 - [`9268a336d`](https://github.com/dashpay/dash/commit/9268a336d) Backport Bitcoin PR#7917: Optimize reindex (#1515)
 - [`b47984f30`](https://github.com/dashpay/dash/commit/b47984f30) Remove non-determinism which is breaking net_tests #8069 (#1517)
-- [`9a8a290b8`](https://github.com/dashpay/dash/commit/9a8a290b8) fix absolute that could fail to persist a ban (#1518)
+- [`9a8a290b8`](https://github.com/dashpay/dash/commit/9a8a290b8) fix race that could fail to persist a ban (#1518)
 - [`5a1961e5e`](https://github.com/dashpay/dash/commit/5a1961e5e) Backport Bitcoin PR#7906: net: prerequisites for p2p encapsulation changes (#1521)
 - [`7b5556a29`](https://github.com/dashpay/dash/commit/7b5556a29) Backport Bitcoin PR#8084: Add recently accepted blocks and txn to AttemptToEvictConnection (#1522)
 - [`9ce2b966c`](https://github.com/dashpay/dash/commit/9ce2b966c) Backport Bitcoin PR#8113: Rework addnode behaviour (#1525)

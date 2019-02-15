@@ -1,3 +1,7 @@
+// Copyright (c) 2015 The Bitcoin Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef _BITCOIN_PREVECTOR_H_
 #define _BITCOIN_PREVECTOR_H_
 
@@ -470,6 +474,13 @@ public:
         } else {
             return ((size_t)(sizeof(T))) * _union.capacity;
         }
+    }
+    value_type* data() {
+        return item_ptr(0);
+    }
+
+    const value_type* data() const {
+        return item_ptr(0);
     }
 };
 #pragma pack(pop)

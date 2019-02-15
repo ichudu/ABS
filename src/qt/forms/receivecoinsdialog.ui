@@ -10,6 +10,11 @@
     <height>387</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1">
    <item>
     <widget class="QFrame" name="frame2">
@@ -325,8 +330,6 @@
   <tabstop>showRequestButton</tabstop>
   <tabstop>removeRequestButton</tabstop>
  </tabstops>
- <resources>
-  <include location="../absolute.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

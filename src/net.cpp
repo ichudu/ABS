@@ -16,6 +16,7 @@
 #include "clientversion.h"
 #include "consensus/consensus.h"
 #include "crypto/common.h"
+#include "crypto/sha256.h"
 #include "hash.h"
 #include "primitives/transaction.h"
 #include "netbase.h"
@@ -70,6 +71,7 @@ const static std::string NET_MESSAGE_COMMAND_OTHER = "*other*";
 constexpr const CConnman::CFullyConnectedOnly CConnman::FullyConnectedOnly;
 constexpr const CConnman::CAllNodes CConnman::AllNodes;
 
+static const uint64_t RANDOMIZER_ID_NETGROUP = 0x6c0edd8036ef4036ULL; // SHA256("netgroup")[0:8]
 //
 // Global state variables
 //
@@ -82,9 +84,6 @@ static bool vfLimited[NET_MAX] = {};
 static CNode* pnodeLocalHost = NULL;
 std::string strSubVersion;
 
-std::map<CInv, CDataStream> mapRelay;
-std::deque<pair<int64_t, CInv> > vRelayExpiration;
-CCriticalSection cs_mapRelay;
 limitedmap<uint256, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
 // Signals for message handling
@@ -195,8 +194,9 @@ void AdvertiseLocal(CNode *pnode)
         }
         if (addrLocal.IsRoutable())
         {
-            LogPrintf("AdvertiseLocal: advertising address %s\n", addrLocal.ToString());
-            pnode->PushAddress(addrLocal);
+            LogPrint("net", "AdvertiseLocal: advertising address %s\n", addrLocal.ToString());
+            FastRandomContext insecure_rand;
+            pnode->PushAddress(addrLocal, insecure_rand);
         }
     }
 }
@@ -295,9 +295,6 @@ bool IsReachable(const CNetAddr& addr)
     return IsReachable(net);
 }
 
-
-std::vector<unsigned char> CNode::vchSecretKey;
-
 CNode* CConnman::FindNode(const CNetAddr& ip)
 {
     LOCK(cs_vNodes);
@@ -344,7 +341,7 @@ bool CConnman::CheckIncomingNonce(uint64_t nonce)
     return true;
 }
 
-CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fConnectToMasternode)
+CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCountFailure, bool fConnectToMasternode)
 {
     // TODO: This is different from what we have in Bitcoin which only calls ConnectNode from OpenNetworkConnection
     //       If we ever switch to using OpenNetworkConnection for MNs as well, this can be removed
@@ -413,10 +410,10 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
             }
         }
 
-        addrman.Attempt(addrConnect);
+        addrman.Attempt(addrConnect, fCountFailure);
 
         // Add node
-        CNode* pnode = new CNode(GetNewNodeId(), nLocalServices, GetBestHeight(), hSocket, addrConnect, pszDest ? pszDest : "", false, true);
+        CNode* pnode = new CNode(GetNewNodeId(), nLocalServices, GetBestHeight(), hSocket, addrConnect, CalculateKeyedNetGroup(addrConnect), pszDest ? pszDest : "", false, true);
 
         pnode->nServicesExpected = ServiceFlags(addrConnect.nServices & nRelevantServices);
         pnode->nTimeConnected = GetSystemTimeInSeconds();
@@ -433,7 +430,7 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
     } else if (!proxyConnectionFailed) {
         // If connecting to the node failed, and failure is not caused by a problem connecting to
         // the proxy, mark this as an attempt.
-        addrman.Attempt(addrConnect);
+        addrman.Attempt(addrConnect, fCountFailure);
     }
 
     return NULL;
@@ -865,11 +862,10 @@ struct NodeEvictionCandidate
           fNetworkNode(pnode->fNetworkNode),
           fRelayTxes(pnode->fRelayTxes),
           fBloomFilter(pnode->pfilter != NULL),
-          vchNetGroup(pnode->addr.GetGroup()),
-          vchKeyedNetGroup(pnode->vchKeyedNetGroup)
+          nKeyedNetGroup(pnode->nKeyedNetGroup)
         {}
 
-    int id;
+    NodeId id;
     int64_t nTimeConnected;
     int64_t nMinPingUsecTime;
     int64_t nLastBlockTime;
@@ -877,8 +873,7 @@ struct NodeEvictionCandidate
     bool fNetworkNode;
     bool fRelayTxes;
     bool fBloomFilter;
-    std::vector<unsigned char> vchNetGroup;
-    std::vector<unsigned char> vchKeyedNetGroup;
+    uint64_t nKeyedNetGroup;
 };
 
 static bool ReverseCompareNodeMinPingTime(const NodeEvictionCandidate& a, const NodeEvictionCandidate& b)
@@ -891,10 +886,9 @@ static bool ReverseCompareNodeTimeConnected(const NodeEvictionCandidate& a, cons
     return a.nTimeConnected > b.nTimeConnected;
 }
 
-static bool CompareKeyedNetGroup(const NodeEvictionCandidate& a, const NodeEvictionCandidate& b)
-{
-    return a.vchKeyedNetGroup < b.vchKeyedNetGroup;
-}
+static bool CompareNetGroupKeyed(const NodeEvictionCandidate &a, const NodeEvictionCandidate &b) {
+    return a.nKeyedNetGroup < b.nKeyedNetGroup;
+};
 
 static bool CompareNodeBlockTime(const NodeEvictionCandidate &a, const NodeEvictionCandidate &b)
 {
@@ -944,13 +938,13 @@ bool CConnman::AttemptToEvictConnection()
     // Protect connections with certain characteristics
 
     // Deterministically select 4 peers to protect by netgroup.
-    // An attacker cannot predict which netgroups will be protected.
-    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), CompareKeyedNetGroup);
+    // An attacker cannot predict which netgroups will be protected
+    std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), CompareNetGroupKeyed);
     vEvictionCandidates.erase(vEvictionCandidates.end() - std::min(4, static_cast<int>(vEvictionCandidates.size())), vEvictionCandidates.end());
 
     if (vEvictionCandidates.empty()) return false;
 
-    // Protect the 8 nodes with the best ping times.
+    // Protect the 8 nodes with the lowest minimum ping time.
     // An attacker cannot manipulate this metric without physically moving nodes closer to the target.
     std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), ReverseCompareNodeMinPingTime);
     vEvictionCandidates.erase(vEvictionCandidates.end() - std::min(8, static_cast<int>(vEvictionCandidates.size())), vEvictionCandidates.end());
@@ -972,7 +966,7 @@ bool CConnman::AttemptToEvictConnection()
     if (vEvictionCandidates.empty()) return false;
 
     // Protect the half of the remaining nodes which have been connected the longest.
-    // This replicates the existing implicit behavior.
+    // This replicates the non-eviction implicit behavior, and precludes attacks that start later.
     std::sort(vEvictionCandidates.begin(), vEvictionCandidates.end(), ReverseCompareNodeTimeConnected);
     vEvictionCandidates.erase(vEvictionCandidates.end() - static_cast<int>(vEvictionCandidates.size() / 2), vEvictionCandidates.end());
 
@@ -980,40 +974,32 @@ bool CConnman::AttemptToEvictConnection()
 
     // Identify the network group with the most connections and youngest member.
     // (vEvictionCandidates is already sorted by reverse connect time)
-    std::vector<unsigned char> naMostConnections;
+    uint64_t naMostConnections;
     unsigned int nMostConnections = 0;
     int64_t nMostConnectionsTime = 0;
-    std::map<std::vector<unsigned char>, std::vector<NodeEvictionCandidate> > mapAddrCounts;
-    for(size_t i = 0; i < vEvictionCandidates.size(); ++i) {
-        const NodeEvictionCandidate& candidate = vEvictionCandidates[i];
-        mapAddrCounts[candidate.vchNetGroup].push_back(candidate);
-        int64_t grouptime = mapAddrCounts[candidate.vchNetGroup][0].nTimeConnected;
-        size_t groupsize = mapAddrCounts[candidate.vchNetGroup].size();
+    std::map<uint64_t, std::vector<NodeEvictionCandidate> > mapNetGroupNodes;
+    BOOST_FOREACH(const NodeEvictionCandidate &node, vEvictionCandidates) {
+        mapNetGroupNodes[node.nKeyedNetGroup].push_back(node);
+        int64_t grouptime = mapNetGroupNodes[node.nKeyedNetGroup][0].nTimeConnected;
+        size_t groupsize = mapNetGroupNodes[node.nKeyedNetGroup].size();
 
         if (groupsize > nMostConnections || (groupsize == nMostConnections && grouptime > nMostConnectionsTime)) {
             nMostConnections = groupsize;
             nMostConnectionsTime = grouptime;
-            naMostConnections = candidate.vchNetGroup;
+            naMostConnections = node.nKeyedNetGroup;
         }
     }
 
     // Reduce to the network group with the most connections
-    std::vector<NodeEvictionCandidate> vEvictionNodes = mapAddrCounts[naMostConnections];
-
-    if(vEvictionNodes.empty()) {
-        return false;
-    }
+    vEvictionCandidates = std::move(mapNetGroupNodes[naMostConnections]);
 
     // Disconnect from the network group with the most connections
-    int nEvictionId = vEvictionNodes[0].id;
-    {
-        LOCK(cs_vNodes);
-        for(size_t i = 0; i < vNodes.size(); ++i) {
-            CNode* pnode = vNodes[i];
-            if(pnode->id == nEvictionId) {
-                pnode->fDisconnect = true;
-                return true;
-            }
+    NodeId evicted = vEvictionCandidates.front().id;
+    LOCK(cs_vNodes);
+    for(std::vector<CNode*>::const_iterator it(vNodes.begin()); it != vNodes.end(); ++it) {
+        if ((*it)->GetId() == evicted) {
+            (*it)->fDisconnect = true;
+            return true;
         }
     }
 
@@ -1094,7 +1080,7 @@ void CConnman::AcceptConnection(const ListenSocket& hListenSocket) {
         return;
     }
 
-    CNode* pnode = new CNode(GetNewNodeId(), nLocalServices, GetBestHeight(), hSocket, addr, "", true);
+    CNode* pnode = new CNode(GetNewNodeId(), nLocalServices, GetBestHeight(), hSocket, addr, CalculateKeyedNetGroup(addr), "", true);
     pnode->fWhitelisted = whitelisted;
     GetNodeSignals().InitializeNode(pnode, *this);
 
@@ -1316,7 +1302,7 @@ void CConnman::ThreadSocketHandler()
                         }
                         else if (nBytes == 0)
                         {
-                            // socket closed gabsolutefully
+                            // socket closed gracefully
                             if (!pnode->fDisconnect)
                                 LogPrint("net", "socket closed\n");
                             pnode->CloseSocketDisconnect();
@@ -1497,7 +1483,7 @@ void MapPort(bool fUseUPnP)
             upnp_thread->join();
             delete upnp_thread;
         }
-        upnp_thread = new boost::thread(boost::bind(&TabsoluteThread<void (*)()>, "upnp", &ThreadMapPort));
+        upnp_thread = new boost::thread(boost::bind(&TraceThread<void (*)()>, "upnp", &ThreadMapPort));
     }
     else if (upnp_thread) {
         upnp_thread->interrupt();
@@ -1514,11 +1500,16 @@ void MapPort(bool)
 }
 #endif
 
+static std::string GetDNSHost(const CDNSSeedData& data, ServiceFlags* requiredServiceBits)
+{
+    //use default host for non-filter-capable seeds or if we use the default service bits (NODE_NETWORK)
+    if (!data.supportsServiceBitsFiltering || *requiredServiceBits == NODE_NETWORK) {
+        *requiredServiceBits = NODE_NETWORK;
+        return data.host;
+    }
 
-
-
-
-
+    return strprintf("x%x.%s", *requiredServiceBits, data.host);
+}
 void CConnman::ThreadDNSAddressSeed()
 {
     // goal: only query DNS seeds if address need is acute
@@ -1545,12 +1536,13 @@ void CConnman::ThreadDNSAddressSeed()
         } else {
             std::vector<CNetAddr> vIPs;
             std::vector<CAddress> vAdd;
-            if (LookupHost(seed.host.c_str(), vIPs, 0, true))
+            ServiceFlags requiredServiceBits = nRelevantServices;
+            if (LookupHost(GetDNSHost(seed, &requiredServiceBits).c_str(), vIPs, 0, true))
             {
                 BOOST_FOREACH(const CNetAddr& ip, vIPs)
                 {
                     int nOneDay = 24*3600;
-                    CAddress addr = CAddress(CService(ip, Params().GetDefaultPort()), NODE_NETWORK);
+                    CAddress addr = CAddress(CService(ip, Params().GetDefaultPort()), requiredServiceBits);
                     addr.nTime = GetTime() - 3*nOneDay - GetRand(4*nOneDay); // use a random age between 3 and 7 days old
                     vAdd.push_back(addr);
                     found++;
@@ -1570,17 +1562,6 @@ void CConnman::ThreadDNSAddressSeed()
 
     LogPrintf("%d addresses found from DNS seeds\n", found);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 void CConnman::DumpAddresses()
 {
@@ -1612,7 +1593,7 @@ void CConnman::ProcessOneShot()
     CAddress addr;
     CSemaphoreGrant grant(*semOutbound, true);
     if (grant) {
-        if (!OpenNetworkConnection(addr, &grant, strDest.c_str(), true))
+        if (!OpenNetworkConnection(addr, false, &grant, strDest.c_str(), true))
             AddOneShot(strDest);
     }
 }
@@ -1628,7 +1609,7 @@ void CConnman::ThreadOpenConnections()
             BOOST_FOREACH(const std::string& strAddr, mapMultiArgs["-connect"])
             {
                 CAddress addr(CService(), NODE_NONE);
-                OpenNetworkConnection(addr, NULL, strAddr.c_str());
+                OpenNetworkConnection(addr, false, NULL, strAddr.c_str());
                 for (int i = 0; i < 10 && i < nLoop; i++)
                 {
                     if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
@@ -1675,9 +1656,10 @@ void CConnman::ThreadOpenConnections()
 
         // Only connect out to one peer per network group (/16 for IPv4).
         // Do this here so we don't have to critsect vNodes inside mapAddresses critsect.
+        // This is only done for mainnet and testnet
         int nOutbound = 0;
         std::set<std::vector<unsigned char> > setConnected;
-        {
+        if (!Params().AllowMultipleAddressesFromGroup()) {
             LOCK(cs_vNodes);
             BOOST_FOREACH(CNode* pnode, vNodes) {
                 if (!pnode->fInbound && !pnode->fMasternode) {
@@ -1756,7 +1738,7 @@ void CConnman::ThreadOpenConnections()
                 LogPrint("net", "Making feeler connection to %s\n", addrConnect.ToString());
             }
 
-            OpenNetworkConnection(addrConnect, &grant, NULL, false, fFeeler);
+            OpenNetworkConnection(addrConnect, (int)setConnected.size() >= std::min(nMaxConnections - 1, 2), &grant, NULL, false, fFeeler);
         }
     }
 }
@@ -1829,7 +1811,7 @@ void CConnman::ThreadOpenAddedConnections()
                 // If strAddedNode is an IP/port, decode it immediately, so
                 // OpenNetworkConnection can detect existing connections to that IP/port.
                 CService service(LookupNumeric(info.strAddedNode.c_str(), Params().GetDefaultPort()));
-                OpenNetworkConnection(CAddress(service, NODE_NONE), &grant, info.strAddedNode.c_str(), false);
+                OpenNetworkConnection(CAddress(service, NODE_NONE), false, &grant, info.strAddedNode.c_str(), false);
                 if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
                     return;
             }
@@ -1857,7 +1839,7 @@ void CConnman::ThreadMnbRequestConnections()
         std::pair<CService, std::set<uint256> > p = mnodeman.PopScheduledMnbRequestConnection();
         if(p.first == CService() || p.second.empty()) continue;
 
-        ConnectNode(CAddress(p.first, NODE_NETWORK), NULL, true);
+        ConnectNode(CAddress(p.first, NODE_NETWORK), NULL, false, true);
 
         LOCK(cs_vNodes);
 
@@ -1883,7 +1865,7 @@ void CConnman::ThreadMnbRequestConnections()
 }
 
 // if successful, this moves the passed grant to the constructed node
-bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOutbound, const char *pszDest, bool fOneShot, bool fFeeler)
+bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFailure, CSemaphoreGrant *grantOutbound, const char *pszDest, bool fOneShot, bool fFeeler)
 {
     //
     // Initiate outbound network connection
@@ -1902,7 +1884,7 @@ bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGran
     } else if (FindNode(std::string(pszDest)))
         return false;
 
-    CNode* pnode = ConnectNode(addrConnect, pszDest);
+    CNode* pnode = ConnectNode(addrConnect, pszDest, fCountFailure);
 
     if (!pnode)
         return false;
@@ -1918,7 +1900,6 @@ bool CConnman::OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGran
 
 void CConnman::ThreadMessageHandler()
 {
-    SetThreadPriority(THREAD_PRIORITY_BELOW_NORMAL);
     while (!flagInterruptMsgProc)
     {
         std::vector<CNode*> vNodesCopy = CopyNodeVector();
@@ -2033,7 +2014,7 @@ bool CConnman::BindListenPort(const CService &addrBind, std::string& strError, b
     {
         int nErr = WSAGetLastError();
         if (nErr == WSAEADDRINUSE)
-            strError = strprintf(_("Unable to bind to %s on this computer. Absolute Core is probably already running."), addrBind.ToString());
+            strError = strprintf(_("Unable to bind to %s on this computer. %s is probably already running."), addrBind.ToString(), _(PACKAGE_NAME));
         else
             strError = strprintf(_("Unable to bind to %s on this computer (bind returned error %s)"), addrBind.ToString(), NetworkErrorString(nErr));
         LogPrintf("%s\n", strError);
@@ -2131,7 +2112,7 @@ void CConnman::SetNetworkActive(bool active)
     uiInterface.NotifyNetworkActiveChanged(fNetworkActive);
 }
 
-CConnman::CConnman()
+CConnman::CConnman(uint64_t nSeed0In, uint64_t nSeed1In) : nSeed0(nSeed0In), nSeed1(nSeed1In)
 {
     fNetworkActive = true;
     setBannedIsDirty = false;
@@ -2157,9 +2138,9 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
 {
     nTotalBytesRecv = 0;
     nTotalBytesSent = 0;
-    nMaxOutboundLimit = 0;
+
     nMaxOutboundTotalBytesSentInCycle = 0;
-    nMaxOutboundTimeframe = 60*60*24; //1 day
+
     nMaxOutboundCycleStartTime = 0;
 
     nRelevantServices = connOptions.nRelevantServices;
@@ -2171,6 +2152,8 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
     nSendBufferMaxSize = connOptions.nSendBufferMaxSize;
     nReceiveFloodSize = connOptions.nReceiveFloodSize;
 
+    nMaxOutboundLimit = connOptions.nMaxOutboundLimit;
+    nMaxOutboundTimeframe = connOptions.nMaxOutboundTimeframe;
     SetBestHeight(connOptions.nBestHeight);
 
     clientInterface = connOptions.uiInterface;
@@ -2207,6 +2190,7 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
         DumpBanlist();
     }
 
+    uiInterface.InitMessage(_("Starting network threads..."));
     fAddressesInitialized = true;
 
     if (semOutbound == NULL) {
@@ -2222,7 +2206,7 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
     if (pnodeLocalHost == NULL) {
         CNetAddr local;
         LookupHost("127.0.0.1", local, false);
-        pnodeLocalHost = new CNode(GetNewNodeId(), nLocalServices, GetBestHeight(), INVALID_SOCKET, CAddress(CService(local, 0), nLocalServices));
+        pnodeLocalHost = new CNode(GetNewNodeId(), nLocalServices, GetBestHeight(), INVALID_SOCKET, CAddress(CService(local, 0), nLocalServices), 0);
         GetNodeSignals().InitializeNode(pnodeLocalHost, *this);
     }
 
@@ -2239,24 +2223,24 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
     }
 
     // Send and receive from sockets, accept connections
-    threadSocketHandler = std::thread(&TabsoluteThread<std::function<void()> >, "net", std::function<void()>(std::bind(&CConnman::ThreadSocketHandler, this)));
+    threadSocketHandler = std::thread(&TraceThread<std::function<void()> >, "net", std::function<void()>(std::bind(&CConnman::ThreadSocketHandler, this)));
 
     if (!GetBoolArg("-dnsseed", true))
         LogPrintf("DNS seeding disabled\n");
     else
-        threadDNSAddressSeed = std::thread(&TabsoluteThread<std::function<void()> >, "dnsseed", std::function<void()>(std::bind(&CConnman::ThreadDNSAddressSeed, this)));
+        threadDNSAddressSeed = std::thread(&TraceThread<std::function<void()> >, "dnsseed", std::function<void()>(std::bind(&CConnman::ThreadDNSAddressSeed, this)));
 
     // Initiate outbound connections from -addnode
-    threadOpenAddedConnections = std::thread(&TabsoluteThread<std::function<void()> >, "addcon", std::function<void()>(std::bind(&CConnman::ThreadOpenAddedConnections, this)));
+    threadOpenAddedConnections = std::thread(&TraceThread<std::function<void()> >, "addcon", std::function<void()>(std::bind(&CConnman::ThreadOpenAddedConnections, this)));
 
     // Initiate outbound connections
-    threadOpenConnections = std::thread(&TabsoluteThread<std::function<void()> >, "opencon", std::function<void()>(std::bind(&CConnman::ThreadOpenConnections, this)));
+    threadOpenConnections = std::thread(&TraceThread<std::function<void()> >, "opencon", std::function<void()>(std::bind(&CConnman::ThreadOpenConnections, this)));
 
     // Initiate masternode connections
-    threadMnbRequestConnections = std::thread(&TabsoluteThread<std::function<void()> >, "mnbcon", std::function<void()>(std::bind(&CConnman::ThreadMnbRequestConnections, this)));
+    threadMnbRequestConnections = std::thread(&TraceThread<std::function<void()> >, "mnbcon", std::function<void()>(std::bind(&CConnman::ThreadMnbRequestConnections, this)));
 
     // Process messages
-    threadMessageHandler = std::thread(&TabsoluteThread<std::function<void()> >, "msghand", std::function<void()>(std::bind(&CConnman::ThreadMessageHandler, this)));
+    threadMessageHandler = std::thread(&TraceThread<std::function<void()> >, "msghand", std::function<void()>(std::bind(&CConnman::ThreadMessageHandler, this)));
 
     // Dump network addresses
     scheduler.scheduleEvery(boost::bind(&CConnman::DumpData, this), DUMP_ADDRESSES_INTERVAL);
@@ -2476,52 +2460,15 @@ bool CConnman::DisconnectNode(NodeId id)
 
 void CConnman::RelayTransaction(const CTransaction& tx)
 {
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss.reserve(10000);
-    uint256 hash = tx.GetHash();
-    CTxLockRequest txLockRequest;
-    CDarksendBroadcastTx dstx = CPrivateSend::GetDSTX(hash);
-    if(dstx) { // MSG_DSTX
-        ss << dstx;
-    } else if(instantsend.GetTxLockRequest(hash, txLockRequest)) { // MSG_TXLOCK_REQUEST
-        ss << txLockRequest;
-    } else { // MSG_TX
-        ss << tx;
-    }
-    RelayTransaction(tx, ss);
-}
 
-void CConnman::RelayTransaction(const CTransaction& tx, const CDataStream& ss)
-{
     uint256 hash = tx.GetHash();
     int nInv = static_cast<bool>(CPrivateSend::GetDSTX(hash)) ? MSG_DSTX :
                 (instantsend.HasTxLockRequest(hash) ? MSG_TXLOCK_REQUEST : MSG_TX);
     CInv inv(nInv, hash);
-    {
-        LOCK(cs_mapRelay);
-        // Expire old relay messages
-        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
-        {
-            mapRelay.erase(vRelayExpiration.front().second);
-            vRelayExpiration.pop_front();
-        }
-
-        // Save original serialized message so newer versions are preserved
-        mapRelay.insert(std::make_pair(inv, ss));
-        vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, inv));
-    }
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
     {
-        if(!pnode->fRelayTxes)
-            continue;
-        LOCK(pnode->cs_filter);
-        if (pnode->pfilter)
-        {
-            if (pnode->pfilter->IsRelevantAndUpdate(tx))
-                pnode->PushInventory(inv);
-        } else
-            pnode->PushInventory(inv);
+        pnode->PushInventory(inv);
     }
 }
 
@@ -2558,11 +2505,10 @@ void CConnman::RecordBytesSent(uint64_t bytes)
 void CConnman::SetMaxOutboundTarget(uint64_t limit)
 {
     LOCK(cs_totalBytesSent);
-    uint64_t recommendedMinimum = (nMaxOutboundTimeframe / 600) * MaxBlockSize(true);
+
     nMaxOutboundLimit = limit;
 
-    if (limit > 0 && limit < recommendedMinimum)
-        LogPrintf("Max outbound target is very small (%s bytes) and will be overshot. Recommended minimum is %s bytes.\n", nMaxOutboundLimit, recommendedMinimum);
+
 }
 
 uint64_t CConnman::GetMaxOutboundTarget()
@@ -2662,7 +2608,9 @@ int CConnman::GetBestHeight() const
 unsigned int CConnman::GetReceiveFloodSize() const { return nReceiveFloodSize; }
 unsigned int CConnman::GetSendBufferSize() const{ return nSendBufferMaxSize; }
 
-CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress& addrIn, const std::string& addrNameIn, bool fInboundIn, bool fNetworkNodeIn) :
+CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress& addrIn, uint64_t nKeyedNetGroupIn, const std::string& addrNameIn, bool fInboundIn, bool fNetworkNodeIn) :
+    addr(addrIn),
+    nKeyedNetGroup(nKeyedNetGroupIn),
     addrKnown(5000, 0.001),
     filterInventoryKnown(50000, 0.000001),
     nSendVersion(0)
@@ -2677,7 +2625,6 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     nRecvBytes = 0;
     nTimeConnected = GetSystemTimeInSeconds();
     nTimeOffset = 0;
-    addr = addrIn;
     addrName = addrNameIn == "" ? addr.ToStringIPPort() : addrNameIn;
     nVersion = 0;
     nNumWarningsSkipped = 0;
@@ -2697,12 +2644,15 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     hashContinue = uint256();
     nStartingHeight = -1;
     filterInventoryKnown.reset();
+    fSendMempool = false;
     fGetAddr = false;
     nNextLocalAddrSend = 0;
     nNextAddrSend = 0;
     nNextInvSend = 0;
     fRelayTxes = false;
+    fSentAddr = false;
     pfilter = new CBloomFilter();
+    timeLastMempoolReq = 0;
     nLastBlockTime = 0;
     nLastTXTime = 0;
     nPingNonceSent = 0;
@@ -2711,7 +2661,9 @@ CNode::CNode(NodeId idIn, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn
     fPingQueued = false;
     fMasternode = false;
     nMinPingUsecTime = std::numeric_limits<int64_t>::max();
-    vchKeyedNetGroup = CalculateKeyedNetGroup(addr);
+    minFeeFilter = 0;
+    lastSentFeeFilter = 0;
+    nextSendTimeFeeFilter = 0;
     id = idIn;
     nLocalServices = nLocalServicesIn;
     fPauseRecv = false;
@@ -2791,27 +2743,6 @@ void CNode::AskFor(const CInv& inv)
 bool CConnman::NodeFullyConnected(const CNode* pnode)
 {
     return pnode && pnode->fSuccessfullyConnected && !pnode->fDisconnect;
-}
-
-std::vector<unsigned char> CNode::CalculateKeyedNetGroup(CAddress& address)
-{
-    if(vchSecretKey.size() == 0) {
-        vchSecretKey.resize(32, 0);
-        GetRandBytes(vchSecretKey.data(), vchSecretKey.size());
-    }
-
-    std::vector<unsigned char> vchGroup;
-    CSHA256 hash;
-    std::vector<unsigned char> vch(32);
-
-    vchGroup = address.GetGroup();
-
-    hash.Write(begin_ptr(vchGroup), vchGroup.size());
-
-    hash.Write(begin_ptr(vchSecretKey), vchSecretKey.size());
-
-    hash.Finalize(begin_ptr(vch));
-    return vch;
 }
 
 CDataStream CConnman::BeginMessage(CNode* pnode, int nVersion, int flags, const std::string& sCommand)
@@ -2912,4 +2843,16 @@ void CConnman::ReleaseNodeVector(const std::vector<CNode*>& vecNodes)
         CNode* pnode = vecNodes[i];
         pnode->Release();
     }
+}
+
+CSipHasher CConnman::GetDeterministicRandomizer(uint64_t id)
+{
+    return CSipHasher(nSeed0, nSeed1).Write(id);
+}
+
+uint64_t CConnman::CalculateKeyedNetGroup(const CAddress& ad)
+{
+    std::vector<unsigned char> vchNetGroup(ad.GetGroup());
+
+    return GetDeterministicRandomizer(RANDOMIZER_ID_NETGROUP).Write(&vchNetGroup[0], vchNetGroup.size()).Finalize();
 }

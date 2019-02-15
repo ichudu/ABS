@@ -22,6 +22,7 @@ static const int MASTERNODE_WATCHDOG_MAX_SECONDS        = 120 * 60;
 static const int MASTERNODE_NEW_START_REQUIRED_SECONDS  = 180 * 60;
 
 static const int MASTERNODE_POSE_BAN_MAX_SCORE          = 5;
+static const int MASTERNODE_COLLATERAL                  = 2500;
 
 //
 // The Masternode Ping Class : Contains a different serialize method for sending pings from masternodes throughout the network
@@ -29,6 +30,9 @@ static const int MASTERNODE_POSE_BAN_MAX_SCORE          = 5;
 
 // sentinel version before sentinel ping implementation
 #define DEFAULT_SENTINEL_VERSION 0x010001
+
+// sentinel with voting fix to enable proposals
+#define MIN_SENTINEL_VERSION 0x010200
 
 class CMasternodePing
 {
@@ -150,7 +154,8 @@ public:
     enum CollateralStatus {
         COLLATERAL_OK,
         COLLATERAL_UTXO_NOT_FOUND,
-        COLLATERAL_INVALID_AMOUNT
+        COLLATERAL_INVALID_AMOUNT,
+        COLLATERAL_INVALID_PUBKEY
     };
 
 
@@ -204,8 +209,8 @@ public:
 
     bool UpdateFromNewBroadcast(CMasternodeBroadcast& mnb, CConnman& connman);
 
-    static CollateralStatus CheckCollateral(const COutPoint& outpoint);
-    static CollateralStatus CheckCollateral(const COutPoint& outpoint, int& nHeightRet);
+    static CollateralStatus CheckCollateral(const COutPoint& outpoint, const CPubKey& pubkey);
+    static CollateralStatus CheckCollateral(const COutPoint& outpoint, const CPubKey& pubkey, int& nHeightRet);
     void Check(bool fForce = false);
 
     bool IsBroadcastedWithin(int nSeconds) { return GetAdjustedTime() - sigTime < nSeconds; }
@@ -251,9 +256,6 @@ public:
 
         return false;
     }
-
-    /// Is the input associated with collateral public key? (and there is 1000 ABS - checking if valid masternode)
-    bool IsInputAssociatedWithPubkey();
 
     bool IsValidNetAddr();
     static bool IsValidNetAddr(CService addrIn);

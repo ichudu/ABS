@@ -1,3 +1,8 @@
+// Copyright (c) 2015 The Bitcoin Core developers
+// Copyright (c) 2014-2017 The Absolute Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef BITCOIN_TEST_TEST_ABSOLUTE_H
 #define BITCOIN_TEST_TEST_ABSOLUTE_H
 
@@ -21,8 +26,7 @@ struct BasicTestingSetup {
 };
 
 /** Testing setup that configures a complete environment.
- * Included are data directory, coins database, script check threads
- * and wallet (if enabled) setup.
+ * Included are data directory, coins database, script check threads setup.
  */
 class CConnman;
 struct TestingSetup: public BasicTestingSetup {

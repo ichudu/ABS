@@ -104,9 +104,6 @@ announcing their headers directly, instead of just announcing the hash. In a
 reorganization, all new headers are sent, instead of just the new tip. This
 can often prevent an extra roundtrip before the actual block is downloaded.
 
-With this change, pruning nodes are now able to relay new blocks to compatible
-peers.
-
 Memory pool limiting
 --------------------
 
@@ -187,6 +184,14 @@ combination of data pushes and numeric constant opcodes (OP_1 to OP_16) after
 the OP_RETURN. The limit on OP_RETURN output size is now applied to the entire
 serialized scriptPubKey, 83 bytes by default. (the previous 80 byte default plus
 three bytes overhead)
+
+Relay: New and only new blocks relayed when pruning
+---------------------------------------------------
+
+When running in pruned mode, the client will now relay new blocks. When
+responding to the `getblocks` message, only hashes of blocks that are on disk
+and are likely to remain there for some reasonable time window (1 hour) will be
+returned (previously all relevant hashes were returned).
 
 Relay and Mining: Priority transactions
 ---------------------------------------
@@ -497,7 +502,7 @@ git merge commit are mentioned.
 - #6648 `cd381d7` Simplify logic of REST request suffix parsing. (Daniel Kraft)
 - #6695 `5e21388` libevent http fixes (Wladimir J. van der Laan)
 - #5264 `48efbdb` show scriptSig signature hash types in transaction decodes. fixes #3166 (mruddy)
-- #6719 `1a9f19a` Make HTTP server shutdown more gabsoluteful (Wladimir J. van der Laan)
+- #6719 `1a9f19a` Make HTTP server shutdown more graceful (Wladimir J. van der Laan)
 - #6859 `0fbfc51` http: Restrict maximum size of http + headers (Wladimir J. van der Laan)
 - #5936 `bf7c195` [RPC] Add optional locktime to createrawtransaction (Tom Harding)
 - #6877 `26f5b34` rpc: Add maxmempool and effective min fee to getmempoolinfo (Wladimir J. van der Laan)
@@ -724,7 +729,7 @@ git merge commit are mentioned.
 - #6287 `d2464df` Clang lock debug (Cory Fields)
 - #6465 `410fd74` Don't share objects between TestInstances (Casey Rodarmor)
 - #6534 `6c1c7fd` Fix test locking issues and un-revert the probable-deadlines assertions commit (Cory Fields)
-- #6509 `bb4faee` Fix absolute condition on test node shutdown (Casey Rodarmor)
+- #6509 `bb4faee` Fix race condition on test node shutdown (Casey Rodarmor)
 - #6523 `561f8af` Add p2p-fullblocktest.py (Casey Rodarmor)
 - #6590 `981fd92` Fix stale socket rebinding and re-enable python tests for Windows (Cory Fields)
 - #6730 `cb4d6d0` build: Remove dependency of bitcoin-cli on secp256k1 (Wladimir J. van der Laan)
@@ -887,5 +892,3 @@ Thanks to everyone who directly contributed to this release:
 - zathras-crypto
 
 As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).
-
-

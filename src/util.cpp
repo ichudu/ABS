@@ -125,14 +125,13 @@ map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
-bool fDaemon = false;
 bool fServer = false;
 string strMiscWarning;
 bool fLogTimestamps = DEFAULT_LOGTIMESTAMPS;
 bool fLogTimeMicros = DEFAULT_LOGTIMEMICROS;
 bool fLogThreadNames = DEFAULT_LOGTHREADNAMES;
 bool fLogIPs = DEFAULT_LOGIPS;
-volatile bool fReopenDebugLog = false;
+std::atomic<bool> fReopenDebugLog(false);
 CTranslationInterface translationInterface;
 
 /** Init OpenSSL library multithreading support */
@@ -609,9 +608,9 @@ void ClearDatadirCache()
     pathCachedNetSpecific = boost::filesystem::path();
 }
 
-boost::filesystem::path GetConfigFile()
+boost::filesystem::path GetConfigFile(const std::string& confPath)
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME));
+    boost::filesystem::path pathConfigFile(confPath);
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
@@ -621,17 +620,19 @@ boost::filesystem::path GetConfigFile()
 boost::filesystem::path GetMasternodeConfigFile()
 {
     boost::filesystem::path pathConfigFile(GetArg("-mnconf", "masternode.conf"));
-    if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir() / pathConfigFile;
+    if (!pathConfigFile.is_complete())
+        pathConfigFile = GetDataDir() / pathConfigFile;
     return pathConfigFile;
 }
 
-void ReadConfigFile(map<string, string>& mapSettingsRet,
+void ReadConfigFile(const std::string& confPath,
+                    map<string, string>& mapSettingsRet,
                     map<string, vector<string> >& mapMultiSettingsRet)
 {
-    boost::filesystem::ifstream streamConfig(GetConfigFile());
+    boost::filesystem::ifstream streamConfig(GetConfigFile(confPath));
     if (!streamConfig.good()){
         // Create empty absolute.conf if it does not excist
-        FILE* configFile = fopen(GetConfigFile().string().c_str(), "a");
+        FILE* configFile = fopen(GetConfigFile(confPath).string().c_str(), "a");
         if (configFile != NULL)
             fclose(configFile);
         return; // Nothing to read, so just return
@@ -703,19 +704,19 @@ bool TryCreateDirectory(const boost::filesystem::path& p)
     return false;
 }
 
-void FileCommit(FILE *fileout)
+void FileCommit(FILE *file)
 {
-    fflush(fileout); // harmless if redundantly called
+    fflush(file); // harmless if redundantly called
 #ifdef WIN32
-    HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fileout));
+    HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(file));
     FlushFileBuffers(hFile);
 #else
     #if defined(__linux__) || defined(__NetBSD__)
-    fdatasync(fileno(fileout));
+    fdatasync(fileno(file));
     #elif defined(__APPLE__) && defined(F_FULLFSYNC)
-    fcntl(fileno(fileout), F_FULLFSYNC, 0);
+    fcntl(fileno(file), F_FULLFSYNC, 0);
     #else
-    fsync(fileno(fileout));
+    fsync(fileno(file));
     #endif
 #endif
 }
@@ -842,28 +843,6 @@ boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate)
 }
 #endif
 
-boost::filesystem::path GetTempPath() {
-#if BOOST_FILESYSTEM_VERSION == 3
-    return boost::filesystem::temp_directory_path();
-#else
-    // TODO: remove when we don't support filesystem v2 anymore
-    boost::filesystem::path path;
-#ifdef WIN32
-    char pszPath[MAX_PATH] = "";
-
-    if (GetTempPathA(MAX_PATH, pszPath))
-        path = boost::filesystem::path(pszPath);
-#else
-    path = boost::filesystem::path("/tmp");
-#endif
-    if (path.empty() || !boost::filesystem::is_directory(path)) {
-        LogPrintf("GetTempPath(): failed to find temp path\n");
-        return boost::filesystem::path("");
-    }
-    return path;
-#endif
-}
-
 void runCommand(const std::string& strCommand)
 {
     int nErr = ::system(strCommand.c_str());
@@ -933,19 +912,6 @@ bool SetupNetworking()
     return true;
 }
 
-void SetThreadPriority(int nPriority)
-{
-#ifdef WIN32
-    SetThreadPriority(GetCurrentThread(), nPriority);
-#else // WIN32
-#ifdef PRIO_THREAD
-    setpriority(PRIO_THREAD, 0, nPriority);
-#else // PRIO_THREAD
-    setpriority(PRIO_PROCESS, 0, nPriority);
-#endif // PRIO_THREAD
-#endif // WIN32
-}
-
 int GetNumCores()
 {
 #if BOOST_VERSION >= 105600
@@ -955,6 +921,17 @@ int GetNumCores()
 #endif
 }
 
+std::string CopyrightHolders(const std::string& strPrefix, unsigned int nStartYear, unsigned int nEndYear)
+{
+    std::string strCopyrightHolders = strPrefix + strprintf(" %u-%u ", nStartYear, nEndYear) + _(COPYRIGHT_HOLDERS);
+    if (strCopyrightHolders.find("%s") != strCopyrightHolders.npos) {
+        strCopyrightHolders = strprintf(strCopyrightHolders, _(COPYRIGHT_HOLDERS_SUBSTITUTION));
+    }
+    if (strCopyrightHolders.find("Bitcoin Core developers") == strCopyrightHolders.npos) {
+        strCopyrightHolders += "\n" + strPrefix + strprintf(" %u-%u ", 2009, nEndYear) + "The Bitcoin Core developers";
+    }
+    return strCopyrightHolders;
+}
 
 uint32_t StringVersionToInt(const std::string& strVersion)
 {

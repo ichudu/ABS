@@ -10,17 +10,25 @@
     <height>363</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Welcome</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="welcomeLabel">
      <property name="styleSheet">
       <string notr="true">QLabel { font-style:italic; }</string>
      </property>
      <property name="text">
-      <string>Welcome to Absolute Core.</string>
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../absolute.qrc">:/images/base/absolute_logo_horizontal</pixmap>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -44,9 +52,9 @@
     </spacer>
    </item>
    <item>
-    <widget class="QLabel" name="label_4">
+    <widget class="QLabel" name="storageLabel">
      <property name="text">
-      <string>As this is the first time the program is launched, you can choose where Absolute Core will store its data.</string>
+      <string>As this is the first time the program is launched, you can choose where %1 will store its data.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -56,7 +64,7 @@
    <item>
     <widget class="QLabel" name="sizeWarningLabel">
      <property name="text">
-      <string>Absolute Core will download and store a copy of the Absolute block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</string>
+      <string>%1 will download and store a copy of the Absolute block chain. At least %1GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -228,7 +236,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../absolute.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>

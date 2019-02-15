@@ -8,7 +8,7 @@
 2. Click the Receive tab.
 3. Fill in the form to request a payment.
     * Label: mn01
-    * Amount: 1000 (optional)
+    * Amount: 2500 (optional)
     * Click *Request payment* button
 5. Click the *Copy Address* button
 
@@ -16,9 +16,9 @@ Create a new wallet address for each Masternode.
 
 Close your QT Wallet.
 
-### Send 1000 ABS to New Addresses
+### Send 2500 ABS to New Addresses
 
-Send exactly 1000 ABS to each new address created above.
+Send exactly 2500 ABS to each new address created above.
 
 ### Create New Masternode Private Keys
 
@@ -53,6 +53,7 @@ Issue the following:
 Make note of the hash (which is your collateral_output) and index.
 
 ### Enter your Masternode details into your masternode.conf file
+[From the absolute github repo](https://github.com/absolute/blob/master/doc/masternode_conf.md)
 
 `masternode.conf` format is a space seperated text file. Each line consisting of an alias, IP address followed by port, masternode private key, collateral output transaction id and collateral output index.
 
@@ -63,8 +64,8 @@ alias ipaddress:port masternode_private_key collateral_output collateral_output_
 Example:
 
 ```
-mn01 127.0.0.1:8800 93HaYBVUCYjEMeeH1Y4sBGLALQZE1Yc1K64xiqgX37tGBDQL8Xg 2bcd3c84c84f87eaa86e4e56834c92927a07f9e18718810b92e0d0324456a67c 0
-mn02 127.0.0.2:8800 93WaAb3htPJEV8E9aQcN23Jt97bPex7YvWfgMDTUdWJvzmrMqey aa9f1034d973377a5e733272c3d0eced1de22555ad45d6b24abadff8087948d4 0
+mn01 127.0.0.1:18888 4gsWMR8PUAZdJ5Umhr4CXrEAQydBGmq3UJ7YR7NwewADRoeudrg 2bcd3c84c84f87eaa86e4e56834c92927a07f9e18718810b92e0d0324456a67c 0
+mn02 127.0.0.2:18888 4hpnZ6zkx8mNEb5ga47MunVdthS5XhG6Jd5C5YaCvsWEh6eFqdM aa9f1034d973377a5e733272c3d0eced1de22555ad45d6b24abadff8087948d4 0
 ```
 
 ## Update absolute.conf on server
@@ -73,7 +74,7 @@ If you generated a new masternode private key, you will need to update the remot
 
 Shut down the daemon and then edit the file.
 
-```vim .absolutecore/absolute.conf```
+```nano .absolutecore/absolute.conf```
 
 ### Edit the masternodeprivkey
 If you generated a new masternode private key, you will need to update the `masternodeprivkey` value in your remote `absolute.conf` file.
@@ -88,7 +89,7 @@ You can confirm that remote server is on the correct block by issuing
 
 ```absolute-cli getinfo```
 
-and comparing with the official explorer at https://explorer.absolutecrypto.com
+and comparing with the official explorer at https://explorer.absolutecoin.net
 
 ### Local
 
@@ -119,7 +120,7 @@ absolute-cli masternode status
 {
     "outpoint" : "<collateral_output>-<collateral_output_index>",
     "service" : "<ipaddress>:<port>",
-    "pubkey" : "<1000 ABS address>",
+    "pubkey" : "<2500 ABS address>",
     "status" : "Masternode successfully started"
 }
 ```

@@ -121,7 +121,12 @@ bool CActiveMasternode::SendMasternodePing(CConnman& connman)
 bool CActiveMasternode::UpdateSentinelPing(int version)
 {
     nSentinelVersion = version;
+    if(version < MIN_SENTINEL_VERSION ){
+        LogPrintf("CActiveMasternode::UpdateSentinelPing -- Sentinel is out of date please update. Version = %s\n", SafeIntVersionToString(version));
+        return false;
+    }
     nSentinelPingTime = GetAdjustedTime();
+    LogPrint("masternode", "CActiveMasternode::UpdateSentinelPing -- Updated Sentinel Version = %s PingTime = %d\n", SafeIntVersionToString(nSentinelVersion), nSentinelPingTime);
 
     return true;
 }
@@ -183,7 +188,7 @@ void CActiveMasternode::ManageStateInitial(CConnman& connman)
 
     LogPrintf("CActiveMasternode::ManageStateInitial -- Checking inbound connection to '%s'\n", service.ToString());
 
-    if(!connman.ConnectNode(CAddress(service, NODE_NETWORK), NULL, true)) {
+    if(!connman.ConnectNode(CAddress(service, NODE_NETWORK), NULL, false, true)) {
         nState = ACTIVE_MASTERNODE_NOT_CAPABLE;
         strNotCapableReason = "Could not connect to " + service.ToString();
         LogPrintf("CActiveMasternode::ManageStateInitial -- %s: %s\n", GetStateString(), strNotCapableReason);

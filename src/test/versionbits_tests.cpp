@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "chain.h"
-#include "random.h"
+#include "test_random.h"
 #include "versionbits.h"
 #include "test/test_absolute.h"
 #include "chainparams.h"
@@ -136,7 +136,7 @@ BOOST_FIXTURE_TEST_SUITE(versionbits_tests, TestingSetup)
 BOOST_AUTO_TEST_CASE(versionbits_test)
 {
     for (int i = 0; i < 64; i++) {
-        BOOST_TEST_MESSAGE("versionbits_test " << i);
+
 
         // DEFINED -> FAILED
         VersionBitsTester().TestDefined()

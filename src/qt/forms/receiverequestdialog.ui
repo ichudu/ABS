@@ -10,6 +10,11 @@
     <height>597</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QRImageWidget" name="lblQRCode">
@@ -22,7 +27,7 @@
      <property name="minimumSize">
       <size>
        <width>300</width>
-       <height>300</height>
+       <height>320</height>
       </size>
      </property>
      <property name="toolTip">

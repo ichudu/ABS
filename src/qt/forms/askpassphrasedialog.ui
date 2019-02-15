@@ -22,6 +22,11 @@
     <height>0</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Passphrase Dialog</string>
   </property>
@@ -113,14 +118,14 @@
        <property name="enabled">
         <bool>true</bool>
        </property>
+       <property name="visible">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Serves to disable the trivial sendmoney when OS account compromised. Provides no real security.</string>
        </property>
        <property name="text">
         <string>Only for mixing via PrivateSend</string>
-       </property>
-       <property name="visible">
-        <bool>false</bool>
        </property>
       </widget>
      </item>

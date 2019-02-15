@@ -420,7 +420,7 @@ bool CPrivateSendClient::SendDenominate(const std::vector<CTxDSIn>& vecTxDSIn, c
 
         mempool.PrioritiseTransaction(tx.GetHash(), tx.GetHash().ToString(), 1000, 0.1*COIN);
         TRY_LOCK(cs_main, lockMain);
-        if(!lockMain || !AcceptToMemoryPool(mempool, validationState, CTransaction(tx), false, NULL, false, true, true)) {
+        if(!lockMain || !AcceptToMemoryPool(mempool, validationState, CTransaction(tx), false, NULL, false, maxTxFee, true)) {
             LogPrintf("CPrivateSendClient::SendDenominate -- AcceptToMemoryPool() failed! tx=%s", tx.ToString());
             UnlockCoins();
             keyHolderStorage.ReturnAll();
@@ -886,7 +886,7 @@ bool CPrivateSendClient::JoinExistingQueue(CAmount nBalanceNeedsAnonymized, CCon
 
         LogPrintf("CPrivateSendClient::JoinExistingQueue -- attempt to connect to masternode from queue, addr=%s\n", infoMn.addr.ToString());
         // connect to Masternode and submit the queue request
-        CNode* pnode = connman.ConnectNode(CAddress(infoMn.addr, NODE_NETWORK), NULL, true);
+        CNode* pnode = connman.ConnectNode(CAddress(infoMn.addr, NODE_NETWORK), NULL, false, true);
         if(pnode) {
             infoMixingMasternode = infoMn;
             nSessionDenom = dsq.nDenom;
@@ -953,7 +953,7 @@ bool CPrivateSendClient::StartNewQueue(CAmount nValueMin, CAmount nBalanceNeedsA
         }
 
         LogPrintf("CPrivateSendClient::StartNewQueue -- attempt %d connection to Masternode %s\n", nTries, infoMn.addr.ToString());
-        CNode* pnode = connman.ConnectNode(CAddress(infoMn.addr, NODE_NETWORK), NULL, true);
+        CNode* pnode = connman.ConnectNode(CAddress(infoMn.addr, NODE_NETWORK), NULL, false, true);
         if(pnode) {
             LogPrintf("CPrivateSendClient::StartNewQueue -- connected, addr=%s\n", infoMn.addr.ToString());
             infoMixingMasternode = infoMn;
@@ -988,7 +988,6 @@ bool CPrivateSendClient::SubmitDenominate(CConnman& connman)
     std::vector<CTxOut> vecTxOutRet;
 
     // Submit transaction to the pool if we get here
-    // Try to use only inputs with the same number of rounds starting from the highest number of rounds possible
     if (nLiquidityProvider) {
         // Try to use only inputs with the same number of rounds starting from the lowest number of rounds possible
         for(int i = 0; i< nPrivateSendRounds; i++) {
@@ -1227,7 +1226,7 @@ bool CPrivateSendClient::MakeCollateralAmounts(const CompactTallyItem& tallyItem
 
     LogPrintf("CPrivateSendClient::MakeCollateralAmounts -- txid=%s\n", wtx.GetHash().GetHex());
 
-    // use the same nCachedLastSuccessBlock as for DS mixinx to prevent absolute
+    // use the same nCachedLastSuccessBlock as for DS mixinx to prevent race
     if(!pwalletMain->CommitTransaction(wtx, reservekeyChange, &connman)) {
         LogPrintf("CPrivateSendClient::MakeCollateralAmounts -- CommitTransaction failed!\n");
         return false;
@@ -1360,7 +1359,7 @@ bool CPrivateSendClient::CreateDenominated(const CompactTallyItem& tallyItem, bo
         return false;
     }
 
-    // use the same nCachedLastSuccessBlock as for DS mixing to prevent absolute
+    // use the same nCachedLastSuccessBlock as for DS mixing to prevent race
     nCachedLastSuccessBlock = nCachedBlockHeight;
     LogPrintf("CPrivateSendClient::CreateDenominated -- txid=%s\n", wtx.GetHash().GetHex());
 

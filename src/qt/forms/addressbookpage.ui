@@ -10,6 +10,11 @@
     <height>380</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="labelExplanation">
@@ -136,8 +141,6 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../absolute.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "prevector.h"
-#include "random.h"
+#include "test_random.h"
 
 #include "serialize.h"
 #include "streams.h"
@@ -27,8 +27,7 @@ class prevector_tester {
 
     typedef typename pretype::size_type Size;
     bool passed = true;
-    uint32_t insecure_rand_Rz_cache;
-    uint32_t insecure_rand_Rw_cache;
+    FastRandomContext rand_cache;
 
 
     template <typename A, typename B>
@@ -171,22 +170,21 @@ public:
         test();
     }
     ~prevector_tester() {
-        BOOST_CHECK_MESSAGE(passed, "insecure_rand_Rz: " 
-                << insecure_rand_Rz_cache 
+        BOOST_CHECK_MESSAGE(passed, "insecure_rand_Rz: "
+                << rand_cache.Rz
                 << ", insecure_rand_Rw: "
-                << insecure_rand_Rw_cache);
+                << rand_cache.Rw);
     }
     prevector_tester() {
         seed_insecure_rand();
-        insecure_rand_Rz_cache = insecure_rand_Rz;
-        insecure_rand_Rw_cache = insecure_rand_Rw;
+        rand_cache = insecure_rand_ctx;
     }
 };
 
 BOOST_AUTO_TEST_CASE(PrevectorTestInt)
 {
     for (int j = 0; j < 64; j++) {
-        BOOST_TEST_MESSAGE("PrevectorTestInt " << j);
+
         prevector_tester<8, int> test;
         for (int i = 0; i < 2048; i++) {
             int r = insecure_rand();
@@ -217,8 +215,8 @@ BOOST_AUTO_TEST_CASE(PrevectorTestInt)
             if (((r >> 21) % 32) == 7) {
                 int values[4];
                 int num = 1 + (insecure_rand() % 4);
-                for (int i = 0; i < num; i++) {
-                    values[i] = insecure_rand();
+                for (int k = 0; k < num; k++) {
+                    values[k] = insecure_rand();
                 }
                 test.insert_range(insecure_rand() % (test.size() + 1), values, values + num);
             }

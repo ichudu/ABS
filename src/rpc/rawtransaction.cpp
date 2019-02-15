@@ -242,7 +242,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
             "\nNOTE: By default this function only works sometimes. This is when there is an\n"
             "unspent output in the utxo for this transaction. To make it always work,\n"
             "you need to maintain a transaction index, using the -txindex command line option or\n"
-            "specify the block in which the transaction is included in manually (by blockhash).\n"
+            "specify the block in which the transaction is included manually (by blockhash).\n"
             "\nReturn the raw transaction data.\n"
             "\nArguments:\n"
             "1. \"txids\"       (string) A json array of txids to filter\n"
@@ -344,7 +344,8 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
     UniValue res(UniValue::VARR);
 
     vector<uint256> vMatch;
-    if (merkleBlock.txn.ExtractMatches(vMatch) != merkleBlock.header.hashMerkleRoot)
+    vector<unsigned int> vIndex;
+    if (merkleBlock.txn.ExtractMatches(vMatch, vIndex) != merkleBlock.header.hashMerkleRoot)
         return res;
 
     LOCK(cs_main);
@@ -374,6 +375,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "       {\n"
             "         \"txid\":\"id\",    (string, required) The transaction id\n"
             "         \"vout\":n        (numeric, required) The output number\n"
+            "         \"sequence\":n    (numeric, optional) The sequence number\n"
             "       }\n"
             "       ,...\n"
             "     ]\n"
@@ -394,7 +396,6 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             + HelpExampleRpc("createrawtransaction", "\"[{\\\"txid\\\":\\\"myid\\\",\\\"vout\\\":0}]\", \"{\\\"data\\\":\\\"00010203\\\"}\"")
         );
 
-    LOCK(cs_main);
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VARR)(UniValue::VOBJ)(UniValue::VNUM), true);
     if (params[0].isNull() || params[1].isNull())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, arguments 1 and 2 must be non-null");
@@ -425,6 +426,15 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
         uint32_t nSequence = (rawTx.nLockTime ? std::numeric_limits<uint32_t>::max() - 1 : std::numeric_limits<uint32_t>::max());
+        // set the sequence number if passed in the parameters object
+        const UniValue& sequenceObj = find_value(o, "sequence");
+        if (sequenceObj.isNum()) {
+            int64_t seqNr64 = sequenceObj.get_int64();
+            if (seqNr64 < 0 || seqNr64 > std::numeric_limits<uint32_t>::max())
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, sequence number is out of range");
+            else
+                nSequence = (uint32_t)seqNr64;
+        }
         CTxIn in(COutPoint(txid, nOutput), CScript(), nSequence);
 
         rawTx.vin.push_back(in);
@@ -497,7 +507,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"RAPQFp8qgLtBsEPnSHuYrxE7hCWrpKwveW\"   (string) Absolute address\n"
+            "           \"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\"   (string) Absolute address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -723,7 +733,12 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
             UniValue prevOut = p.get_obj();
 
-            RPCTypeCheckObj(prevOut, boost::assign::map_list_of("txid", UniValue::VSTR)("vout", UniValue::VNUM)("scriptPubKey", UniValue::VSTR));
+            RPCTypeCheckObj(prevOut,
+                {
+                    {"txid", UniValueType(UniValue::VSTR)},
+                    {"vout", UniValueType(UniValue::VNUM)},
+                    {"scriptPubKey", UniValueType(UniValue::VSTR)},
+                });
 
             uint256 txid = ParseHashO(prevOut, "txid");
 
@@ -753,7 +768,13 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             // if redeemScript given and not using the local wallet (private keys
             // given), add redeemScript to the tempKeystore so it can be signed:
             if (fGivenKeys && scriptPubKey.IsPayToScriptHash()) {
-                RPCTypeCheckObj(prevOut, boost::assign::map_list_of("txid", UniValue::VSTR)("vout", UniValue::VNUM)("scriptPubKey", UniValue::VSTR)("redeemScript",UniValue::VSTR));
+                RPCTypeCheckObj(prevOut,
+                    {
+                        {"txid", UniValueType(UniValue::VSTR)},
+                        {"vout", UniValueType(UniValue::VNUM)},
+                        {"scriptPubKey", UniValueType(UniValue::VSTR)},
+                        {"redeemScript", UniValueType(UniValue::VSTR)},
+                    });
                 UniValue v = find_value(prevOut, "redeemScript");
                 if (!v.isNull()) {
                     vector<unsigned char> rsData(ParseHexV(v, "redeemScript"));
@@ -793,6 +814,9 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
+    // Use CTransaction for the constant parts of the
+    // transaction to avoid rehashing.
+    const CTransaction txConst(mergedTx);
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
@@ -810,10 +834,10 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
         // ... and merge in other signatures:
         BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
-            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+            txin.scriptSig = CombineSignatures(prevPubKey, txConst, i, txin.scriptSig, txv.vin[i].scriptSig);
         }
         ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i), &serror)) {
             TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
         }
     }
@@ -862,9 +886,10 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
     uint256 hashTx = tx.GetHash();
 
-    bool fOverrideFees = false;
-    if (params.size() > 1)
-        fOverrideFees = params[1].get_bool();
+    bool fLimitFree = false;
+    CAmount nMaxRawTxFee = maxTxFee;
+    if (params.size() > 1 && params[1].get_bool())
+        nMaxRawTxFee = 0;
 
     bool fInstantSend = false;
     if (params.size() > 2)
@@ -884,7 +909,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
         CValidationState state;
         bool fMissingInputs;
-        if (!AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, false, !fOverrideFees)) {
+        if (!AcceptToMemoryPool(mempool, state, tx, fLimitFree, &fMissingInputs, false, nMaxRawTxFee)) {
             if (state.IsInvalid()) {
                 throw JSONRPCError(RPC_TRANSACTION_REJECTED, strprintf("%i: %s", state.GetRejectCode(), state.GetRejectReason()));
             } else {
@@ -903,4 +928,24 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
     g_connman->RelayTransaction(tx);
 
     return hashTx.GetHex();
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true  },
+    { "rawtransactions",    "createrawtransaction",   &createrawtransaction,   true  },
+    { "rawtransactions",    "decoderawtransaction",   &decoderawtransaction,   true  },
+    { "rawtransactions",    "decodescript",           &decodescript,           true  },
+    { "rawtransactions",    "sendrawtransaction",     &sendrawtransaction,     false },
+    { "rawtransactions",    "signrawtransaction",     &signrawtransaction,     false }, /* uses wallet if enabled */
+
+    { "blockchain",         "gettxoutproof",          &gettxoutproof,          true  },
+    { "blockchain",         "verifytxoutproof",       &verifytxoutproof,       true  },
+};
+
+void RegisterRawTransactionRPCCommands(CRPCTable &t)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

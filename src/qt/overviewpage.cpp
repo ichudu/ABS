@@ -39,7 +39,7 @@ class TxViewDelegate : public QAbstractItemDelegate
     Q_OBJECT
 public:
     TxViewDelegate(const PlatformStyle *_platformStyle, QObject *parent=nullptr):
-        QAbstractItemDelegate(parent), unit(BitcoinUnits::ABS),
+        QAbstractItemDelegate(), unit(BitcoinUnits::ABS),
         platformStyle(_platformStyle)
     {
 
@@ -135,7 +135,7 @@ OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) 
     currentWatchImmatureBalance(-1),
     txdelegate(new TxViewDelegate(platformStyle, this)),
     timer(nullptr)
- {
+{
     ui->setupUi(this);
     QString theme = GUIUtil::getThemeName();
 
@@ -660,7 +660,7 @@ void OverviewPage::SetupTransactionList(int nNumItems) {
         filter->setDynamicSortFilter(true);
         filter->setSortRole(Qt::EditRole);
         filter->setShowInactive(false);
-        filter->sort(TransactionTableModel::Status, Qt::DescendingOrder);
+        filter->sort(TransactionTableModel::Date, Qt::DescendingOrder);
 
         ui->listTransactions->setModel(filter.get());
         ui->listTransactions->setModelColumn(TransactionTableModel::ToAddress);

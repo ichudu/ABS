@@ -10,6 +10,11 @@
     <height>526</height>
    </rect>
   </property>
+  <property name="font">
+   <font>
+    <family>Lato</family>
+   </font>
+  </property>
   <property name="windowTitle">
    <string>Send Coins</string>
   </property>
@@ -588,7 +593,7 @@
         <x>0</x>
         <y>0</y>
         <width>830</width>
-        <height>69</height>
+        <height>104</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1">
@@ -826,7 +831,7 @@
                  <item>
                   <widget class="QRadioButton" name="radioCustomPerKilobyte">
                    <property name="toolTip">
-                    <string>If the custom fee is set to 1000  and the transaction is only 250 bytes, then &quot;per kilobyte&quot; only pays 250  in fee,&lt;br /&gt;while &quot;at least&quot; pays 1000 . For transactions bigger than a kilobyte both pay by kilobyte.</string>
+                    <string>If the custom fee is set to 1000 nABS and the transaction is only 250 bytes, then &quot;per kilobyte&quot; only pays 250  in fee,&lt;br /&gt;while &quot;at least&quot; pays 1000 . For transactions bigger than a kilobyte both pay by kilobyte.</string>
                    </property>
                    <property name="text">
                     <string>per kilobyte</string>
@@ -842,7 +847,7 @@
                  <item>
                   <widget class="QRadioButton" name="radioCustomAtLeast">
                    <property name="toolTip">
-                    <string>If the custom fee is set to 1000  and the transaction is only 250 bytes, then &quot;per kilobyte&quot; only pays 250  in fee,&lt;br /&gt;while &quot;total at least&quot; pays 1000 . For transactions bigger than a kilobyte both pay by kilobyte.</string>
+                    <string>If the custom fee is set to 1000 nABS and the transaction is only 250 bytes, then &quot;per kilobyte&quot; only pays 250  in fee,&lt;br /&gt;while &quot;total at least&quot; pays 1000 . For transactions bigger than a kilobyte both pay by kilobyte.</string>
                    </property>
                    <property name="text">
                     <string>total at least</string>
@@ -1138,59 +1143,6 @@
              </item>
             </layout>
            </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayoutFee5" stretch="0,0,0">
-             <property name="spacing">
-              <number>8</number>
-             </property>
-             <property name="bottomMargin">
-              <number>4</number>
-             </property>
-             <item>
-              <widget class="QCheckBox" name="checkBoxFreeTx">
-               <property name="text">
-                <string>Send as zero-fee transaction if possible</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="labelFreeTx">
-               <property name="text">
-                <string>(confirmation may take longer)</string>
-               </property>
-               <property name="margin">
-                <number>5</number>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacerFee5">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>1</width>
-                 <height>1</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <spacer name="verticalSpacerFee2">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>1</width>
-               <height>1</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
           </layout>
          </widget>
         </item>
@@ -1363,12 +1315,10 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../absolute.qrc"/>
- </resources>
+ <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="groupCustomFee"/>
   <buttongroup name="groupFee"/>
+  <buttongroup name="groupCustomFee"/>
  </buttongroups>
 </ui>
