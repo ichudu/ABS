@@ -15,7 +15,7 @@
 #include "txmempool.h"
 #include "walletmodel.h"
 
-#include "coincontrol.h"
+#include "wallet/coincontrol.h"
 #include "init.h"
 #include "validation.h" // For minRelayTxFee
 #include "wallet/wallet.h"
