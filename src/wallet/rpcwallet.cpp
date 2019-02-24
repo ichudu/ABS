@@ -640,13 +640,9 @@ UniValue getreceivedbyaddress(const JSONRPCRequest& request)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-<<<<<<< HEAD
     // Absolute address
-    CBitcoinAddress address = CBitcoinAddress(params[0].get_str());
-=======
-    // Dash address
     CBitcoinAddress address = CBitcoinAddress(request.params[0].get_str());
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
+
     if (!address.IsValid())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Absolute address");
     CScript scriptPubKey = GetScriptForDestination(address.Get());
@@ -735,12 +731,7 @@ UniValue getreceivedbyaccount(const JSONRPCRequest& request)
     return ValueFromAmount(nAmount);
 }
 
-<<<<<<< HEAD
-UniValue getbalance(const UniValue& params, bool fHelp)
-=======
-
 UniValue getbalance(const JSONRPCRequest& request)
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
 {
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
@@ -917,13 +908,8 @@ UniValue sendfrom(const JSONRPCRequest& request)
     string strAccount = AccountFromValue(request.params[0]);
     CBitcoinAddress address(request.params[1].get_str());
     if (!address.IsValid())
-<<<<<<< HEAD
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Absolute address");
-    CAmount nAmount = AmountFromValue(params[2]);
-=======
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Dash address");
     CAmount nAmount = AmountFromValue(request.params[2]);
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
     if (nAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
     int nMinDepth = 1;

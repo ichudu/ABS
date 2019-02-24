@@ -40,12 +40,8 @@ struct UniValueType {
     bool typeAny;
     UniValue::VType type;
 };
-<<<<<<< HEAD
-class JSONRequest
-=======
 
 class JSONRPCRequest
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
 {
 public:
     UniValue id;
