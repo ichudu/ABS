@@ -43,12 +43,7 @@ private:
     bool fCompressed;
 
     //! The actual byte data
-<<<<<<< HEAD
-    unsigned char vch[32];
-    static_assert(sizeof(vch) == 32, "vch must be 32 bytes in length to not break serialization");
-=======
     std::vector<unsigned char, secure_allocator<unsigned char> > keydata;
->>>>>>> bc3b9294e... Merge #8753: Locked memory manager
 
     //! Check whether the 32-byte array pointed to be vch is valid keydata.
     bool static Check(const unsigned char* vch);
