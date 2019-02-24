@@ -24,12 +24,8 @@
 #include <iomanip>
 #include <univalue.h>
 
-<<<<<<< HEAD
-UniValue masternodelist(const UniValue& params, bool fHelp);
-=======
 UniValue masternodelist(const JSONRPCRequest& request);
 
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
 #ifdef ENABLE_WALLET
 void EnsureWalletIsUnlocked();
 
