@@ -109,7 +109,7 @@ if ENABLE_ZMQ:
 
 testScripts = [
     # longest test should go first, to favor running tests in parallel
-    'p2p-fullblocktest.py', # NOTE: needs dash_hash to pass
+    'p2p-fullblocktest.py', # NOTE: needs absolute_hash to pass
     'walletbackup.py',
     'bip68-112-113-p2p.py',
     'wallet.py',

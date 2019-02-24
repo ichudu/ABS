@@ -546,12 +546,8 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
 
     return EncodeBase64(&vchSig[0], vchSig.size());
 }
-<<<<<<< HEAD
-UniValue setmocktime(const UniValue& params, bool fHelp)
-=======
 
 UniValue setmocktime(const JSONRPCRequest& request)
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
 {
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(

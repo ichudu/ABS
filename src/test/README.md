@@ -5,29 +5,29 @@ and tests weren't explicitly disabled.
 
 After configuring, they can be run with `make check`.
 
-To run the dashd tests manually, launch `src/test/test_dash`.
+To run the absoluted tests manually, launch `src/test/test_absolute`.
 
-To add more dashd tests, add `BOOST_AUTO_TEST_CASE` functions to the existing
+To add more absoluted tests, add `BOOST_AUTO_TEST_CASE` functions to the existing
 .cpp files in the `test/` directory or add new .cpp files that
 implement new BOOST_AUTO_TEST_SUITE sections.
 
-To run the dash-qt tests manually, launch `src/qt/test/test_dash-qt`
+To run the absolute-qt tests manually, launch `src/qt/test/test_absolute-qt`
 
-To add more dash-qt tests, add them to the `src/qt/test/` directory and
+To add more absolute-qt tests, add them to the `src/qt/test/` directory and
 the `src/qt/test/test_main.cpp` file.
 
 ### Running individual tests
 
-test_dash has some built-in command-line arguments; for
+test_absolute has some built-in command-line arguments; for
 example, to run just the getarg_tests verbosely:
 
-    test_dash --log_level=all --run_test=getarg_tests
+    test_absolute --log_level=all --run_test=getarg_tests
 
-... or to run just the doubledash test:
+... or to run just the doubleabsolute test:
 
-    test_dash --run_test=getarg_tests/doubledash
+    test_absolute --run_test=getarg_tests/doubleabsolute
 
-Run `test_dash --help` for the full list.
+Run `test_absolute --help` for the full list.
 
 ### Note on adding test cases
 
@@ -51,23 +51,9 @@ For further reading, I found the following website to be helpful in
 explaining how the boost unit test framework works:
 [http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/](http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/).
 
-<<<<<<< HEAD
-test_absolute has some built-in command-line arguments; for
-example, to run just the getarg_tests verbosely:
-
-    test_absolute --log_level=all --run_test=getarg_tests
-
-... or to run just the doubleabsolute test:
-
-    test_absolute --run_test=getarg_tests/doubleabsolute
-
-Run `test_absolute --help` for the full list.
-
-=======
->>>>>>> 70c86db4e... Merge #9065: Merge `doc/unit-tests.md` into `src/test/README.md`
 ### bitcoin-util-test.py
 
-The test directory also contains the bitcoin-util-test.py tool, which tests bitcoin utils (currently just dash-tx). This test gets run automatically during the `make check` build process. It is also possible to run the test manually from the src directory:
+The test directory also contains the bitcoin-util-test.py tool, which tests bitcoin utils (currently just absolute-tx). This test gets run automatically during the `make check` build process. It is also possible to run the test manually from the src directory:
 
 ```
 test/bitcoin-util-test.py --srcdir=[current directory]
