@@ -1156,9 +1156,6 @@ static UniValue BIP9SoftForkDesc(const Consensus::Params& consensusParams, Conse
     return rv;
 }
 
-<<<<<<< HEAD
-UniValue getblockchaininfo(const UniValue& params, bool fHelp)
-=======
 void BIP9SoftForkDescPushBack(UniValue& bip9_softforks, const std::string &name, const Consensus::Params& consensusParams, Consensus::DeploymentPos id)
 {
     // Deployments with timeout value of 0 are hidden.
@@ -1169,7 +1166,6 @@ void BIP9SoftForkDescPushBack(UniValue& bip9_softforks, const std::string &name,
 }
 
 UniValue getblockchaininfo(const JSONRPCRequest& request)
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
 {
     if (request.fHelp || request.params.size() != 0)
         throw runtime_error(
@@ -1462,12 +1458,9 @@ UniValue preciousblock(const JSONRPCRequest& request)
 
     return NullUniValue;
 }
-<<<<<<< HEAD
-UniValue invalidateblock(const UniValue& params, bool fHelp)
-=======
 
 UniValue invalidateblock(const JSONRPCRequest& request)
->>>>>>> dd6b9ad20... Merge #8788: [RPC] Give RPC commands more information about the RPC request
+
 {
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
