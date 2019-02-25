@@ -522,7 +522,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
         uint256 hash;
 
         // get previous transaction
-        GetTransaction(txin.prevout.hash, txPrev, Params().GetConsensus(), hash, true);
+        GetPastTransaction(txin.prevout.hash, txPrev, Params().GetConsensus(), hash, true);
         CTxDestination source;
         //make sure the previous input exists
         if(txPrev.vout.size()>txin.prevout.n) {
@@ -536,19 +536,16 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-premine");
             }
         }
-        if (vInOutPoints.count(txin.prevout))
-            return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
-        vInOutPoints.insert(txin.prevout);
     }
 
-/** END DISABLE PREMINE **/
-/*    for (const auto& txin : tx.vin)
-    {
-        if (vInOutPoints.count(txin.prevout))
-            return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
-        vInOutPoints.insert(txin.prevout);
+    if (fCheckDuplicateInputs) {
+        set<COutPoint> vInOutPoints;
+        for (const auto& txin : tx.vin)
+        {
+            if (!vInOutPoints.insert(txin.prevout).second)
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
+        }
     }
-*/
 
     if (tx.IsCoinBase())
     {
