@@ -1235,12 +1235,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 return true;
             }
         }
-<<<<<<< HEAD
-        connman.PushMessageWithVersion(pfrom, INIT_PROTO_VERSION, NetMsgType::VERACK);
-=======
 
         connman.PushMessage(pfrom, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::VERACK));
->>>>>>> 5c0b55a7c... Merge #9128: net: Decouple CConnman and message serialization
 
         pfrom->nServices = nServices;
         pfrom->addrLocal = addrMe;

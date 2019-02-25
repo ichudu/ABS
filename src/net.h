@@ -160,15 +160,6 @@ public:
     bool OpenMasternodeConnection(const CAddress& addrConnect);
     bool CheckIncomingNonce(uint64_t nonce);
 
-<<<<<<< HEAD
-    // fConnectToMasternode should be 'true' only if you want this node to allow to connect to itself
-    // and/or you want it to be disconnected on CMasternodeMan::ProcessMasternodeConnections()
-    // Unfortunately, can't make this method private like in Bitcoin,
-    // because it's used in many Absolute-specific places (masternode, privatesend).
-    CNode* ConnectNode(CAddress addrConnect, const char *pszDest = NULL, bool fCountFailure = false, bool fConnectToMasternode = false);
-
-=======
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
     struct CFullyConnectedOnly {
         bool operator() (const CNode* pnode) const {
             return NodeFullyConnected(pnode);
@@ -199,28 +190,6 @@ public:
     }
 
     bool IsConnected(const CService& addr, std::function<bool(const CNode* pnode)> cond)
-<<<<<<< HEAD
-=======
-    {
-        return ForNode(addr, cond, [](CNode* pnode){
-            return true;
-        });
-    }
-
-    bool IsMasternodeOrDisconnectRequested(const CService& addr);
-
-    template <typename... Args>
-    void PushMessageWithVersionAndFlag(CNode* pnode, int nVersion, int flag, const std::string& sCommand, Args&&... args)
-    {
-        auto msg(BeginMessage(pnode, nVersion, flag, sCommand));
-        ::SerializeMany(msg, std::forward<Args>(args)...);
-        EndMessage(msg);
-        PushMessage(pnode, msg, sCommand);
-    }
-
-    template <typename... Args>
-    void PushMessageWithFlag(CNode* pnode, int flag, const std::string& sCommand, Args&&... args)
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
     {
         return ForNode(addr, cond, [](CNode* pnode){
             return true;

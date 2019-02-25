@@ -345,11 +345,6 @@ bool CConnman::CheckIncomingNonce(uint64_t nonce)
 CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCountFailure)
 {
     if (pszDest == NULL) {
-<<<<<<< HEAD
-=======
-        // we clean masternode connections in CMasternodeMan::ProcessMasternodeConnections()
-        // so should be safe to skip this and connect to local Hot MN on CActiveMasternode::ManageState()
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
         if (IsLocal(addrConnect))
             return NULL;
 
@@ -358,13 +353,10 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
         CNode* pnode = FindNode((CService)addrConnect);
         if (pnode)
         {
-<<<<<<< HEAD
+
             LogPrintf("Failed to open new connection, already connected\n");
             return NULL;
-=======
-            pnode->AddRef();
-            return pnode;
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
+
         }
     }
 
@@ -394,10 +386,6 @@ CNode* CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
             CNode* pnode = FindNode((CService)addrConnect);
             if (pnode)
             {
-<<<<<<< HEAD
-=======
-                pnode->AddRef();
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
                 if (pnode->addrName.empty()) {
                     pnode->addrName = std::string(pszDest);
                 }
@@ -1120,12 +1108,7 @@ void CConnman::ThreadSocketHandler()
                     pnode->CloseSocketDisconnect();
 
                     // hold in disconnected pool until all refs are released
-<<<<<<< HEAD
                     pnode->Release();
-=======
-                    if (pnode->fNetworkNode || pnode->fInbound)
-                        pnode->Release();
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
                     vNodesDisconnected.push_back(pnode);
                 }
             }
@@ -1859,12 +1842,8 @@ void CConnman::ThreadMnbRequestConnections()
             grant.MoveTo(pnode->grantMasternodeOutbound);
 
             // ask for data
-<<<<<<< HEAD
             CNetMsgMaker msgMaker(pnode->GetSendVersion());
             PushMessage(pnode, msgMaker.Make(NetMsgType::GETDATA, vToFetch));
-=======
-            PushMessage(pnode, NetMsgType::GETDATA, vToFetch);
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
 
             return true;
         });

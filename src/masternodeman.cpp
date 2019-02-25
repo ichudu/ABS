@@ -1057,12 +1057,8 @@ bool CMasternodeMan::SendVerifyRequest(const CAddress& addr, const std::vector<C
         CMasternodeVerification mnv(addr, GetRandInt(999999), nCachedBlockHeight - 1);
         mWeAskedForVerification[addr] = mnv;
         LogPrintf("CMasternodeMan::SendVerifyRequest -- verifying node using nonce %d addr=%s\n", mnv.nonce, addr.ToString());
-<<<<<<< HEAD
-        CNetMsgMaker msgMaker(pnode->GetSendVersion());
-        connman.PushMessage(pnode, msgMaker.Make(NetMsgType::MNVERIFY, mnv));
-=======
         connman.PushMessage(pnode, NetMsgType::MNVERIFY, mnv);
->>>>>>> 532b9fa3d... Use OpenNetworkConnection instead of calling ConnectNode directly in Dash code (#1857)
+
         return true;
     });
     if (!fSuccess) {
