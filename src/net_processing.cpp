@@ -1613,7 +1613,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         deque<COutPoint> vWorkQueue;
         vector<uint256> vEraseQueue;
-        CMutableTransaction tx;
+        CTransactionRef ptx;
         CTxLockRequest txLockRequest;
         CDarksendBroadcastTx dstx;
         int nInvType = MSG_TX;
@@ -1623,11 +1623,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             vRecv >> ptx;
         } else if(strCommand == NetMsgType::TXLOCKREQUEST) {
             vRecv >> txLockRequest;
-            tx = *txLockRequest.tx;
+            ptx = txLockRequest.tx;
             nInvType = MSG_TXLOCK_REQUEST;
         } else if (strCommand == NetMsgType::DSTX) {
             vRecv >> dstx;
-            tx = *dstx.tx;
+            ptx = dstx.tx;
             nInvType = MSG_DSTX;
         }
         const CTransaction& tx = *ptx;
