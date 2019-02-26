@@ -76,7 +76,8 @@ int absoluteconsensus_verify_script(const unsigned char *scriptPubKey, unsigned 
 {
     try {
         TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
-        CTransaction tx(deserialize, stream);
+        CTransaction tx;
+        stream >> tx;
         if (nIn >= tx.vin.size())
             return set_error(err, absoluteconsensus_ERR_TX_INDEX);
         if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen)

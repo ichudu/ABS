@@ -120,7 +120,7 @@ public:
     std::string ToString();
 };
 
-class CTxLockRequest
+class CTxLockRequest : public CTransaction
 {
 private:
     static const CAmount MIN_FEE            = 0.0001 * COIN;
@@ -128,39 +128,12 @@ private:
 public:
     static const int WARN_MANY_INPUTS       = 100;
 
-    CTransactionRef tx;
-
-    CTxLockRequest() : tx(MakeTransactionRef()) {}
-    CTxLockRequest(const CTransaction& _tx) : tx(MakeTransactionRef(_tx)) {};
-
-    ADD_SERIALIZE_METHODS;
-
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(tx);
-    }
+    CTxLockRequest() = default;
+    CTxLockRequest(const CTransaction& tx) : CTransaction(tx) {};
 
     bool IsValid() const;
     CAmount GetMinFee() const;
     int GetMaxSignatures() const;
-
-    const uint256 &GetHash() const {
-        return tx->GetHash();
-    }
-
-    std::string ToString() const {
-        return tx->ToString();
-    }
-
-    friend bool operator==(const CTxLockRequest& a, const CTxLockRequest& b)
-    {
-        return *a.tx == *b.tx;
-    }
-
-    friend bool operator!=(const CTxLockRequest& a, const CTxLockRequest& b)
-    {
-        return *a.tx != *b.tx;
-    }
 
     explicit operator bool() const
     {
