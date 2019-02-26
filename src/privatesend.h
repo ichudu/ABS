@@ -105,21 +105,21 @@ class CDarkSendEntry
 public:
     std::vector<CTxDSIn> vecTxDSIn;
     std::vector<CTxOut> vecTxOut;
-    CTransactionRef txCollateral;
+    CTransaction txCollateral;
     // memory only
     CService addr;
 
     CDarkSendEntry() :
         vecTxDSIn(std::vector<CTxDSIn>()),
         vecTxOut(std::vector<CTxOut>()),
-        txCollateral(MakeTransactionRef()),
+        txCollateral(CTransaction()),
         addr(CService())
         {}
 
     CDarkSendEntry(const std::vector<CTxDSIn>& vecTxDSIn, const std::vector<CTxOut>& vecTxOut, const CTransaction& txCollateral) :
         vecTxDSIn(vecTxDSIn),
         vecTxOut(vecTxOut),
-        txCollateral(MakeTransactionRef(txCollateral)),
+        txCollateral(txCollateral),
         addr(CService())
         {}
 
@@ -217,25 +217,25 @@ private:
     int nConfirmedHeight;
 
 public:
-    CTransactionRef tx;
+    CTransaction tx;
     CTxIn vin;
     std::vector<unsigned char> vchSig;
     int64_t sigTime;
 
     CDarksendBroadcastTx() :
         nConfirmedHeight(-1),
-        tx(MakeTransactionRef()),
+        tx(),
         vin(),
         vchSig(),
         sigTime(0)
         {}
 
-    CDarksendBroadcastTx(const CTransaction& _tx, COutPoint _outpoint, int64_t _sigTime) :
+    CDarksendBroadcastTx(CTransaction tx, COutPoint outpoint, int64_t sigTime) :
         nConfirmedHeight(-1),
-        tx(MakeTransactionRef(_tx)),
-        vin(CTxIn(_outpoint)),
+        tx(tx),
+        vin(CTxIn(outpoint)),
         vchSig(),
-        sigTime(_sigTime)
+        sigTime(sigTime)
         {}
 
     ADD_SERIALIZE_METHODS;
@@ -250,7 +250,7 @@ public:
 
     friend bool operator==(const CDarksendBroadcastTx& a, const CDarksendBroadcastTx& b)
     {
-        return *a.tx == *b.tx;
+        return a.tx == b.tx;
     }
     friend bool operator!=(const CDarksendBroadcastTx& a, const CDarksendBroadcastTx& b)
     {

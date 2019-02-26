@@ -1623,11 +1623,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             vRecv >> tx;
         } else if(strCommand == NetMsgType::TXLOCKREQUEST) {
             vRecv >> txLockRequest;
-            tx = *txLockRequest.tx;
+            tx = txLockRequest;
             nInvType = MSG_TXLOCK_REQUEST;
         } else if (strCommand == NetMsgType::DSTX) {
             vRecv >> dstx;
-            tx = *dstx.tx;
+            tx = dstx.tx;
             nInvType = MSG_DSTX;
         }
 

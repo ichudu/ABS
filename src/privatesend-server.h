@@ -21,7 +21,7 @@ class CPrivateSendServer : public CPrivateSendBase
 private:
     // Mixing uses collateral transactions to trust parties entering the pool
     // to behave honestly. If they don't it takes their money.
-    std::vector<CTransactionRef> vecSessionCollaterals;
+    std::vector<CTransaction> vecSessionCollaterals;
 
     bool fUnitTest;
 
