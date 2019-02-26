@@ -523,7 +523,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
         uint256 hash;
 
         // get previous transaction
-        GetPastTransaction(txin.prevout.hash, txPrev, Params().GetConsensus(), hash, true);
+        GetTransaction(txin.prevout.hash, txPrev, Params().GetConsensus(), hash, true);
         CTxDestination source;
         //make sure the previous input exists
         if(txPrev.vout.size()>txin.prevout.n) {
