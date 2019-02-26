@@ -263,9 +263,6 @@ private:
     unsigned int untrackedTxs;
 };
 
-    unsigned int trackedTxs;
-    unsigned int untrackedTxs;
-};
 class FeeFilterRounder
 {
 public:

@@ -898,8 +898,8 @@ UniValue sendrawtransaction(const JSONRPCRequest& request)
     CMutableTransaction mtx;
     if (!DecodeHexTx(mtx, request.params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
-    CTransaction tx(std::move(mtx));
-    uint256 hashTx = tx.GetHash();
+    CTransactionRef tx(MakeTransactionRef(std::move(mtx)));
+    const uint256& hashTx = tx->GetHash();
 
     bool fLimitFree = false;
     CAmount nMaxRawTxFee = maxTxFee;
