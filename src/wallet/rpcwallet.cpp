@@ -2708,8 +2708,6 @@ extern UniValue importmulti(const JSONRPCRequest& request);
 extern UniValue dumphdinfo(const JSONRPCRequest& request);
 extern UniValue importelectrumwallet(const JSONRPCRequest& request);
 
-extern UniValue privatesend(const JSONRPCRequest& request);
-
 static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
     //  --------------------- ------------------------    -----------------------    ----------
