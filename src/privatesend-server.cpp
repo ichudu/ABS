@@ -40,8 +40,8 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         }
 
         int nDenom;
-        vRecv >> nDenom;
-        CTransaction txCollateral(deserialize, vRecv);
+        CTransaction txCollateral;
+        vRecv >> nDenom >> txCollateral;
 
         LogPrint("privatesend", "DSACCEPT -- nDenom %d (%s)  txCollateral %s", nDenom, CPrivateSend::GetDenominationsToString(nDenom), txCollateral.ToString());
 

@@ -1116,7 +1116,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 }
 
 /** Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock */
-bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus::Params& consensusParams, uint256 &hashBlock, bool fAllowSlow)
+bool GetTransaction(const uint256 &hash, CTransaction &txOut, const Consensus::Params& consensusParams, uint256 &hashBlock, bool fAllowSlow)
 {
     CBlockIndex *pindexSlow = NULL;
 
@@ -1125,7 +1125,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     CTransactionRef ptx = mempool.get(hash);
     if (ptx)
     {
-        txOut = ptx;
+        txOut = *ptx;
         return true;
     }
 
@@ -1144,7 +1144,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
                 return error("%s: Deserialize or I/O error - %s", __func__, e.what());
             }
             hashBlock = header.GetHash();
-            if (txOut->GetHash() != hash)
+            if (txOut.GetHash() != hash)
                 return error("%s: txid mismatch", __func__);
             return true;
         }
@@ -1163,7 +1163,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
         if (ReadBlockFromDisk(block, pindexSlow, consensusParams)) {
             for (const auto& tx : block.vtx) {
                 if (tx->GetHash() == hash) {
-                    txOut = tx;
+                    txOut = *tx;
                     hashBlock = pindexSlow->GetBlockHash();
                     return true;
                 }
@@ -4497,9 +4497,10 @@ bool LoadMempool(void)
         file >> num;
         double prioritydummy = 0;
         while (num--) {
+            CTransaction tx;
             int64_t nTime;
             int64_t nFeeDelta;
-            CTransaction tx(deserialize, file);
+            file >> tx;
             file >> nTime;
             file >> nFeeDelta;
 
