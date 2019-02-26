@@ -448,7 +448,7 @@ void CPrivateSendServer::ChargeFees(CConnman& connman)
 
         CValidationState state;
         bool fMissingInputs;
-        if(!AcceptToMemoryPool(mempool, state, *vecOffendersCollaterals[0], false, &fMissingInputs, false, maxTxFee)) {
+        if(!AcceptToMemoryPool(mempool, state, vecOffendersCollaterals[0], false, &fMissingInputs, false, maxTxFee)) {
             // should never really happen
             LogPrintf("CPrivateSendServer::ChargeFees -- ERROR: AcceptToMemoryPool failed!\n");
         } else {
@@ -483,7 +483,7 @@ void CPrivateSendServer::ChargeRandomFees(CConnman& connman)
 
         CValidationState state;
         bool fMissingInputs;
-        if(!AcceptToMemoryPool(mempool, state, *txCollateral, false, &fMissingInputs, false, maxTxFee)) {
+        if(!AcceptToMemoryPool(mempool, state, txCollateral, false, &fMissingInputs, false, maxTxFee)) {
             // should never really happen
             LogPrintf("CPrivateSendServer::ChargeRandomFees -- ERROR: AcceptToMemoryPool failed!\n");
         } else {
