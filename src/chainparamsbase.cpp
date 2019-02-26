@@ -115,7 +115,7 @@ void SelectBaseParams(const std::string& chain)
 std::string ChainNameFromCommandLine()
 {
     bool fRegTest = GetBoolArg("-regtest", false);
-    bool fDevNet = IsArgSet("-povnet");
+    bool fPoVNet = IsArgSet("-povnet");
     bool fTestNet = GetBoolArg("-testnet", false);
 
     int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNET ? 1 : 0) + (fTestNet ? 1 : 0);
