@@ -1335,8 +1335,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::vector<std::string> uacomments;
 
     if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-        // Add devnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own devnet
-        uacomments.push_back(strprintf("devnet=%s", GetDevNetName()));
+        // Add povnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own devnet
+        uacomments.push_back(strprintf("povnet=%s", GetPoVNETName()));
     }
 
     if (mapMultiArgs.count("-uacomment")) {
