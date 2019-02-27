@@ -146,7 +146,7 @@ private:
 
 };
 
-void ThreadFlushWalletDB(const std::string& strFile);
+void ThreadFlushWalletDB();
 
 
 

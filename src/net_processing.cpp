@@ -63,7 +63,7 @@ struct IteratorComparator
 };
 struct COrphanTx {
     // When modifying, adapt the copy of this definition in tests/DoS_tests.
-    CTransaction tx;
+    CTransactionRef tx;
     NodeId fromPeer;
     int64_t nTimeExpire;
 };
@@ -525,9 +525,9 @@ void UnregisterNodeSignals(CNodeSignals& nodeSignals)
 // mapOrphanTransactions
 //
 
-bool AddOrphanTx(const CTransaction& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+bool AddOrphanTx(const CTransactionRef& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
-    uint256 hash = tx.GetHash();
+    const uint256& hash = tx->GetHash();
     if (mapOrphanTransactions.count(hash))
         return false;
 
@@ -538,7 +538,7 @@ bool AddOrphanTx(const CTransaction& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(c
     // have been mined or received.
     // 100 orphans, each of which is at most 99,999 bytes big is
     // at most 10 megabytes of orphans and somewhat more byprev index (in the worst case):
-    unsigned int sz = GetSerializeSize(tx, SER_NETWORK, CTransaction::CURRENT_VERSION);
+    unsigned int sz = GetSerializeSize(*tx, SER_NETWORK, CTransaction::CURRENT_VERSION);
     if (sz > MAX_STANDARD_TX_SIZE)
     {
         LogPrint("mempool", "ignoring large orphan tx (size: %u, hash: %s)\n", sz, hash.ToString());
@@ -547,7 +547,7 @@ bool AddOrphanTx(const CTransaction& tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(c
 
     auto ret = mapOrphanTransactions.emplace(hash, COrphanTx{tx, peer, GetTime() + ORPHAN_TX_EXPIRE_TIME});
     assert(ret.second);
-    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+    BOOST_FOREACH(const CTxIn& txin, tx->vin) {
         mapOrphanTransactionsByPrev[txin.prevout].insert(ret.first);
     }
 
@@ -561,7 +561,7 @@ int EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     map<uint256, COrphanTx>::iterator it = mapOrphanTransactions.find(hash);
     if (it == mapOrphanTransactions.end())
         return 0;
-    BOOST_FOREACH(const CTxIn& txin, it->second.tx.vin)
+    BOOST_FOREACH(const CTxIn& txin, it->second.tx->vin)
     {
         auto itPrev = mapOrphanTransactionsByPrev.find(txin.prevout);
         if (itPrev == mapOrphanTransactionsByPrev.end())
@@ -583,7 +583,7 @@ void EraseOrphansFor(NodeId peer)
         map<uint256, COrphanTx>::iterator maybeErase = iter++; // increment to avoid iterator becoming invalid
         if (maybeErase->second.fromPeer == peer)
         {
-            nErased += EraseOrphanTx(maybeErase->second.tx.GetHash());
+            nErased += EraseOrphanTx(maybeErase->second.tx->GetHash());
         }
     }
     if (nErased > 0) LogPrint("mempool", "Erased %d orphan tx from peer %d\n", nErased, peer);
@@ -604,7 +604,7 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRE
         {
             map<uint256, COrphanTx>::iterator maybeErase = iter++;
             if (maybeErase->second.nTimeExpire <= nNow) {
-                nErased += EraseOrphanTx(maybeErase->second.tx.GetHash());
+                nErased += EraseOrphanTx(maybeErase->second.tx->GetHash());
             } else {
                 nMinExpTime = std::min(maybeErase->second.nTimeExpire, nMinExpTime);
             }
@@ -675,7 +675,7 @@ void PeerLogicValidation::SyncTransaction(const CTransaction& tx, const CBlockIn
         auto itByPrev = mapOrphanTransactionsByPrev.find(tx.vin[j].prevout);
         if (itByPrev == mapOrphanTransactionsByPrev.end()) continue;
         for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi) {
-            const CTransaction& orphanTx = (*mi)->second.tx;
+            const CTransaction& orphanTx = *(*mi)->second.tx;
             const uint256& orphanHash = orphanTx.GetHash();
             vOrphanErase.push_back(orphanHash);
         }
@@ -1125,7 +1125,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 {
     LogPrint("net", "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
 
-    if (mapArgs.count("-dropmessagestest") && GetRand(atoi(mapArgs["-dropmessagestest"])) == 0)
+    if (IsArgSet("-dropmessagestest") && GetRand(GetArg("-dropmessagestest", 0)) == 0)
     {
         LogPrintf("dropmessagestest DROPPING RECV MESSAGE\n");
         return true;
@@ -1613,23 +1613,24 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         deque<COutPoint> vWorkQueue;
         vector<uint256> vEraseQueue;
-        CTransaction tx;
+        CTransactionRef ptx;
         CTxLockRequest txLockRequest;
         CDarksendBroadcastTx dstx;
         int nInvType = MSG_TX;
 
         // Read data and assign inv type
         if(strCommand == NetMsgType::TX) {
-            vRecv >> tx;
+            vRecv >> ptx;
         } else if(strCommand == NetMsgType::TXLOCKREQUEST) {
             vRecv >> txLockRequest;
-            tx = txLockRequest;
+            ptx = txLockRequest.tx;
             nInvType = MSG_TXLOCK_REQUEST;
         } else if (strCommand == NetMsgType::DSTX) {
             vRecv >> dstx;
-            tx = dstx.tx;
+            ptx = dstx.tx;
             nInvType = MSG_DSTX;
         }
+        const CTransaction& tx = *ptx;
 
         CInv inv(nInvType, tx.GetHash());
         pfrom->AddInventoryKnown(inv);
@@ -1679,7 +1680,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
         mapAlreadyAskedFor.erase(inv.hash);
 
-        if (!AlreadyHave(inv) && AcceptToMemoryPool(mempool, state, tx, true, &fMissingInputs)) {
+        if (!AlreadyHave(inv) && AcceptToMemoryPool(mempool, state, ptx, true, &fMissingInputs)) {
             // Process custom txes, this changes AlreadyHave to "true"
             if (strCommand == NetMsgType::DSTX) {
                 LogPrintf("DSTX -- Masternode transaction accepted, txid=%s, peer=%d\n",
@@ -1716,7 +1717,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                      mi != itByPrev->second.end();
                      ++mi)
                 {
-                    const CTransaction& orphanTx = (*mi)->second.tx;
+                    const CTransactionRef& porphanTx = (*mi)->second.tx;
+                    const CTransaction& orphanTx = *porphanTx;
                     const uint256& orphanHash = orphanTx.GetHash();
                     NodeId fromPeer = (*mi)->second.fromPeer;
                     bool fMissingInputs2 = false;
@@ -1728,7 +1730,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
                     if (setMisbehaving.count(fromPeer))
                         continue;
-                    if (AcceptToMemoryPool(mempool, stateDummy, orphanTx, true, &fMissingInputs2))
+                    if (AcceptToMemoryPool(mempool, stateDummy, porphanTx, true, &fMissingInputs2))
                     {
                         LogPrint("mempool", "   accepted orphan tx %s\n", orphanHash.ToString());
                         connman.RelayTransaction(orphanTx);
@@ -1776,7 +1778,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                     pfrom->AddInventoryKnown(_inv);
                     if (!AlreadyHave(_inv)) pfrom->AskFor(_inv);
                 }
-                AddOrphanTx(tx, pfrom->GetId());
+                AddOrphanTx(ptx, pfrom->GetId());
 
                 // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
                 unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0, GetArg("-maxorphantx", DEFAULT_MAX_ORPHAN_TRANSACTIONS));
@@ -2010,7 +2012,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             mapBlockSource.emplace(hash, pfrom->GetId());
         }
         bool fNewBlock = false;
-        ProcessNewBlock(chainparams, pblock, forceProcessing, NULL, &fNewBlock);
+        ProcessNewBlock(chainparams, pblock, forceProcessing, &fNewBlock);
         if (fNewBlock)
             pfrom->nLastBlockTime = GetTime();
     }
@@ -2486,6 +2488,8 @@ bool SendMessages(CNode* pto, CConnman& connman, std::atomic<bool>& interruptMsg
             state.fShouldBan = false;
             if (pto->fWhitelisted)
                 LogPrintf("Warning: not punishing whitelisted peer %s!\n", pto->addr.ToString());
+            else if (pto->fAddnode)
+                LogPrintf("Warning: not punishing addnoded peer %s!\n", pto->addr.ToString());
             else {
                 pto->fDisconnect = true;
                 if (pto->addr.IsLocal())
@@ -2948,6 +2952,9 @@ bool SendMessages(CNode* pto, CConnman& connman, std::atomic<bool>& interruptMsg
             int64_t timeNow = GetTimeMicros();
             if (timeNow > pto->nextSendTimeFeeFilter) {
                 CAmount filterToSend = filterRounder.round(currentFilter);
+                // If we don't allow free transactions, then we always have a fee filter of at least minRelayTxFee
+                if (GetArg("-limitfreerelay", DEFAULT_LIMITFREERELAY) <= 0)
+                    filterToSend = std::max(filterToSend, ::minRelayTxFee.GetFeePerK());
                 if (filterToSend != pto->lastSentFeeFilter) {
                     connman.PushMessage(pto, msgMaker.Make(NetMsgType::FEEFILTER, filterToSend));
                     pto->lastSentFeeFilter = filterToSend;

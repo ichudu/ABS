@@ -81,7 +81,7 @@ bool CDarksendBroadcastTx::Sign()
 {
     if(!fMasterNode) return false;
 
-    std::string strMessage = tx.GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
+    std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
 
     if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternode.keyMasternode)) {
         LogPrintf("CDarksendBroadcastTx::Sign -- SignMessage() failed\n");
@@ -93,7 +93,7 @@ bool CDarksendBroadcastTx::Sign()
 
 bool CDarksendBroadcastTx::CheckSignature(const CPubKey& pubKeyMasternode)
 {
-    std::string strMessage = tx.GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
+    std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
     std::string strError = "";
 
     if(!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
@@ -217,7 +217,7 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
     {
         LOCK(cs_main);
         CValidationState validationState;
-        if(!AcceptToMemoryPool(mempool, validationState, txCollateral, false, NULL, false, maxTxFee, true)) {
+        if(!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), false, NULL, false, maxTxFee, true)) {
             LogPrint("privatesend", "CPrivateSend::IsCollateralValid -- didn't pass AcceptToMemoryPool()\n");
             return false;
         }
@@ -383,7 +383,7 @@ std::string CPrivateSend::GetMessageByID(PoolMessage nMessageID)
 void CPrivateSend::AddDSTX(const CDarksendBroadcastTx& dstx)
 {
     LOCK(cs_mapdstx);
-    mapDSTX.insert(std::make_pair(dstx.tx.GetHash(), dstx));
+    mapDSTX.insert(std::make_pair(dstx.tx->GetHash(), dstx));
 }
 
 CDarksendBroadcastTx CPrivateSend::GetDSTX(const uint256& hash)

@@ -81,10 +81,11 @@ UniValue importprivkey(const JSONRPCRequest& request)
 {
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
+
     
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 3)
         throw runtime_error(
-            "importprivkey \"absoluteprivkey\" ( \"label\" rescan )\n"
+            "importprivkey \"absoluteprivkey\" ( \"label\" ) ( rescan )\n"
             "\nAdds a private key (as returned by dumpprivkey) to your wallet.\n"
             "\nArguments:\n"
             "1. \"absoluteprivkey\"   (string, required) The private key (see dumpprivkey)\n"
@@ -191,6 +192,7 @@ UniValue importaddress(const JSONRPCRequest& request)
 {
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
+
     
     if (request.fHelp || request.params.size() < 1 || request.params.size() > 4)
         throw runtime_error(
@@ -268,11 +270,11 @@ UniValue importprunedfunds(const JSONRPCRequest& request)
             "2. \"txoutproof\"     (string, required) The hex output from gettxoutproof that contains the transaction\n"
         );
 
-    CTransaction tx;
+    CMutableTransaction tx;
     if (!DecodeHexTx(tx, request.params[0].get_str()))
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
     uint256 hashTx = tx.GetHash();
-    CWalletTx wtx(pwalletMain,tx);
+    CWalletTx wtx(pwalletMain, MakeTransactionRef(std::move(tx)));
 
     CDataStream ssMB(ParseHexV(request.params[1], "proof"), SER_NETWORK, PROTOCOL_VERSION);
     CMerkleBlock merkleBlock;
@@ -305,7 +307,7 @@ UniValue importprunedfunds(const JSONRPCRequest& request)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    if (pwalletMain->IsMine(tx)) {
+    if (pwalletMain->IsMine(wtx)) {
         pwalletMain->AddToWallet(wtx, false);
         return NullUniValue;
     }
@@ -413,6 +415,7 @@ UniValue importwallet(const JSONRPCRequest& request)
 {
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
+
     
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
@@ -654,14 +657,15 @@ UniValue dumpprivkey(const JSONRPCRequest& request)
 {
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
+
     
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
-            "dumpprivkey \"absoluteaddress\"\n"
-            "\nReveals the private key corresponding to 'absoluteaddress'.\n"
+            "dumpprivkey \"address\"\n"
+            "\nReveals the private key corresponding to 'address'.\n"
             "Then the importprivkey can be used with this output\n"
             "\nArguments:\n"
-            "1. \"absoluteaddress\"   (string, required) The absolute address for the private key\n"
+            "1. \"address\"   (string, required) The dash address for the private key\n"
             "\nResult:\n"
             "\"key\"                (string) The private key\n"
             "\nExamples:\n"
@@ -737,6 +741,7 @@ UniValue dumpwallet(const JSONRPCRequest& request)
 {
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
+
     
     if (request.fHelp || request.params.size() != 1)
         throw runtime_error(
@@ -1169,10 +1174,10 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
     // clang-format off
     if (mainRequest.fHelp || mainRequest.params.size() < 1 || mainRequest.params.size() > 2)
         throw runtime_error(
-            "importmulti '[<json import requests>]' '<json options>' \n\n"
+            "importmulti \"requests\" \"options\"\n\n"
             "Import addresses/scripts (with private or public keys, redeem script (P2SH)), rescanning all addresses in one-shot-only (rescan can be disabled via options).\n\n"
             "Arguments:\n"
-            "1. request array     (array, required) Data to be imported\n"
+            "1. requests     (array, required) Data to be imported\n"
             "  [     (array of json objects)\n"
             "    {\n"
             "      \"scriptPubKey\": \"<script>\" | { \"address\":\"<address>\" }, (string / json, required) Type of scriptPubKey (string for script, json for address)\n"
@@ -1186,7 +1191,7 @@ UniValue importmulti(const JSONRPCRequest& mainRequest)
             "    }\n"
             "  ,...\n"
             "  ]\n"
-            "2. json options                 (json, optional)\n"
+            "2. options                 (json, optional)\n"
             "  {\n"
             "     \"rescan\": <false>,         (boolean, optional, default: true) Stating if should rescan the blockchain after all imports\n"
             "  }\n"

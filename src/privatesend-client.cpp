@@ -156,8 +156,8 @@ void CPrivateSendClient::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         }
 
         int nMsgSessionID;
-        CTransaction txNew;
-        vRecv >> nMsgSessionID >> txNew;
+        vRecv >> nMsgSessionID;
+        CTransaction txNew(deserialize, vRecv);
 
         if(nSessionID != nMsgSessionID) {
             LogPrint("privatesend", "DSFINALTX -- message doesn't match current PrivateSend session: nSessionID: %d  nMsgSessionID: %d\n", nSessionID, nMsgSessionID);
@@ -421,7 +421,7 @@ bool CPrivateSendClient::SendDenominate(const std::vector<CTxDSIn>& vecTxDSIn, c
 
         mempool.PrioritiseTransaction(tx.GetHash(), tx.GetHash().ToString(), 1000, 0.1*COIN);
         TRY_LOCK(cs_main, lockMain);
-        if(!lockMain || !AcceptToMemoryPool(mempool, validationState, CTransaction(tx), false, NULL, false, maxTxFee, true)) {
+        if(!lockMain || !AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(tx), false, NULL, false, maxTxFee, true)) {
             LogPrintf("CPrivateSendClient::SendDenominate -- AcceptToMemoryPool() failed! tx=%s", tx.ToString());
             UnlockCoins();
             keyHolderStorage.ReturnAll();
@@ -1092,7 +1092,7 @@ bool CPrivateSendClient::PrepareDenominate(int nMinRounds, int nMaxRounds, std::
             std::vector<COutput>::iterator it2 = vCoins.begin();
             while (it2 != vCoins.end()) {
                 // we have matching inputs
-                if ((*it2).tx->vout[(*it2).i].nValue == nValueDenom) {
+                if ((*it2).tx->tx->vout[(*it2).i].nValue == nValueDenom) {
                     // add new input in resulting vector
                     vecTxDSInRet.push_back(*it);
                     // remove corresponting items from initial vectors

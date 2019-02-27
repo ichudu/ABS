@@ -115,14 +115,14 @@ void SelectBaseParams(const std::string& chain)
 std::string ChainNameFromCommandLine()
 {
     bool fRegTest = GetBoolArg("-regtest", false);
-    bool fPoVNET = mapArgs.count("-povnet") != 0;
+    bool fPoVNet = IsArgSet("-povnet");
     bool fTestNet = GetBoolArg("-testnet", false);
 
-    int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNET ? 1 : 0) + (fTestNet ? 1 : 0);
+    int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNet ? 1 : 0) + (fTestNet ? 1 : 0);
     if (nameParamsCount > 1)
         throw std::runtime_error("Only one of -regtest, -testnet or -povnet can be used.");
 
-    if (fPoVNET)
+    if (fPoVNet)
         return CBaseChainParams::POVNET;
     if (fRegTest)
         return CBaseChainParams::REGTEST;
@@ -133,10 +133,10 @@ std::string ChainNameFromCommandLine()
 
 std::string GetPoVNETName()
 {
-    // This function should never be called for non-povnets
-    assert(mapArgs.count("-povnet"));
-    std::string PoVNETName = GetArg("-dpovnet", "");
-    return "povnet" + (PoVNETName.empty() ? "" : "-" + PoVNETName);
+    // This function should never be called for non-devnets
+    assert(IsArgSet("-povnet"));
+    std::string devNetName = GetArg("-povnet", "");
+    return "povnet" + (devNetName.empty() ? "" : "-" + devNetName);
 }
 
 bool AreBaseParamsConfigured()

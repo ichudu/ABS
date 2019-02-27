@@ -42,8 +42,7 @@ DIST_DOCS = $(wildcard doc/*.md) $(wildcard doc/release-notes/*.md)
 DIST_CONTRIB = $(top_srcdir)/contrib/absolute-cli.bash-completion \
 	       $(top_srcdir)/contrib/absolute-tx.bash-completion \
 	       $(top_srcdir)/contrib/absoluted.bash-completion \
-	       $(top_srcdir)/contrib/init \
-	       $(top_srcdir)/contrib/rpm
+	       $(top_srcdir)/contrib/init
 
 BIN_CHECKS=$(top_srcdir)/contrib/devtools/symbol-check.py \
            $(top_srcdir)/contrib/devtools/security-check.py
@@ -85,7 +84,7 @@ $(OSX_APP)/Contents/PkgInfo:
 
 $(OSX_APP)/Contents/Resources/empty.lproj:
 	$(MKDIR_P) $(@D)
-	@touch $@ 
+	@touch $@
 
 $(OSX_APP)/Contents/Info.plist: $(OSX_PLIST)
 	$(MKDIR_P) $(@D)
@@ -111,8 +110,15 @@ osx_volname:
 	echo $(OSX_VOLNAME) >$@
 
 if BUILD_DARWIN
-$(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING)
+$(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING) $(OSX_BACKGROUND_IMAGE)
 	$(PYTHON) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) -add-qt-tr $(OSX_QT_TRANSLATIONS) -translations-dir=$(QT_TRANSLATION_DIR) -dmg -fancy $(OSX_FANCY_PLIST) -verbose 2 -volname $(OSX_VOLNAME)
+
+$(OSX_BACKGROUND_IMAGE).png: contrib/macdeploy/$(OSX_BACKGROUND_SVG)
+	sed 's/PACKAGE_NAME/$(PACKAGE_NAME)/' < "$<" | $(RSVG_CONVERT) -f png -d 36 -p 36 -o $@
+$(OSX_BACKGROUND_IMAGE)@2x.png: contrib/macdeploy/$(OSX_BACKGROUND_SVG)
+	sed 's/PACKAGE_NAME/$(PACKAGE_NAME)/' < "$<" | $(RSVG_CONVERT) -f png -d 72 -p 72 -o $@
+$(OSX_BACKGROUND_IMAGE): $(OSX_BACKGROUND_IMAGE).png $(OSX_BACKGROUND_IMAGE)@2x.png
+	tiffutil -cathidpicheck $^ -out $@
 
 deploydir: $(OSX_DMG)
 else

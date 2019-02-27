@@ -40,8 +40,8 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         }
 
         int nDenom;
-        CTransaction txCollateral;
-        vRecv >> nDenom >> txCollateral;
+        vRecv >> nDenom;
+        CTransaction txCollateral(deserialize, vRecv);
 
         LogPrint("privatesend", "DSACCEPT -- nDenom %d (%s)  txCollateral %s", nDenom, CPrivateSend::GetDenominationsToString(nDenom), txCollateral.ToString());
 
@@ -147,7 +147,7 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, std::string& strCommand, C
         CDarkSendEntry entry;
         vRecv >> entry;
 
-        LogPrint("privatesend", "DSVIN -- txCollateral %s", entry.txCollateral.ToString());
+        LogPrint("privatesend", "DSVIN -- txCollateral %s", entry.txCollateral->ToString());
 
         if(entry.vecTxDSIn.size() > PRIVATESEND_ENTRY_MAX_SIZE) {
             LogPrintf("DSVIN -- ERROR: too many inputs! %d/%d\n", entry.vecTxDSIn.size(), PRIVATESEND_ENTRY_MAX_SIZE);
@@ -218,7 +218,7 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, std::string& strCommand, C
                 LOCK(cs_main);
                 CValidationState validationState;
                 mempool.PrioritiseTransaction(tx.GetHash(), tx.GetHash().ToString(), 1000, 0.1*COIN);
-                if(!AcceptToMemoryPool(mempool, validationState, CTransaction(tx), false, NULL, false, maxTxFee, true)) {
+                if(!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(tx), false, NULL, false, maxTxFee, true)) {
                     LogPrintf("DSVIN -- transaction not valid! tx=%s", tx.ToString());
                     PushStatus(pfrom, STATUS_REJECTED, ERR_INVALID_TX, connman);
                     return;
@@ -335,10 +335,10 @@ void CPrivateSendServer::CommitFinalTransaction(CConnman& connman)
 {
     if(!fMasterNode) return; // check and relay final tx only on masternode
 
-    CTransaction finalTransaction = CTransaction(finalMutableTransaction);
-    uint256 hashTx = finalTransaction.GetHash();
+    CTransactionRef finalTransaction = MakeTransactionRef(finalMutableTransaction);
+    uint256 hashTx = finalTransaction->GetHash();
 
-    LogPrint("privatesend", "CPrivateSendServer::CommitFinalTransaction -- finalTransaction=%s", finalTransaction.ToString());
+    LogPrint("privatesend", "CPrivateSendServer::CommitFinalTransaction -- finalTransaction=%s", finalTransaction->ToString());
 
     {
         // See if the transaction is valid
@@ -399,13 +399,13 @@ void CPrivateSendServer::ChargeFees(CConnman& connman)
     //we don't need to charge collateral for every offence.
     if(GetRandInt(100) > 33) return;
 
-    std::vector<CTransaction> vecOffendersCollaterals;
+    std::vector<CTransactionRef> vecOffendersCollaterals;
 
     if(nState == POOL_STATE_ACCEPTING_ENTRIES) {
-        BOOST_FOREACH(const CTransaction& txCollateral, vecSessionCollaterals) {
+        BOOST_FOREACH(CTransactionRef txCollateral, vecSessionCollaterals) {
             bool fFound = false;
             BOOST_FOREACH(const CDarkSendEntry& entry, vecEntries)
-                if(entry.txCollateral == txCollateral)
+                if(*entry.txCollateral == *txCollateral)
                     fFound = true;
 
             // This queue entry didn't send us the promised transaction
@@ -442,7 +442,7 @@ void CPrivateSendServer::ChargeFees(CConnman& connman)
 
     if(nState == POOL_STATE_ACCEPTING_ENTRIES || nState == POOL_STATE_SIGNING) {
         LogPrintf("CPrivateSendServer::ChargeFees -- found uncooperative node (didn't %s transaction), charging fees: %s\n",
-                (nState == POOL_STATE_SIGNING) ? "sign" : "send", vecOffendersCollaterals[0].ToString());
+                (nState == POOL_STATE_SIGNING) ? "sign" : "send", vecOffendersCollaterals[0]->ToString());
 
         LOCK(cs_main);
 
@@ -452,7 +452,7 @@ void CPrivateSendServer::ChargeFees(CConnman& connman)
             // should never really happen
             LogPrintf("CPrivateSendServer::ChargeFees -- ERROR: AcceptToMemoryPool failed!\n");
         } else {
-            connman.RelayTransaction(vecOffendersCollaterals[0]);
+            connman.RelayTransaction(*vecOffendersCollaterals[0]);
         }
     }
 }
@@ -475,11 +475,11 @@ void CPrivateSendServer::ChargeRandomFees(CConnman& connman)
 
     LOCK(cs_main);
 
-    BOOST_FOREACH(const CTransaction& txCollateral, vecSessionCollaterals) {
+    BOOST_FOREACH(CTransactionRef txCollateral, vecSessionCollaterals) {
 
         if(GetRandInt(100) > 10) return;
 
-        LogPrintf("CPrivateSendServer::ChargeRandomFees -- charging random fees, txCollateral=%s", txCollateral.ToString());
+        LogPrintf("CPrivateSendServer::ChargeRandomFees -- charging random fees, txCollateral=%s", txCollateral->ToString());
 
         CValidationState state;
         bool fMissingInputs;
@@ -487,7 +487,7 @@ void CPrivateSendServer::ChargeRandomFees(CConnman& connman)
             // should never really happen
             LogPrintf("CPrivateSendServer::ChargeRandomFees -- ERROR: AcceptToMemoryPool failed!\n");
         } else {
-            connman.RelayTransaction(txCollateral);
+            connman.RelayTransaction(*txCollateral);
         }
     }
 }
@@ -591,7 +591,7 @@ bool CPrivateSendServer::AddEntry(const CDarkSendEntry& entryNew, PoolMessage& n
         }
     }
 
-    if(!CPrivateSend::IsCollateralValid(entryNew.txCollateral)) {
+    if(!CPrivateSend::IsCollateralValid(*entryNew.txCollateral)) {
         LogPrint("privatesend", "CPrivateSendServer::AddEntry -- collateral not valid!\n");
         nMessageIDRet = ERR_INVALID_COLLATERAL;
         return false;
@@ -739,7 +739,7 @@ bool CPrivateSendServer::CreateNewSession(int nDenom, CTransaction txCollateral,
         vecDarksendQueue.push_back(dsq);
     }
 
-    vecSessionCollaterals.push_back(txCollateral);
+    vecSessionCollaterals.push_back(MakeTransactionRef(txCollateral));
     LogPrintf("CPrivateSendServer::CreateNewSession -- new session created, nSessionID: %d  nSessionDenom: %d (%s)  vecSessionCollaterals.size(): %d\n",
             nSessionID, nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), vecSessionCollaterals.size());
 
@@ -772,7 +772,7 @@ bool CPrivateSendServer::AddUserToExistingSession(int nDenom, CTransaction txCol
 
     nMessageIDRet = MSG_NOERR;
     nTimeLastSuccessfulStep = GetTimeMillis();
-    vecSessionCollaterals.push_back(txCollateral);
+    vecSessionCollaterals.push_back(MakeTransactionRef(txCollateral));
 
     LogPrintf("CPrivateSendServer::AddUserToExistingSession -- new user accepted, nSessionID: %d  nSessionDenom: %d (%s)  vecSessionCollaterals.size(): %d\n",
             nSessionID, nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), vecSessionCollaterals.size());

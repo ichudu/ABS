@@ -239,7 +239,7 @@ def wait_for_bitcoind_start(process, url, i):
                 raise # unknown JSON RPC exception
         time.sleep(0.25)
 
-def initialize_chain(test_dir, num_nodes):
+def initialize_chain(test_dir, num_nodes, cachedir):
     """
     Create a cache of a 200-block-long chain (with wallet) for MAX_NODES
     Afterward, create num_nodes copies from the cache
@@ -248,7 +248,7 @@ def initialize_chain(test_dir, num_nodes):
     assert num_nodes <= MAX_NODES
     create_cache = False
     for i in range(MAX_NODES):
-        if not os.path.isdir(os.path.join('cache', 'node'+str(i))):
+        if not os.path.isdir(os.path.join(cachedir, 'node'+str(i))):
             create_cache = True
             break
 
@@ -256,12 +256,12 @@ def initialize_chain(test_dir, num_nodes):
 
         #find and delete old cache directories if any exist
         for i in range(MAX_NODES):
-            if os.path.isdir(os.path.join("cache","node"+str(i))):
-                shutil.rmtree(os.path.join("cache","node"+str(i)))
+            if os.path.isdir(os.path.join(cachedir,"node"+str(i))):
+                shutil.rmtree(os.path.join(cachedir,"node"+str(i)))
 
         # Create cache directories, run absoluteds:
         for i in range(MAX_NODES):
-            datadir=initialize_datadir("cache", i)
+            datadir=initialize_datadir(cachedir, i)
             args = [ os.getenv("ABSOLUTED", "absoluted"), "-server", "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
@@ -302,13 +302,13 @@ def initialize_chain(test_dir, num_nodes):
         stop_nodes(rpcs)
         disable_mocktime()
         for i in range(MAX_NODES):
-            os.remove(log_filename("cache", i, "debug.log"))
-            os.remove(log_filename("cache", i, "db.log"))
-            os.remove(log_filename("cache", i, "peers.dat"))
-            os.remove(log_filename("cache", i, "fee_estimates.dat"))
+            os.remove(log_filename(cachedir, i, "debug.log"))
+            os.remove(log_filename(cachedir, i, "db.log"))
+            os.remove(log_filename(cachedir, i, "peers.dat"))
+            os.remove(log_filename(cachedir, i, "fee_estimates.dat"))
 
     for i in range(num_nodes):
-        from_dir = os.path.join("cache", "node"+str(i))
+        from_dir = os.path.join(cachedir, "node"+str(i))
         to_dir = os.path.join(test_dir,  "node"+str(i))
         shutil.copytree(from_dir, to_dir)
         initialize_datadir(test_dir, i) # Overwrite port/rpcport in absolute.conf
@@ -540,10 +540,10 @@ def assert_fee_amount(fee, tx_size, fee_per_kB):
     """Assert the fee was in range"""
     target_fee = tx_size * fee_per_kB / 1000
     if fee < target_fee:
-        raise AssertionError("Fee of %s DASH too low! (Should be %s DASH)"%(str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s ABSOLUTE too low! (Should be %s ABSOLUTE)"%(str(fee), str(target_fee)))
     # allow the wallet's estimation to be at most 2 bytes off
     if fee > (tx_size + 2) * fee_per_kB / 1000:
-        raise AssertionError("Fee of %s DASH too high! (Should be %s DASH)"%(str(fee), str(target_fee)))
+        raise AssertionError("Fee of %s ABSOLUTE too high! (Should be %s ABSOLUTE)"%(str(fee), str(target_fee)))
 
 def assert_equal(thing1, thing2):
     if thing1 != thing2:
@@ -562,6 +562,18 @@ def assert_raises_message(exc, message, fun, *args, **kwds):
     except exc as e:
         if message is not None and message not in e.error['message']:
             raise AssertionError("Expected substring not found:"+e.error['message'])
+    except Exception as e:
+        raise AssertionError("Unexpected exception raised: "+type(e).__name__)
+    else:
+        raise AssertionError("No exception raised")
+
+def assert_raises_jsonrpc(code, fun, *args, **kwds):
+    '''Check for specific JSONRPC exception code'''
+    try:
+        fun(*args, **kwds)
+    except JSONRPCException as e:
+        if e.error["code"] != code:
+            raise AssertionError("Unexpected JSONRPC error code %i" % e.error["code"])
     except Exception as e:
         raise AssertionError("Unexpected exception raised: "+type(e).__name__)
     else:
