@@ -1,3 +1,2 @@
-debian/manpages/absoluted.1
-debian/manpages/absolute.conf.5
-debian/manpages/absolute-cli.1
+doc/man/absolute.1
+doc/man/absolute-cli.1
