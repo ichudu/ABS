@@ -118,11 +118,11 @@ std::string ChainNameFromCommandLine()
     bool fPoVNet = IsArgSet("-povnet");
     bool fTestNet = GetBoolArg("-testnet", false);
 
-    int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNET ? 1 : 0) + (fTestNet ? 1 : 0);
+    int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNet ? 1 : 0) + (fTestNet ? 1 : 0);
     if (nameParamsCount > 1)
         throw std::runtime_error("Only one of -regtest, -testnet or -povnet can be used.");
 
-    if (fPoVNET)
+    if (fPoVNet)
         return CBaseChainParams::POVNET;
     if (fRegTest)
         return CBaseChainParams::REGTEST;
