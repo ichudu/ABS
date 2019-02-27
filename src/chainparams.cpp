@@ -145,9 +145,8 @@ public:
 		/* Governance */
 		consensus.nGovernanceMinQuorum = 10;
         consensus.nGovernanceFilterElements = 20000;
-        consensus.nMajorityEnforceBlockUpgrade = 750;
-        consensus.nMajorityRejectBlockOutdated = 950;
-        consensus.nMajorityWindow = 1000;
+        consensus.nMasternodeMinimumConfirmations = 15;
+
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
@@ -233,11 +232,15 @@ public:
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            (  0, uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e")),
-            1518598800, // * UNIX timestamp of last checkpoint block
-            0,		// * total number of transactions between genesis and last checkpoint
+            (  0, uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e"))
+	};
+
+        chainTxData = ChainTxData{
+
+            1518598800, // * UNIX timestamp of last known number of transactions
+            0,		// * total number of transactions between genesis and that timestamp
 			//   (the tx=... number in the SetBestChain debug.log lines)
-            2000		// * estimated number of transactions per day after checkpoint
+            2000	//estimated number of transactions per second after that timestamp
         };
     }
 };
@@ -264,11 +267,12 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.nMajorityEnforceBlockUpgrade = 51;
-        consensus.nMajorityRejectBlockOutdated = 75;
-        consensus.nMajorityWindow = 100;
+
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6");
+        consensus.BIP65Height = 2431; //
+        consensus.BIP66Height = 2075; //
+
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Absolute: 1 day
         consensus.nPowTargetSpacing = 1.5 * 60; // Absolute: 1.5 minutes
@@ -357,7 +361,10 @@ public:
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            (      0, uint256S("0x00000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6")),
+            (      0, uint256S("0x00000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6"))
+        };
+
+        chainTxData = ChainTxData{   
             1518597800, // * UNIX timestamp of last checkpoint block
             0,		// * total number of transactions between genesis and last checkpoint
 			//   (the tx=... number in the SetBestChain debug.log lines)
@@ -389,7 +396,9 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.BIP34Height = 1; // BIP34 activated immediately on povnet (BIP34Hash is set later for the povnet genesis block)
+
+        consensus.BIP34Height = 0;
+        consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
         consensus.BIP65Height = 1; // BIP65 activated immediately on povnet
         consensus.BIP66Height = 1; // BIP66 activated immediately on povnet
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
@@ -438,7 +447,7 @@ public:
 
         PoVNETGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
 
-        consensus.BIP34Hash = povnetGenesis.GetHash();
+        consensus.BIP34Hash = PoVNETGenesis.GetHash();
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -472,15 +481,12 @@ public:
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
-            ( 0, uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"))
-            ( 1, PoVNETGenesis.GetHash()),
-            0,
-            0,
-            0
+            (      0, uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"))
+            (      1, PoVNETGenesis.GetHash())
         };
 
         chainTxData = ChainTxData{
-            povnetGenesis.GetBlockTime(), // * UNIX timestamp of devnet genesis block
+            PoVNETGenesis.GetBlockTime(), // * UNIX timestamp of povnet genesis block
             2,                            // * we only have 2 coinbase transactions when a povnet is started up
             0.01                          // * estimated number of transactions per second
         };
@@ -510,9 +516,7 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 100;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.nMajorityEnforceBlockUpgrade = 750;
-        consensus.nMajorityRejectBlockOutdated = 950;
-        consensus.nMajorityWindow = 1000;
+
         consensus.BIP34Height = -1; // BIP34 is not required
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
@@ -570,8 +574,11 @@ public:
 
         checkpointData = (CCheckpointData){
             boost::assign::map_list_of
-            ( 0, uint256S("0x00000d8cfc345deda15f4897bb9ed59878fb4c84f02c478dc1165ee8fbaede56")),
-            1518596800,
+            ( 0, uint256S("0x00000d8cfc345deda15f4897bb9ed59878fb4c84f02c478dc1165ee8fbaede56"))
+        };
+
+        chainTxData = ChainTxData{
+            0,
             0,
             0
         };
