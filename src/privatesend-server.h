@@ -70,7 +70,7 @@ public:
     CPrivateSendServer() :
         fUnitTest(false) { SetNull(); }
 
-    void ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv, CConnman& connman);
+    void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
     void CheckTimeout(CConnman& connman);
     void CheckForCompleteQueue(CConnman& connman);

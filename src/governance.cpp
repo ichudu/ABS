@@ -100,7 +100,7 @@ bool CGovernanceManager::SerializeVoteForHash(uint256 nHash, CDataStream& ss)
     return true;
 }
 
-void CGovernanceManager::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv, CConnman& connman)
+void CGovernanceManager::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
     // lite mode is not supported
     if(fLiteMode) return;
@@ -375,7 +375,7 @@ void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CConnman
         break;
     }
 
-    LogPrintf("AddGovernanceObject -- %s new, received form %s\n", strHash, pfrom? pfrom->addrName : "NULL");
+    LogPrintf("AddGovernanceObject -- %s new, received form %s\n", strHash, pfrom? pfrom->GetAddrName() : "NULL");
     govobj.Relay(connman);
 
     // Update the rate buffer

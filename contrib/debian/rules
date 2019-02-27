@@ -5,9 +5,6 @@
 #build/absoluted::
 #	$(if $(filter nocheck,$(DEB_BUILD_OPTIONS)),,src/test_absolute)
 
-DEB_INSTALL_EXAMPLES_absoluted += debian/examples/*
-DEB_INSTALL_MANPAGES_absoluted += debian/manpages/*
-
 %:
 	dh --with bash-completion $@
 
