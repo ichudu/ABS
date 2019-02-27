@@ -939,6 +939,19 @@ ServiceFlags nLocalServices = NODE_NETWORK;
 
 }
 
+[[noreturn]] static void new_handler_terminate()
+{
+    // Rather than throwing std::bad-alloc if allocation fails, terminate
+    // immediately to (try to) avoid chain corruption.
+    // Since LogPrintf may itself allocate memory, set the handler directly
+    // to terminate first.
+    std::set_new_handler(std::terminate);
+    LogPrintf("Error: Out of memory. Terminating.\n");
+
+    // The log was successful, terminate now.
+    std::terminate();
+};
+
 bool AppInitBasicSetup()
 {
     // ********************************************************* Step 1: setup
@@ -991,6 +1004,9 @@ bool AppInitBasicSetup()
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
     signal(SIGPIPE, SIG_IGN);
 #endif
+
+    std::set_new_handler(new_handler_terminate);
+
     return true;
 }
 
@@ -1721,15 +1737,15 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     // ********************************************************* Step 11a: setup PrivateSend
-    fMasterNode = GetBoolArg("-masternode", false);
+    fMasternodeMode = GetBoolArg("-masternode", false);
     // TODO: masternode should have no wallet
 
-    if((fMasterNode || masternodeConfig.getCount() > -1) && fTxIndex == false) {
+    if((fMasternodeMode || masternodeConfig.getCount() > -1) && fTxIndex == false) {
         return InitError("Enabling Masternode support requires turning on transaction indexing."
                   "Please add txindex=1 to your configuration and start with -reindex");
     }
 
-    if(fMasterNode) {
+    if(fMasternodeMode) {
         LogPrintf("MASTERNODE:\n");
 
         std::string strMasterNodePrivKey = GetArg("-masternodeprivkey", "");
@@ -1783,7 +1799,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     //lite mode disables all Masternode and Darksend related functionality
     fLiteMode = GetBoolArg("-litemode", false);
-    if(fMasterNode && fLiteMode){
+    if(fMasternodeMode && fLiteMode){
         return InitError("You can not start a masternode in litemode");
     }
 
@@ -1846,7 +1862,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 11d: start absolute-ps-<smth> threads
 
     threadGroup.create_thread(boost::bind(&ThreadCheckPrivateSend, boost::ref(*g_connman)));
-    if (fMasterNode)
+    if (fMasternodeMode)
         threadGroup.create_thread(boost::bind(&ThreadCheckPrivateSendServer, boost::ref(*g_connman)));
 #ifdef ENABLE_WALLET
     else

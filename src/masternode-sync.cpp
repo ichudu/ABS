@@ -180,7 +180,7 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
 
     // gradually request the rest of the votes after sync finished
     if(IsSynced()) {
-        std::vector<CNode*> vNodesCopy = connman.CopyNodeVector();
+        std::vector<CNode*> vNodesCopy = connman.CopyNodeVector(CConnman::FullyConnectedOnly);
         governance.RequestGovernanceObjectVotes(vNodesCopy, connman);
         connman.ReleaseNodeVector(vNodesCopy);
         return;
@@ -191,24 +191,23 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
     LogPrintf("CMasternodeSync::ProcessTick -- nTick %d nRequestedMasternodeAssets %d nRequestedMasternodeAttempt %d nSyncProgress %f\n", nTick, nRequestedMasternodeAssets, nRequestedMasternodeAttempt, nSyncProgress);
     uiInterface.NotifyAdditionalDataSyncProgressChanged(nSyncProgress);
 
-    std::vector<CNode*> vNodesCopy = connman.CopyNodeVector();
+    std::vector<CNode*> vNodesCopy = connman.CopyNodeVector(CConnman::FullyConnectedOnly);
 
     BOOST_FOREACH(CNode* pnode, vNodesCopy)
     {
         CNetMsgMaker msgMaker(pnode->GetSendVersion());
-        CNetMsgMaker msgMakerInitProto(INIT_PROTO_VERSION);
 
         // Don't try to sync any data from outbound "masternode" connections -
         // they are temporary and should be considered unreliable for a sync process.
         // Inbound connection this early is most likely a "masternode" connection
         // initiated from another node, so skip it too.
-        if(pnode->fMasternode || (fMasterNode && pnode->fInbound)) continue;
+        if(pnode->fMasternode || (fMasternodeMode && pnode->fInbound)) continue;
 
         // QUICK MODE (REGTEST ONLY!)
         if(Params().NetworkIDString() == CBaseChainParams::REGTEST)
         {
             if(nRequestedMasternodeAttempt <= 2) {
-                connman.PushMessage(pnode, msgMakerInitProto.Make(NetMsgType::GETSPORKS)); //get current network sporks
+                connman.PushMessage(pnode, msgMaker.Make(NetMsgType::GETSPORKS)); //get current network sporks
             } else if(nRequestedMasternodeAttempt < 4) {
                 mnodeman.DsegUpdate(pnode, connman);
             } else if(nRequestedMasternodeAttempt < 6) {
@@ -239,7 +238,7 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
                 // always get sporks first, only request once from each peer
                 netfulfilledman.AddFulfilledRequest(pnode->addr, "spork-sync");
                 // get current network sporks
-                connman.PushMessage(pnode, msgMakerInitProto.Make(NetMsgType::GETSPORKS));
+                connman.PushMessage(pnode, msgMaker.Make(NetMsgType::GETSPORKS));
                 LogPrintf("CMasternodeSync::ProcessTick -- nTick %d nRequestedMasternodeAssets %d -- requesting sporks from peer %d\n", nTick, nRequestedMasternodeAssets, pnode->id);
             }
 

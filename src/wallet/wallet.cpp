@@ -1837,10 +1837,14 @@ void CWalletTx::GetAccountAmounts(const string& strAccount, CAmount& nReceived,
  * Scan the block chain (starting in pindexStart) for transactions
  * from or to us. If fUpdate is true, found transactions that already
  * exist in the wallet will be updated.
+ *
+ * Returns pointer to the first block in the last contiguous range that was
+ * successfully scanned.
+ *
  */
-int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
+CBlockIndex* CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 {
-    int ret = 0;
+    CBlockIndex* ret = nullptr;
     int64_t nNow = GetTime();
     const CChainParams& chainParams = Params();
 
@@ -1860,20 +1864,23 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
         {
             if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((GuessVerificationProgress(chainParams.TxData(), pindex) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
-
-            CBlock block;
-            ReadBlockFromDisk(block, pindex, Params().GetConsensus());
-            int posInBlock;
-            for (posInBlock = 0; posInBlock < (int)block.vtx.size(); posInBlock++)
-            {
-                if (AddToWalletIfInvolvingMe(*block.vtx[posInBlock], pindex, posInBlock, fUpdate))
-                    ret++;
-            }
-            pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {
                 nNow = GetTime();
                 LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->nHeight, GuessVerificationProgress(chainParams.TxData(), pindex));
             }
+
+            CBlock block;
+            if (ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
+                for (size_t posInBlock = 0; posInBlock < block.vtx.size(); ++posInBlock) {
+                    AddToWalletIfInvolvingMe(*block.vtx[posInBlock], pindex, posInBlock, fUpdate);
+                }
+                if (!ret) {
+                    ret = pindex;
+                }
+            } else {
+                ret = nullptr;
+            }
+            pindex = chainActive.Next(pindex);
         }
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
     }
@@ -3060,7 +3067,7 @@ bool CWallet::SelectCoinsGrouppedByAddresses(std::vector<CompactTallyItem>& vecT
             if(fAnonymizable) {
                 // ignore collaterals
                 if(CPrivateSend::IsCollateralAmount(wtx.tx->vout[i].nValue)) continue;
-                if(fMasterNode && wtx.tx->vout[i].nValue == 1000*COIN) continue;
+                if(fMasternodeMode && wtx.tx->vout[i].nValue == 2500*COIN) continue;
                 // ignore outputs that are 10 times smaller then the smallest denomination
                 // otherwise they will just lead to higher fee / lower priority
                 if(wtx.tx->vout[i].nValue <= nSmallestDenom/10) continue;
@@ -3126,7 +3133,7 @@ bool CWallet::SelectCoinsDark(CAmount nValueMin, CAmount nValueMax, std::vector<
         if(out.tx->tx->vout[out.i].nValue < nValueMin/10) continue;
         //do not allow collaterals to be selected
         if(CPrivateSend::IsCollateralAmount(out.tx->tx->vout[out.i].nValue)) continue;
-        if(fMasterNode && out.tx->tx->vout[out.i].nValue == 1000*COIN) continue; //masternode input
+        if(fMasternodeMode && out.tx->tx->vout[out.i].nValue == 2500*COIN) continue; //masternode input
 
         if(nValueRet + out.tx->tx->vout[out.i].nValue <= nValueMax){
             CTxIn txin = CTxIn(out.tx->GetHash(),out.i);
@@ -3588,9 +3595,10 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                             txNew.vout.insert(position, newTxOut);
                         }
                     }
-                }
-                else
+                } else {
                     reservekey.ReturnKey();
+                    nChangePosInOut = -1;
+                }
 
                 // Fill vin
                 //

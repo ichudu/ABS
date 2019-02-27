@@ -22,8 +22,8 @@ CPrivateSendClient privateSendClient;
 
 void CPrivateSendClient::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
-    if(fMasterNode) return;
-    if(fLiteMode) return; // ignore all Absolute related functionality
+    if(fMasternodeMode) return;
+    if(fLiteMode) return; // ignore all absolute related functionality
     if(!masternodeSync.IsBlockchainSynced()) return;
 
     if(strCommand == NetMsgType::DSQUEUE) {
@@ -323,10 +323,10 @@ void CPrivateSendClient::CheckTimeout()
 {
     CheckQueue();
 
-    if(!fEnablePrivateSend && !fMasterNode) return;
+    if(!fEnablePrivateSend && !fMasternodeMode) return;
 
     // catching hanging sessions
-    if(!fMasterNode) {
+    if(!fMasternodeMode) {
         switch(nState) {
             case POOL_STATE_ERROR:
                 LogPrint("privatesend", "CPrivateSendClient::CheckTimeout -- Pool error -- Running CheckPool\n");
@@ -341,7 +341,7 @@ void CPrivateSendClient::CheckTimeout()
         }
     }
 
-    int nLagTime = fMasterNode ? 0 : 10000; // if we're the client, give the server a few extra seconds before resetting.
+    int nLagTime = fMasternodeMode ? 0 : 10000; // if we're the client, give the server a few extra seconds before resetting.
     int nTimeout = (nState == POOL_STATE_SIGNING) ? PRIVATESEND_SIGNING_TIMEOUT : PRIVATESEND_QUEUE_TIMEOUT;
     bool fTimeout = GetTimeMillis() - nTimeLastSuccessfulStep >= nTimeout*1000 + nLagTime;
 
@@ -362,7 +362,7 @@ void CPrivateSendClient::CheckTimeout()
 //
 bool CPrivateSendClient::SendDenominate(const std::vector<CTxDSIn>& vecTxDSIn, const std::vector<CTxOut>& vecTxOut, CConnman& connman)
 {
-    if(fMasterNode) {
+    if(fMasternodeMode) {
         LogPrintf("CPrivateSendClient::SendDenominate -- PrivateSend from a Masternode is not supported currently.\n");
         return false;
     }
@@ -442,7 +442,7 @@ bool CPrivateSendClient::SendDenominate(const std::vector<CTxDSIn>& vecTxDSIn, c
 // Incoming message from Masternode updating the progress of mixing
 bool CPrivateSendClient::CheckPoolStateUpdate(PoolState nStateNew, int nEntriesCountNew, PoolStatusUpdate nStatusUpdate, PoolMessage nMessageID, int nSessionIDNew)
 {
-    if(fMasterNode) return false;
+    if(fMasternodeMode) return false;
 
     // do not update state when mixing client state is one of these
     if(nState == POOL_STATE_IDLE || nState == POOL_STATE_ERROR || nState == POOL_STATE_SUCCESS) return false;
@@ -488,7 +488,7 @@ bool CPrivateSendClient::CheckPoolStateUpdate(PoolState nStateNew, int nEntriesC
 //
 bool CPrivateSendClient::SignFinalTransaction(const CTransaction& finalTransactionNew, CNode* pnode, CConnman& connman)
 {
-    if(fMasterNode || pnode == NULL) return false;
+    if(fMasternodeMode || pnode == NULL) return false;
 
     finalMutableTransaction = finalTransactionNew;
     LogPrintf("CPrivateSendClient::SignFinalTransaction -- finalMutableTransaction=%s", finalMutableTransaction.ToString());
@@ -588,7 +588,7 @@ bool CPrivateSendClient::SignFinalTransaction(const CTransaction& finalTransacti
 // mixing transaction was completed (failed or successful)
 void CPrivateSendClient::CompletedTransaction(PoolMessage nMessageID)
 {
-    if(fMasterNode) return;
+    if(fMasternodeMode) return;
 
     if(nMessageID == MSG_SUCCESS) {
         LogPrintf("CompletedTransaction -- success\n");
@@ -684,7 +684,7 @@ bool CPrivateSendClient::CheckAutomaticBackup()
 //
 bool CPrivateSendClient::DoAutomaticDenominating(CConnman& connman, bool fDryRun)
 {
-    if(fMasterNode) return false; // no client-side mixing on masternodes
+    if(fMasternodeMode) return false; // no client-side mixing on masternodes
     if(!fEnablePrivateSend) return false;
     if(!pwalletMain || pwalletMain->IsLocked(true)) return false;
     if(nState != POOL_STATE_IDLE) return false;
@@ -889,9 +889,9 @@ bool CPrivateSendClient::JoinExistingQueue(CAmount nBalanceNeedsAnonymized, CCon
         bool fSuccess = connman.ForNode(addr, CConnman::AllNodes, [&](CNode* pnode){
             infoMixingMasternode = infoMn;
             nSessionDenom = dsq.nDenom;
-
-            CNetMsgMaker msgMaker(pnode->GetSendVersion());
-            connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSACCEPT, nSessionDenom, txMyCollateral));
+            CDarksendAccept dsa(nSessionDenom, txMyCollateral);
+            CNetMsgMaker msgMaker(pnode->GetSendVersion()); // TODO this gives a warning about version not being set (we should wait for VERSION exchange)
+            connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSACCEPT, dsa));
             LogPrintf("CPrivateSendClient::JoinExistingQueue -- connected (from queue), sending DSACCEPT: nSessionDenom: %d (%s), addr=%s\n",
                       nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), pnode->addr.ToString());
             strAutoDenomResult = _("Mixing in progress...");
@@ -963,9 +963,9 @@ bool CPrivateSendClient::StartNewQueue(CAmount nValueMin, CAmount nBalanceNeedsA
             while(nSessionDenom == 0) {
                 nSessionDenom = CPrivateSend::GetDenominationsByAmounts(vecAmounts);
             }
-
-            CNetMsgMaker msgMaker(pnode->GetSendVersion());
-            connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSACCEPT, nSessionDenom, txMyCollateral));
+            CDarksendAccept dsa(nSessionDenom, txMyCollateral);
+            CNetMsgMaker msgMaker(pnode->GetSendVersion()); // TODO this gives a warning about version not being set (we should wait for VERSION exchange)
+            connman.PushMessage(pnode, msgMaker.Make(NetMsgType::DSACCEPT, dsa));
             LogPrintf("CPrivateSendClient::StartNewQueue -- connected, sending DSACCEPT, nSessionDenom: %d (%s)\n",
                     nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom));
             strAutoDenomResult = _("Mixing in progress...");
@@ -1398,8 +1398,8 @@ void CPrivateSendClient::UpdatedBlockTip(const CBlockIndex *pindex)
 //TODO: Rename/move to core
 void ThreadCheckPrivateSendClient(CConnman& connman)
 {
-    if(fLiteMode) return; // disable all Absolute specific functionality
-    if(fMasterNode) return; // no client-side mixing on masternodes
+    if(fLiteMode) return; // disable all absolute specific functionality
+    if(fMasternodeMode) return; // no client-side mixing on masternodes
 
     static bool fOneThread;
     if(fOneThread) return;

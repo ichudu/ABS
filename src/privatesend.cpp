@@ -39,7 +39,7 @@ bool CDarkSendEntry::AddScriptSig(const CTxIn& txin)
 
 bool CDarksendQueue::Sign()
 {
-    if(!fMasterNode) return false;
+    if(!fMasternodeMode) return false;
 
     std::string strMessage = vin.ToString() + boost::lexical_cast<std::string>(nDenom) + boost::lexical_cast<std::string>(nTime) + boost::lexical_cast<std::string>(fReady);
 
@@ -66,7 +66,7 @@ bool CDarksendQueue::CheckSignature(const CPubKey& pubKeyMasternode)
 
 bool CDarksendQueue::Relay(CConnman& connman)
 {
-    std::vector<CNode*> vNodesCopy = connman.CopyNodeVector();
+    std::vector<CNode*> vNodesCopy = connman.CopyNodeVector(CConnman::FullyConnectedOnly);
     BOOST_FOREACH(CNode* pnode, vNodesCopy) {
         CNetMsgMaker msgMaker(pnode->GetSendVersion());
         if (pnode->nVersion >= MIN_PRIVATESEND_PEER_PROTO_VERSION)
@@ -79,7 +79,7 @@ bool CDarksendQueue::Relay(CConnman& connman)
 
 bool CDarksendBroadcastTx::Sign()
 {
-    if(!fMasterNode) return false;
+    if(!fMasternodeMode) return false;
 
     std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
 
@@ -467,7 +467,7 @@ void ThreadCheckPrivateSend(CConnman& connman)
                 mnpayments.CheckAndRemove();
                 instantsend.CheckAndRemove();
             }
-            if(fMasterNode && (nTick % (60 * 5) == 0)) {
+            if(fMasternodeMode && (nTick % (60 * 5) == 0)) {
                 mnodeman.DoFullVerificationStep(connman);
             }
 

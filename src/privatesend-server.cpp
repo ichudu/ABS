@@ -20,8 +20,8 @@ CPrivateSendServer privateSendServer;
 
 void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
-    if(!fMasterNode) return;
-    if(fLiteMode) return; // ignore all Absolute related functionality
+    if(!fMasternodeMode) return;
+    if(fLiteMode) return; // ignore all absolute related functionality
     if(!masternodeSync.IsBlockchainSynced()) return;
 
     if(strCommand == NetMsgType::DSACCEPT) {
@@ -39,11 +39,10 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
             return;
         }
 
-        int nDenom;
-        vRecv >> nDenom;
-        CTransaction txCollateral(deserialize, vRecv);
+        CDarksendAccept dsa;
+        vRecv >> dsa;
 
-        LogPrint("privatesend", "DSACCEPT -- nDenom %d (%s)  txCollateral %s", nDenom, CPrivateSend::GetDenominationsToString(nDenom), txCollateral.ToString());
+        LogPrint("privatesend", "DSACCEPT -- nDenom %d (%s)  txCollateral %s", dsa.nDenom, CPrivateSend::GetDenominationsToString(dsa.nDenom), dsa.txCollateral.ToString());
 
         masternode_info_t mnInfo;
         if(!mnodeman.GetMasternodeInfo(activeMasternode.outpoint, mnInfo)) {
@@ -61,8 +60,8 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
 
         PoolMessage nMessageID = MSG_NOERR;
 
-        bool fResult = nSessionID == 0  ? CreateNewSession(nDenom, txCollateral, nMessageID, connman)
-                                        : AddUserToExistingSession(nDenom, txCollateral, nMessageID);
+        bool fResult = nSessionID == 0  ? CreateNewSession(dsa, nMessageID, connman)
+                                        : AddUserToExistingSession(dsa, nMessageID);
         if(fResult) {
             LogPrintf("DSACCEPT -- is compatible, please submit!\n");
             PushStatus(pfrom, STATUS_ACCEPTED, nMessageID, connman);
@@ -280,7 +279,7 @@ void CPrivateSendServer::SetNull()
 //
 void CPrivateSendServer::CheckPool(CConnman& connman)
 {
-    if(fMasterNode) {
+    if(fMasternodeMode) {
         LogPrint("privatesend", "CPrivateSendServer::CheckPool -- entries count %lu\n", GetEntriesCount());
 
         // If entries are full, create finalized transaction
@@ -333,7 +332,7 @@ void CPrivateSendServer::CreateFinalTransaction(CConnman& connman)
 
 void CPrivateSendServer::CommitFinalTransaction(CConnman& connman)
 {
-    if(!fMasterNode) return; // check and relay final tx only on masternode
+    if(!fMasternodeMode) return; // check and relay final tx only on masternode
 
     CTransactionRef finalTransaction = MakeTransactionRef(finalMutableTransaction);
     uint256 hashTx = finalTransaction->GetHash();
@@ -394,7 +393,7 @@ void CPrivateSendServer::CommitFinalTransaction(CConnman& connman)
 //
 void CPrivateSendServer::ChargeFees(CConnman& connman)
 {
-    if(!fMasterNode) return;
+    if(!fMasternodeMode) return;
 
     //we don't need to charge collateral for every offence.
     if(GetRandInt(100) > 33) return;
@@ -471,7 +470,7 @@ void CPrivateSendServer::ChargeFees(CConnman& connman)
 */
 void CPrivateSendServer::ChargeRandomFees(CConnman& connman)
 {
-    if(!fMasterNode) return;
+    if(!fMasternodeMode) return;
 
     LOCK(cs_main);
 
@@ -499,9 +498,9 @@ void CPrivateSendServer::CheckTimeout(CConnman& connman)
 {
     CheckQueue();
 
-    if(!fMasterNode) return;
+    if(!fMasternodeMode) return;
 
-    int nLagTime = fMasterNode ? 0 : 10000; // if we're the client, give the server a few extra seconds before resetting.
+    int nLagTime = fMasternodeMode ? 0 : 10000; // if we're the client, give the server a few extra seconds before resetting.
     int nTimeout = (nState == POOL_STATE_SIGNING) ? PRIVATESEND_SIGNING_TIMEOUT : PRIVATESEND_QUEUE_TIMEOUT;
     bool fTimeout = GetTimeMillis() - nTimeLastSuccessfulStep >= nTimeout*1000 + nLagTime;
 
@@ -521,7 +520,7 @@ void CPrivateSendServer::CheckTimeout(CConnman& connman)
 */
 void CPrivateSendServer::CheckForCompleteQueue(CConnman& connman)
 {
-    if(!fMasterNode) return;
+    if(!fMasternodeMode) return;
 
     if(nState == POOL_STATE_QUEUE && IsSessionReady()) {
         SetState(POOL_STATE_ACCEPTING_ENTRIES);
@@ -581,7 +580,7 @@ bool CPrivateSendServer::IsInputScriptSigValid(const CTxIn& txin)
 //
 bool CPrivateSendServer::AddEntry(const CDarkSendEntry& entryNew, PoolMessage& nMessageIDRet)
 {
-    if(!fMasterNode) return false;
+    if(!fMasternodeMode) return false;
 
     BOOST_FOREACH(CTxIn txin, entryNew.vecTxDSIn) {
         if(txin.prevout.IsNull()) {
@@ -685,21 +684,21 @@ bool CPrivateSendServer::IsOutputsCompatibleWithSessionDenom(const std::vector<C
     return true;
 }
 
-bool CPrivateSendServer::IsAcceptableDenomAndCollateral(int nDenom, CTransaction txCollateral, PoolMessage& nMessageIDRet)
+bool CPrivateSendServer::IsAcceptableDSA(const CDarksendAccept& dsa, PoolMessage& nMessageIDRet)
 {
-    if(!fMasterNode) return false;
+    if(!fMasternodeMode) return false;
 
     // is denom even smth legit?
     std::vector<int> vecBits;
-    if(!CPrivateSend::GetDenominationsBits(nDenom, vecBits)) {
-        LogPrint("privatesend", "CPrivateSendServer::IsAcceptableDenomAndCollateral -- denom not valid!\n");
+    if(!CPrivateSend::GetDenominationsBits(dsa.nDenom, vecBits)) {
+        LogPrint("privatesend", "CPrivateSendServer::%s -- denom not valid!\n", __func__);
         nMessageIDRet = ERR_DENOM;
         return false;
     }
 
     // check collateral
-    if(!fUnitTest && !CPrivateSend::IsCollateralValid(txCollateral)) {
-        LogPrint("privatesend", "CPrivateSendServer::IsAcceptableDenomAndCollateral -- collateral not valid!\n");
+    if(!fUnitTest && !CPrivateSend::IsCollateralValid(dsa.txCollateral)) {
+        LogPrint("privatesend", "CPrivateSendServer::%s -- collateral not valid!\n", __func__);
         nMessageIDRet = ERR_INVALID_COLLATERAL;
         return false;
     }
@@ -707,9 +706,9 @@ bool CPrivateSendServer::IsAcceptableDenomAndCollateral(int nDenom, CTransaction
     return true;
 }
 
-bool CPrivateSendServer::CreateNewSession(int nDenom, CTransaction txCollateral, PoolMessage& nMessageIDRet, CConnman& connman)
+bool CPrivateSendServer::CreateNewSession(const CDarksendAccept& dsa, PoolMessage& nMessageIDRet, CConnman& connman)
 {
-    if(!fMasterNode || nSessionID != 0) return false;
+    if(!fMasternodeMode || nSessionID != 0) return false;
 
     // new session can only be started in idle mode
     if(nState != POOL_STATE_IDLE) {
@@ -718,39 +717,39 @@ bool CPrivateSendServer::CreateNewSession(int nDenom, CTransaction txCollateral,
         return false;
     }
 
-    if(!IsAcceptableDenomAndCollateral(nDenom, txCollateral, nMessageIDRet)) {
+    if(!IsAcceptableDSA(dsa, nMessageIDRet)) {
         return false;
     }
 
     // start new session
     nMessageIDRet = MSG_NOERR;
     nSessionID = GetRandInt(999999)+1;
-    nSessionDenom = nDenom;
+    nSessionDenom = dsa.nDenom;
 
     SetState(POOL_STATE_QUEUE);
     nTimeLastSuccessfulStep = GetTimeMillis();
 
     if(!fUnitTest) {
         //broadcast that I'm accepting entries, only if it's the first entry through
-        CDarksendQueue dsq(nDenom, activeMasternode.outpoint, GetAdjustedTime(), false);
+        CDarksendQueue dsq(dsa.nDenom, activeMasternode.outpoint, GetAdjustedTime(), false);
         LogPrint("privatesend", "CPrivateSendServer::CreateNewSession -- signing and relaying new queue: %s\n", dsq.ToString());
         dsq.Sign();
         dsq.Relay(connman);
         vecDarksendQueue.push_back(dsq);
     }
 
-    vecSessionCollaterals.push_back(MakeTransactionRef(txCollateral));
+    vecSessionCollaterals.push_back(MakeTransactionRef(dsa.txCollateral));
     LogPrintf("CPrivateSendServer::CreateNewSession -- new session created, nSessionID: %d  nSessionDenom: %d (%s)  vecSessionCollaterals.size(): %d\n",
             nSessionID, nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), vecSessionCollaterals.size());
 
     return true;
 }
 
-bool CPrivateSendServer::AddUserToExistingSession(int nDenom, CTransaction txCollateral, PoolMessage& nMessageIDRet)
+bool CPrivateSendServer::AddUserToExistingSession(const CDarksendAccept& dsa, PoolMessage& nMessageIDRet)
 {
-    if(!fMasterNode || nSessionID == 0 || IsSessionReady()) return false;
+    if(!fMasternodeMode || nSessionID == 0 || IsSessionReady()) return false;
 
-    if(!IsAcceptableDenomAndCollateral(nDenom, txCollateral, nMessageIDRet)) {
+    if(!IsAcceptableDSA(dsa, nMessageIDRet)) {
         return false;
     }
 
@@ -761,9 +760,9 @@ bool CPrivateSendServer::AddUserToExistingSession(int nDenom, CTransaction txCol
         return false;
     }
 
-    if(nDenom != nSessionDenom) {
+    if(dsa.nDenom != nSessionDenom) {
         LogPrintf("CPrivateSendServer::AddUserToExistingSession -- incompatible denom %d (%s) != nSessionDenom %d (%s)\n",
-                    nDenom, CPrivateSend::GetDenominationsToString(nDenom), nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom));
+                    dsa.nDenom, CPrivateSend::GetDenominationsToString(dsa.nDenom), nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom));
         nMessageIDRet = ERR_DENOM;
         return false;
     }
@@ -772,7 +771,7 @@ bool CPrivateSendServer::AddUserToExistingSession(int nDenom, CTransaction txCol
 
     nMessageIDRet = MSG_NOERR;
     nTimeLastSuccessfulStep = GetTimeMillis();
-    vecSessionCollaterals.push_back(MakeTransactionRef(txCollateral));
+    vecSessionCollaterals.push_back(MakeTransactionRef(dsa.txCollateral));
 
     LogPrintf("CPrivateSendServer::AddUserToExistingSession -- new user accepted, nSessionID: %d  nSessionDenom: %d (%s)  vecSessionCollaterals.size(): %d\n",
             nSessionID, nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), vecSessionCollaterals.size());
@@ -865,7 +864,7 @@ void CPrivateSendServer::RelayCompletedTransaction(PoolMessage nMessageID, CConn
 
 void CPrivateSendServer::SetState(PoolState nStateNew)
 {
-    if(fMasterNode && (nStateNew == POOL_STATE_ERROR || nStateNew == POOL_STATE_SUCCESS)) {
+    if(fMasternodeMode && (nStateNew == POOL_STATE_ERROR || nStateNew == POOL_STATE_SUCCESS)) {
         LogPrint("privatesend", "CPrivateSendServer::SetState -- Can't set state to ERROR or SUCCESS as a Masternode. \n");
         return;
     }

@@ -1219,7 +1219,7 @@ int CGovernanceManager::RequestGovernanceObjectVotes(const std::vector<CNode*>& 
             // they stay connected for a short period of time and it's possible that we won't get everything we should.
             // Only use outbound connections - inbound connection could be a "masternode" connection
             // initiated from another node, so skip it too.
-            if(pnode->fMasternode || (fMasterNode && pnode->fInbound)) continue;
+            if(pnode->fMasternode || (fMasternodeMode && pnode->fInbound)) continue;
             // only use up to date peers
             if(pnode->nVersion < MIN_GOVERNANCE_PEER_PROTO_VERSION) continue;
             // stop early to prevent setAskFor overflow
@@ -1364,7 +1364,7 @@ void CGovernanceManager::UpdatedBlockTip(const CBlockIndex *pindex, CConnman& co
 
 void CGovernanceManager::RequestOrphanObjects(CConnman& connman)
 {
-    std::vector<CNode*> vNodesCopy = connman.CopyNodeVector();
+    std::vector<CNode*> vNodesCopy = connman.CopyNodeVector(CConnman::FullyConnectedOnly);
 
     std::vector<uint256> vecHashesFiltered;
     {
