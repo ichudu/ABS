@@ -273,8 +273,8 @@ bool LogAcceptCategory(const char* category)
                 const vector<string>& categories = mapMultiArgs.at("-debug");
                 ptrCategory.reset(new set<string>(categories.begin(), categories.end()));
                 // thread_specific_ptr automatically deletes the set when the thread ends.
-                // "dash" is a composite category enabling all Dash-related debug output
-                if(ptrCategory->count(string("dash"))) {
+                // "absolute" is a composite category enabling all Dash-related debug output
+                if(ptrCategory->count(string("absolute"))) {
                     ptrCategory->insert(string("privatesend"));
                     ptrCategory->insert(string("instantsend"));
                     ptrCategory->insert(string("masternode"));
@@ -662,7 +662,7 @@ void ReadConfigFile(const std::string& confPath)
 
         for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
         {
-            // Don't overwrite existing settings so command line settings override dash.conf
+            // Don't overwrite existing settings so command line settings override absolute.conf
             string strKey = string("-") + it->string_key;
             string strValue = it->value[0];
             InterpretNegativeSetting(strKey, strValue);

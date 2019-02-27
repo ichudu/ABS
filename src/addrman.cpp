@@ -251,7 +251,8 @@ bool CAddrMan::Add_(const CAddress& addr, const CNetAddr& source, int64_t nTimeP
     bool fNew = false;
     int nId;
     CAddrInfo* pinfo = Find(addr, &nId);
-    // Do not set a penality for a source's self-announcement
+
+    // Do not set a penalty for a source's self-announcement
     if (addr == source) {
         nTimePenalty = 0;
     }
@@ -347,7 +348,7 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
 
     // Use a 50% chance for choosing between tried and new table entries.
     if (!newOnly &&
-       (nTried > 0 && (nNew == 0 || RandomInt(2) == 0))) { 
+       (nTried > 0 && (nNew == 0 || RandomInt(2) == 0))) {
         // use a tried node
         double fChanceFactor = 1.0;
         while (1) {

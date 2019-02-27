@@ -102,13 +102,14 @@ UniValue getpeerinfo(const JSONRPCRequest& request)
             "    \"inflight\": [\n"
             "       n,                        (numeric) The heights of blocks we're currently asking from this peer\n"
             "       ...\n"
-            "    ]\n"
+            "    ],\n"
+            "    \"whitelisted\": true|false, (boolean) Whether the peer is whitelisted\n"					
             "    \"bytessent_per_msg\": {\n"
-            "       \"addr\": n,             (numeric) The total bytes sent aggregated by message type\n"
+            "       \"addr\": n,              (numeric) The total bytes sent aggregated by message type\n"
             "       ...\n"
-            "    }\n"
+            "    },\n"
             "    \"bytesrecv_per_msg\": {\n"
-            "       \"addr\": n,             (numeric) The total bytes received aggregated by message type\n"
+            "       \"addr\": n,              (numeric) The total bytes received aggregated by message type\n"
             "       ...\n"
             "    }\n"
             "  }\n"
@@ -151,7 +152,7 @@ UniValue getpeerinfo(const JSONRPCRequest& request)
             obj.push_back(Pair("pingwait", stats.dPingWait));
         obj.push_back(Pair("version", stats.nVersion));
         // Use the sanitized form of subver here, to avoid tricksy remote peers from
-        // corrupting or modifiying the JSON output by putting special characters in
+        // corrupting or modifying the JSON output by putting special characters in
         // their ver message.
         obj.push_back(Pair("subver", stats.cleanSubVer));
         obj.push_back(Pair("inbound", stats.fInbound));
@@ -413,6 +414,7 @@ UniValue getnetworkinfo(const JSONRPCRequest& request)
             "    \"limited\": true|false,               (boolean) is the network limited using -onlynet?\n"
             "    \"reachable\": true|false,             (boolean) is the network reachable?\n"
             "    \"proxy\": \"host:port\"               (string) the proxy that is used for this network, or empty if none\n"
+            "    \"proxy_randomize_credentials\": true|false,  (string) Whether randomized credentials are used\n"
             "  }\n"
             "  ,...\n"
             "  ],\n"
@@ -425,7 +427,7 @@ UniValue getnetworkinfo(const JSONRPCRequest& request)
             "  }\n"
             "  ,...\n"
             "  ]\n"
-            "  \"warnings\": \"...\"                    (string) any network warnings (such as alert messages) \n"
+            "  \"warnings\": \"...\"                    (string) any network warnings\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getnetworkinfo", "")
