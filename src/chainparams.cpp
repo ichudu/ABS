@@ -404,7 +404,6 @@ public:
         consensus.nBudgetPaymentsStartBlock = 4100;
         consensus.nBudgetPaymentsCycleBlocks = 50;
         consensus.nBudgetPaymentsWindowBlocks = 10;
-        consensus.nBudgetProposalEstablishingTime = 60*20;
         consensus.nSuperblockStartBlock = 4200; // NOTE: Should satisfy nSuperblockStartBlock > nBudgetPeymentsStartBlock
         consensus.nSuperblockCycle = 24; // Superblocks can be issued hourly on PoVNET
         consensus.nGovernanceMinQuorum = 1;
@@ -532,7 +531,6 @@ public:
         consensus.nBudgetPaymentsStartBlock = 1000;
         consensus.nBudgetPaymentsCycleBlocks = 50;
         consensus.nBudgetPaymentsWindowBlocks = 10;
-        consensus.nBudgetProposalEstablishingTime = 60*20;
         consensus.nSuperblockStartBlock = 1500;
         consensus.nSuperblockCycle = 10;
         consensus.nGovernanceMinQuorum = 1;

@@ -96,6 +96,8 @@ public:
     bool SimpleCheck(int& nDos);
     bool CheckAndUpdate(CMasternode* pmn, bool fFromNewBroadcast, int& nDos, CConnman& connman);
     void Relay(CConnman& connman);
+
+    explicit operator bool() const;
 };
 
 inline bool operator==(const CMasternodePing& a, const CMasternodePing& b)
@@ -105,6 +107,10 @@ inline bool operator==(const CMasternodePing& a, const CMasternodePing& b)
 inline bool operator!=(const CMasternodePing& a, const CMasternodePing& b)
 {
     return !(a == b);
+}
+inline CMasternodePing::operator bool() const
+{
+    return *this != CMasternodePing();
 }
 
 struct masternode_info_t
@@ -245,7 +251,7 @@ public:
 
     bool IsPingedWithin(int nSeconds, int64_t nTimeToCheckAt = -1)
     {
-        if(lastPing == CMasternodePing()) return false;
+        if(!lastPing) return false;
 
         if(nTimeToCheckAt == -1) {
             nTimeToCheckAt = GetAdjustedTime();
@@ -456,6 +462,7 @@ public:
     uint256 GetHash() const
     {
         CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
+        // adding dummy values here to match old hashing format
         ss << masternodeOutpoint1 << uint8_t{} << 0xffffffff;
         ss << masternodeOutpoint2 << uint8_t{} << 0xffffffff;
         ss << addr;
