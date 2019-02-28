@@ -40,7 +40,7 @@ typedef enum absoluteconsensus_error_t
     absoluteconsensus_ERR_TX_SIZE_MISMATCH,
     absoluteconsensus_ERR_TX_DESERIALIZE,
     absoluteconsensus_ERR_INVALID_FLAGS,
-} dashconsensus_error;
+} absoluteconsensus_error;
 
 
 /** Script verification flags */
