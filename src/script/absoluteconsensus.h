@@ -53,8 +53,8 @@ enum
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
-    absoluteconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH | dashconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
-                                                           absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH | absoluteconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
+                                                           absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
                                                            absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY
 
 };
