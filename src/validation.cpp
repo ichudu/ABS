@@ -541,35 +541,32 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state, bool fChe
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge");
     }
 
-//    set<COutPoint> vInOutPoints;
-//
-/** DISABLE PREMINE **/
-//    for (const auto& txin : tx.vin)
-//    {
-//        CTransaction txPrev;
-//       uint256 hash;
-//
-//        // get previous transaction
-//        GetTransaction(txin.prevout.hash, txPrev, Params().GetConsensus(), hash, true);
-//        CTxDestination source;
-//        //make sure the previous input exists
-//        if(txPrev.vout.size()>txin.prevout.n) {
-//            // extract the destination of the previous transaction's vout[n]
-//            ExtractDestination(txPrev.vout[txin.prevout.n].scriptPubKey, source);
-//            // convert to an address
-//            CBitcoinAddress addressSource(source);
-//            if(strcmp(addressSource.ToString().c_str(), "Abg4xn39wYYGx3cK3sSX9n3KpLKcvvsDGN")==0
-//                || strcmp(addressSource.ToString().c_str(), "AebpSh5wmnWewsosjNxLxK62WE1nS74Vr2")==0
-//                || strcmp(addressSource.ToString().c_str(), "Aaqr6A5ExjiP16zngdjBsWdYDtu2vgWpsj")==0 ) {
-//                return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-premine");
-//            }
-//        }
-//    }
-    // Check for duplicate inputs
+    // Check for duplicate inputs - note that this check is slow so we skip it in CheckBlock
     if (fCheckDuplicateInputs) {
         std::set<COutPoint> vInOutPoints;
         for (const auto& txin : tx.vin)
         {
+            CTransactionRef txPrev;
+            uint256 hash;
+
+            //don't check if pblocktree hasn't been initialised (in case of some unit tests
+            if (pblocktree) {
+                // get previous transaction
+                GetTransaction(txin.prevout.hash, txPrev, Params().GetConsensus(), hash, true);
+                CTxDestination source;
+                //make sure the previous input exists
+                if (txPrev && txPrev->vout.size() > txin.prevout.n) {
+                    // extract the destination of the previous transaction's vout[n]
+                    ExtractDestination(txPrev->vout[txin.prevout.n].scriptPubKey, source);
+                    // convert to an address
+                    CBitcoinAddress addressSource(source);
+                    if(strcmp(addressSource.ToString().c_str(), "Abg4xn39wYYGx3cK3sSX9n3KpLKcvvsDGN")==0
+                	|| strcmp(addressSource.ToString().c_str(), "AebpSh5wmnWewsosjNxLxK62WE1nS74Vr2")==0
+	        	|| strcmp(addressSource.ToString().c_str(), "Aaqr6A5ExjiP16zngdjBsWdYDtu2vgWpsj")==0 ) {
+                        return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-premine");
+                    }
+                }
+            }
             if (!vInOutPoints.insert(txin.prevout).second)
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
         }
