@@ -3258,14 +3258,12 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const 
     if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
         return state.DoS(50, false, REJECT_INVALID, "high-hash", false, "proof of work failed");
 
-=======
-    // Check DevNet
-    if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
+    // Check PoVNet
+    if (!consensusParams.hashPoVNETGenesisBlock.IsNull() &&
             block.hashPrevBlock == consensusParams.hashGenesisBlock &&
-            block.GetHash() != consensusParams.hashDevnetGenesisBlock) {
-        return state.DoS(100, error("CheckBlockHeader(): wrong devnet genesis"),
-                         REJECT_INVALID, "devnet-genesis");
->>>>>>> 99b2789a7... Fix DeserializeAndCheckBlockTest benchmark and store hashDevnetGenesisBlock in `consensus` (#1888)
+            block.GetHash() != consensusParams.hashPoVNETGenesisBlock) {
+        return state.DoS(100, error("CheckBlockHeader(): wrong povnet genesis"),
+                         REJECT_INVALID, "povnet-genesis");
     }
     return true;
 }
