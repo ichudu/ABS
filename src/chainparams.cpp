@@ -150,8 +150,8 @@ public:
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
-        consensus.nPowTargetTimespan = 7.5 * 60; // 5 blocks
-        consensus.nPowTargetSpacing = 1.5 * 60; // 1.5 minutes
+        consensus.nPowTargetTimespan = 10 * 60; // 5 blocks
+        consensus.nPowTargetSpacing = 2 * 60; // 2 minutes adjusted from 1.5 minutes as of Proposal C2
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nPowDGWHeight = 150;
@@ -364,7 +364,7 @@ public:
             (      0, uint256S("0x00000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6"))
         };
 
-        chainTxData = ChainTxData{   
+        chainTxData = ChainTxData{
             1518597800, // * UNIX timestamp of last checkpoint block
             0,		// * total number of transactions between genesis and last checkpoint
 			//   (the tx=... number in the SetBestChain debug.log lines)
