@@ -392,6 +392,7 @@ void CGovernanceManager::UpdateCachesAndClean()
     // Clean up any expired or invalid triggers
     triggerman.CleanAndRemove();
 
+    object_m_it it = mapObjects.begin();
     int64_t nNow = GetAdjustedTime();
 
     while(it != mapObjects.end())
