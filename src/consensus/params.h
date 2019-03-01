@@ -54,6 +54,7 @@ struct Params {
     int nBudgetPaymentsCycleBlocks;
     int nBudgetPaymentsWindowBlocks;
     int nSuperblockStartBlock;
+    uint256 nSuperblockStartHash;
     int nSuperblockCycle; // in blocks
     int nGovernanceMinQuorum; // Min absolute vote count to trigger an action
     int nGovernanceFilterElements;
@@ -65,6 +66,8 @@ struct Params {
     int BIP65Height;
     /** Block height at which BIP66 becomes active */
     int BIP66Height;
+    /** Block height at which DIP0001 becomes active */
+    int DIP0001Height;
     /**
      * Minimum blocks including miner confirmation of the total of nMinerConfirmationWindow blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
