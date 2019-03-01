@@ -83,7 +83,6 @@ bool CDarksendQueue::Sign()
 
 bool CDarksendQueue::CheckSignature(const CPubKey& pubKeyMasternode) const
 {
-    std::string strMessage = CTxIn(masternodeOutpoint).ToString() + boost::lexical_cast<std::string>(nDenom) + boost::lexical_cast<std::string>(nTime) + boost::lexical_cast<std::string>(fReady);
     std::string strError = "";
 
     if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {

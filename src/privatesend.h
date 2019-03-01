@@ -214,6 +214,11 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nDenom);
         int nVersion = s.GetVersion();
+        if (nVersion > 70208) {
+            READWRITE(nInputCount);
+        } else if (ser_action.ForRead()) {
+            nInputCount = 0;
+        }
         if (nVersion == 70208 && (s.GetType() & SER_NETWORK)) {
             // converting from/to old format
             CTxIn txin{};
