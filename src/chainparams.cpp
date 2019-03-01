@@ -137,6 +137,8 @@ public:
 		consensus.nBudgetPaymentsStartBlock = 98800;
         consensus.nBudgetPaymentsCycleBlocks = 7300; // ~(60*24*30)/1.5 / 4
         consensus.nBudgetPaymentsWindowBlocks = 100;
+        consensus.nSuperblockStartBlock = 98800;
+        consensus.nSuperblockStartHash = uint256S("00000000000c8a59f1d5e93403f5506bebcd3471d34d1feffe4ecfa2d69182bb");
         consensus.nBudgetProposalEstablishingTime = 60*60*24; // in seconds
 
         consensus.nSuperblockStartBlock = 98800;
