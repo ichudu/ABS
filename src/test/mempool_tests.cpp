@@ -387,12 +387,7 @@ BOOST_AUTO_TEST_CASE(MempoolAncestorIndexingTest)
 
     pool.addUnchecked(tx6.GetHash(), entry.Fee(0LL).FromTx(tx6));
     BOOST_CHECK_EQUAL(pool.size(), 6);
-    // Ties are broken by hash
-    if (tx3.GetHash() < tx6.GetHash())
-        sortedOrder.push_back(tx6.GetHash().ToString());
-    else
-        sortedOrder.insert(sortedOrder.end()-1,tx6.GetHash().ToString());
-
+    sortedOrder.push_back(tx6.GetHash().ToString());
     CheckSort<ancestor_score>(pool, sortedOrder);
 
     CMutableTransaction tx7 = CMutableTransaction();
@@ -419,11 +414,7 @@ BOOST_AUTO_TEST_CASE(MempoolAncestorIndexingTest)
     pool.removeForBlock(vtx, 1);
 
     sortedOrder.erase(sortedOrder.begin()+1);
-    // Ties are broken by hash
-    if (tx3.GetHash() < tx6.GetHash())
-        sortedOrder.pop_back();
-    else
-        sortedOrder.erase(sortedOrder.end()-2);
+    sortedOrder.pop_back();
     sortedOrder.insert(sortedOrder.begin(), tx7.GetHash().ToString());
     CheckSort<ancestor_score>(pool, sortedOrder);
 }
