@@ -1326,7 +1326,7 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
 
     // decrease supply by 50% on the yearly basis, capping max supply at 52.5M ABS
     for (int i = consensusParams.nSubsidyHalvingInterval; i <= nPrevHeight; i += consensusParams.nSubsidyHalvingInterval) {
-        nSubsidy -= nSubsidy/2;
+        nSubsidy -= nSubsidy/5;
     }
 
 	// Hard fork to increase the block reward by 10 extra percent (allowing budget/superblocks)
