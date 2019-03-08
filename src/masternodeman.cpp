@@ -856,12 +856,6 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, const std::string& strCommand,
         if(pmn && mnp.fSentinelIsCurrent)
             UpdateLastSentinelPingTime();
 
-        // if masternode uses sentinel ping instead of watchdog
-        // we shoud update nTimeLastWatchdogVote here if sentinel
-        // ping flag is actual
-        if(pmn && mnp.fSentinelIsCurrent)
-            pmn->UpdateWatchdogVoteTime(mnp.sigTime);
-
         // too late, new MNANNOUNCE is required
         if(pmn && pmn->IsNewStartRequired()) return;
 
@@ -1680,12 +1674,10 @@ void CMasternodeMan::SetMasternodeLastPing(const COutPoint& outpoint, const CMas
     if(!pmn) {
         return;
     }
-    pMN->lastPing = mnp;
-    // if masternode uses sentinel ping instead of watchdog
-    // we shoud update nTimeLastWatchdogVote here if sentinel
-    // ping flag is actual
-    if(mnp.fSentinelIsCurrent)
-        pMN->UpdateWatchdogVoteTime(mnp.sigTime);
+    pmn->lastPing = mnp;
+    if(mnp.fSentinelIsCurrent) {
+        UpdateLastSentinelPingTime();
+    }
     mapSeenMasternodePing.insert(std::make_pair(mnp.GetHash(), mnp));
 
     CMasternodeBroadcast mnb(*pmn);
