@@ -132,15 +132,7 @@ bool CActiveMasternode::UpdateSentinelPing(int version)
     return true;
 }
 
-bool CActiveMasternode::UpdateSentinelPing(int version)
-{
-    nSentinelVersion = version;
-    nSentinelPingTime = GetAdjustedTime();
-
-    return true;
-}
-
-void CActiveMasternode::ManageStateInitial()
+void CActiveMasternode::ManageStateInitial(CConnman& connman)
 {
     LogPrint("masternode", "CActiveMasternode::ManageStateInitial -- status = %s, type = %s, pinger enabled = %d\n", GetStatus(), GetTypeString(), fPingerEnabled);
 
