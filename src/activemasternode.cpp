@@ -122,12 +122,7 @@ bool CActiveMasternode::SendMasternodePing(CConnman& connman)
 bool CActiveMasternode::UpdateSentinelPing(int version)
 {
     nSentinelVersion = version;
-    if(version < DEFAULT_SENTINEL_VERSION ){
-        LogPrintf("CActiveMasternode::UpdateSentinelPing -- Sentinel is out of date please update. Version = %s\n", SafeIntVersionToString(version));
-        return false;
-    }
     nSentinelPingTime = GetAdjustedTime();
-    LogPrint("masternode", "CActiveMasternode::UpdateSentinelPing -- Updated Sentinel Version = %s PingTime = %d\n", SafeIntVersionToString(nSentinelVersion), nSentinelPingTime);
 
     return true;
 }
