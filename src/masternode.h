@@ -33,9 +33,6 @@ static const int MASTERNODE_COLLATERAL                  = 2500;
 // daemon version before implementation of nDaemonVersion in CMasternodePing
 #define DEFAULT_DAEMON_VERSION 120200
 
-// daemon version before implementation of nDaemonVersion in CMasternodePing
-#define DEFAULT_DAEMON_VERSION 120200
-
 class CMasternodePing
 {
 public:
