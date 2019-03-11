@@ -139,7 +139,7 @@ public:
         consensus.nBudgetPaymentsWindowBlocks = 100;
         consensus.nSuperblockStartBlock = 98800;
         consensus.nSuperblockStartHash = uint256S("00000000000c8a59f1d5e93403f5506bebcd3471d34d1feffe4ecfa2d69182bb");
-        consensus.nBudgetProposalEstablishingTime = 60*60*24; // in seconds
+
 
         consensus.nSuperblockStartBlock = 98800;
         consensus.nSuperblockCycle = 7300; // ~(60*24*30)/1.5 / 4
@@ -202,7 +202,7 @@ public:
         vAlertPubKey = ParseHex("04139ff96fe352a5bee201a1b4665c5975c2f949abb7d13fc0ba00bd8d9e30205be35e3bdd41637925a80e8053b8225f30dfacb424b6a711bc6c82d8537143b85f");
         nDefaultPort = 18888;
 
-        nDelayGetHeadersTime = 24 * 60 * 60;
+
         nPruneAfterHeight = 100000;
 
         genesis = CreateGenesisBlock(1518598800, 1399438, 0x1e0ffff0, 1, 30 * COIN);
@@ -273,7 +273,7 @@ public:
         consensus.nBudgetPaymentsStartBlock =450;
         consensus.nBudgetPaymentsCycleBlocks = 150;
         consensus.nBudgetPaymentsWindowBlocks = 100;
-        consensus.nBudgetProposalEstablishingTime = 60*20;
+
         consensus.nSuperblockStartBlock = 450;
         consensus.nSuperblockCycle = 150; // Superblocks can be issued hourly on testnet
         consensus.nGovernanceMinQuorum = 1;
@@ -331,7 +331,7 @@ public:
         vAlertPubKey = ParseHex("043b5741a0fa2319111e30c32221a8d0de2eef7fc2a91e2cd230fe9c22c8279b97e6bfaa7f622574ae9171188429332b55730a58839ecdffb2ce2736aa859b0459");
         nDefaultPort = 17777;
 
-        nDelayGetHeadersTime = 24 * 60 * 60 * 14;
+
         nPruneAfterHeight = 1000;
 /* old
         genesis = CreateGenesisBlock(1518597800, 519328, 0x1e0ffff0, 1, 30 * COIN);
@@ -404,6 +404,7 @@ public:
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but its ok as long as its less then nMasternodePaymentsIncreaseBlock
         consensus.nMasternodePaymentsIncreaseBlock = 4030;
         consensus.nMasternodePaymentsIncreasePeriod = 10;
+        consensus.nInstantSendConfirmationsRequired = 2;
         consensus.nInstantSendKeepLock = 6;
         consensus.nBudgetPaymentsStartBlock = 4100;
         consensus.nBudgetPaymentsCycleBlocks = 50;
@@ -423,6 +424,7 @@ public:
         consensus.nPowTargetSpacing = 2 * 60; // ABS: 2 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
+        consensus.nPowKGWHeight = 100; // nPowKGWHeight >= nPowDGWHeight means "no KGW"
         consensus.nPowDGWHeight = 100;
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
@@ -468,7 +470,7 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"));
         assert(genesis.hashMerkleRoot == uint256S("0xe0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"));
 
-        PoVNETtGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
+        PoVNETGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
         consensus.hashPoVNETGenesisBlock = PoVNETGenesis.GetHash();
 
         vFixedSeeds.clear();
@@ -527,6 +529,7 @@ public:
         consensus.nMasternodePaymentsStartBlock = 240;
         consensus.nMasternodePaymentsIncreaseBlock = 350;
         consensus.nMasternodePaymentsIncreasePeriod = 10;
+        consensus.nInstantSendConfirmationsRequired = 2;
         consensus.nInstantSendKeepLock = 6;
         consensus.nBudgetPaymentsStartBlock = 1000;
         consensus.nBudgetPaymentsCycleBlocks = 50;
@@ -548,7 +551,8 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60; // Absolute: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
-        consensus.nPowDGWHeight = 25;
+        consensus.nPowKGWHeight = 25; 
+        consensus.nPowDGWHeight = 25; 
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -575,7 +579,7 @@ public:
         pchMessageStart[2] = 0xc5;
         pchMessageStart[3] = 0x43;
 
-        nDelayGetHeadersTime = std::numeric_limits<int64_t>::max(); // never delay GETHEADERS in regtests
+
         nDefaultPort = 16666;
         nPruneAfterHeight = 1000;
 
