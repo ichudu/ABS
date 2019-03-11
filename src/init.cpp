@@ -511,7 +511,7 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-bip9params=deployment:start:end", "Use given start/end times for specified BIP9 deployment (regtest-only)");
     }
     std::string debugCategories = "addrman, alert, bench, cmpctblock, coindb, db, http, leveldb, libevent, lock, mempool, mempoolrej, net, proxy, prune, rand, reindex, rpc, selectcoins, tor, zmq, "
-                                  "dash (or specifically: gobject, instantsend, keepass, masternode, mnpayments, mnsync, privatesend, spork)"; // Don't translate these and qt below
+                                  "absolute (or specifically: gobject, instantsend, keepass, masternode, mnpayments, mnsync, privatesend, spork)"; // Don't translate these and qt below
     if (mode == HMM_BITCOIN_QT)
         debugCategories += ", qt";
     strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
@@ -1786,7 +1786,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     fMasternodeMode = GetBoolArg("-masternode", false);
     // TODO: masternode should have no wallet
 
-    //lite mode disables all Dash-specific functionality
+    //lite mode disables all Absolute-specific functionality
     fLiteMode = GetBoolArg("-litemode", false);
 
     if(fLiteMode) {
