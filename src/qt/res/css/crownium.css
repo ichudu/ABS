@@ -762,7 +762,7 @@ QDialog#HelpMessageDialog QScrollBar:vertical, QDialog#HelpMessageDialog QScroll
 border:0;
 }
 
-/* About Dash Dialog */
+/* About Absolute Dialog */
 QDialog#AboutDialog {
 background-color:#F8F6F6;
 }
