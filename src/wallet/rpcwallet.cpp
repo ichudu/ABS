@@ -567,7 +567,7 @@ UniValue listaddressbalances(const JSONRPCRequest& request)
             "1. minamount               (numeric, optional, default=0) Minimum balance in " + CURRENCY_UNIT + " an address should have to be shown in the list\n"
             "\nResult:\n"
             "{\n"
-            "  \"address\": amount,       (string) The dash address and the amount in " + CURRENCY_UNIT + "\n"
+            "  \"address\": amount,       (string) The absolute address and the amount in " + CURRENCY_UNIT + "\n"
             "  ,...\n"
             "}\n"
             "\nExamples:\n"

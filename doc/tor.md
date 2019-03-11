@@ -130,7 +130,7 @@ This new feature is enabled by default if Absolute Core is listening, and
 a connection to Tor can be made. It can be configured with the `-listenonion`,
 `-torcontrol` and `-torpassword` settings. To show verbose debugging
 information, pass `-debug=tor`.
-This new feature is enabled by default if Dash Core is listening (`-listen`), and
+This new feature is enabled by default if Absolute Core is listening (`-listen`), and
 requires a Tor connection to work. It can be explicitly disabled with `-listenonion=0`
 and, if not disabled, configured using the `-torcontrol` and `-torpassword` settings.
 To show verbose debugging information, pass `-debug=tor`.
