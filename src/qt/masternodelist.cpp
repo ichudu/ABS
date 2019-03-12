@@ -40,8 +40,8 @@ MasternodeList::MasternodeList(const PlatformStyle *platformStyle, QWidget *pare
 
     int columnAliasWidth = 100;
     int columnAddressWidth = 200;
-    int columnProtocolWidth = 60;
-    int columnStatusWidth = 80;
+    int columnProtocolWidth = 80;
+    int columnStatusWidth = 100;
     int columnActiveWidth = 130;
     int columnLastSeenWidth = 130;
 
