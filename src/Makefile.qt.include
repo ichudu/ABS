@@ -309,6 +309,7 @@ RES_IMAGES = \
   qt/res/images/base/splash.png \
   qt/res/images/base/splash_testnet.png \
   qt/res/images/base/absolute_logo_horizontal.png \
+  qt/res/images/base/wallet_version.png \
   qt/res/images/base/unchecked.png \
   qt/res/images/base/checked.png \
   qt/res/images/base/drkblue_downArrow.png \
