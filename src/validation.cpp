@@ -1322,11 +1322,18 @@ CAmount GetBlockSubsidy(int nPrevBits, int nPrevHeight, const Consensus::Params&
 		nSubsidyBase = 30;  // Absolute base reward
 	}
 
+    CAmount nSubsidyDivide;
+    if (nPrevHeight < consensusParams.nSubsidyHalvingInterval * 1.1) {
+        nSubsidyDivide = 5;	// Halving amount before Proposal C2
+	}else{
+		nSubsidyDivide = 2;  // Halving amount after Halving Subsidy plus 10%
+	}
+
     CAmount nSubsidy = nSubsidyBase * COIN;
 
     // decrease supply by 50% on the yearly basis, capping max supply at 52.5M ABS
     for (int i = consensusParams.nSubsidyHalvingInterval; i <= nPrevHeight; i += consensusParams.nSubsidyHalvingInterval) {
-        nSubsidy -= nSubsidy/5;
+        nSubsidy -= nSubsidy/nSubsidyDivide;
     }
 
 	// Hard fork to increase the block reward by 10 extra percent (allowing budget/superblocks)
