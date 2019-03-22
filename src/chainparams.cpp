@@ -330,9 +330,7 @@ public:
         pchMessageStart[3] = 0x66;
         vAlertPubKey = ParseHex("043b5741a0fa2319111e30c32221a8d0de2eef7fc2a91e2cd230fe9c22c8279b97e6bfaa7f622574ae9171188429332b55730a58839ecdffb2ce2736aa859b0459");
         nDefaultPort = 17777;
-
-
-        nPruneAfterHeight = 150;
+        nPruneAfterHeight = 1500000;
 /* old
         genesis = CreateGenesisBlock(1518597800, 519328, 0x1e0ffff0, 1, 30 * COIN);
         assert(consensus.hashGenesisBlock == uint256S("0x0000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6"));
