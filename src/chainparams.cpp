@@ -260,16 +260,16 @@ public:
 static CMainParams mainParams;
 
 /**
- * Testnet (v3)
+ * Testnet (v4)
  */
 class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 350400; // Blocks per year
-        consensus.nMasternodePaymentsStartBlock = 1024; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
-        consensus.nMasternodePaymentsIncreaseBlock = 40320; // increase after 6 weeks first
-        consensus.nMasternodePaymentsIncreasePeriod = 26880; // increase every 4 weeks afterwards
+        consensus.nSubsidyHalvingInterval = 500; // Blocks per year
+        consensus.nMasternodePaymentsStartBlock = 400; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
+        consensus.nMasternodePaymentsIncreaseBlock = 250; // increase after 6 weeks first
+        consensus.nMasternodePaymentsIncreasePeriod = 350; // increase every 4 weeks afterwards
         consensus.nInstantSendKeepLock = 6;
         consensus.nBudgetPaymentsStartBlock =450;
         consensus.nBudgetPaymentsCycleBlocks = 150;
@@ -283,15 +283,16 @@ public:
 
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6");
-        consensus.BIP65Height = 2431; //
-        consensus.BIP66Height = 2075; //
+        consensus.BIP65Height = 800; //
+        consensus.BIP66Height = 950; //
 
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
-        consensus.nPowTargetTimespan = 24 * 60 * 60; // Absolute: 1 day
-        consensus.nPowTargetSpacing = 1.5* 60; // Absolute: 1.5 minutes
-        consensus.fPowAllowMinDifficultyBlocks = false;
+        consensus.nPowTargetTimespan = 1 * 60 * 60; // Absolute: 1 day
+        consensus.nPowTargetSpacing = 1* 60; // Absolute: 1 minutes
+        consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
         consensus.nPowDGWHeight = 100;
+	consensus.nPowKGWHeight = 975;
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -333,7 +334,7 @@ public:
         nDefaultPort = 17777;
 
 
-        nPruneAfterHeight = 1000;
+        nPruneAfterHeight = 150;
 /* old
         genesis = CreateGenesisBlock(1518597800, 519328, 0x1e0ffff0, 1, 30 * COIN);
         assert(consensus.hashGenesisBlock == uint256S("0x0000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6"));
