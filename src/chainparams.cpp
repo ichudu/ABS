@@ -266,7 +266,7 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        consensus.nSubsidyHalvingInterval = 350400; // Blocks per year
+        consensus.nSubsidyHalvingInterval = 1700; // Blocks per year
         consensus.nMasternodePaymentsStartBlock = 1024; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
         consensus.nMasternodePaymentsIncreaseBlock = 40320; // increase after 6 weeks first
         consensus.nMasternodePaymentsIncreasePeriod = 26880; // increase every 4 weeks afterwards
@@ -283,8 +283,8 @@ public:
 
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6");
-        consensus.BIP65Height = 2431; //
-        consensus.BIP66Height = 2075; //
+        consensus.BIP65Height = 1760; //
+        consensus.BIP66Height = 1820; //
 
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Absolute: 1 day
@@ -292,6 +292,7 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nPowDGWHeight = 100;
+		consensus.nPowKGWHeight = 1890;
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
