@@ -653,7 +653,7 @@ boost::filesystem::path static StartupShortcutPath()
     std::string chain = ChainNameFromCommandLine();
     if (chain == CBaseChainParams::MAIN)
         return GetSpecialFolderPath(CSIDL_STARTUP) / "Absolute Core.lnk";
-    if (chain == CBaseChainParams::TESTNET) // Remove this special case when CBaseChainParams::TESTNET = "testnet4"
+    if (chain == CBaseChainParams::TESTNET) // Remove this special case when CBaseChainParams::TESTNET = "testnetv4"
         return GetSpecialFolderPath(CSIDL_STARTUP) / "Absolute Core (testnet).lnk";
     return GetSpecialFolderPath(CSIDL_STARTUP) / strprintf("Absolute Core (%s).lnk", chain);
 }

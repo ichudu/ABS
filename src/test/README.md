@@ -33,6 +33,7 @@ Run `test_absolute --help` for the full list.
 
 The sources in this directory are unit test cases.  Boost includes a
 unit testing framework, and since Absolute Core already uses boost, it makes
+testnetv4
 sense to simply use this framework rather than require developers to
 configure some other framework (we want as few impediments to creating
 unit tests as possible).
