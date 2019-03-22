@@ -13,7 +13,7 @@
 
 #include <math.h>
 
-unsigned int static DarkGravityWave(const CBlockIndex* pindexLast, const Consensus::Params& params) {
+unsigned int static DarkGravityWave(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params) {
     /* current difficulty formula, absolute - DarkGravity v3, written by Evan Duffield - evan@dash.org */
     const arith_uint256 bnPowLimit = UintToArith256(params.powLimit);
     int64_t nPastBlocks = 24;
@@ -42,7 +42,7 @@ unsigned int static DarkGravityWave(const CBlockIndex* pindexLast, const Consens
         // 000000000000000000000000000000000000000000000000003ff00000000000
         if (pindexLast->nChainWork >= UintToArith256(uint256S("0x000000000000000000000000000000000000000000000000003ff00000000000"))
             // and immediately on povnet
-            || !params.hashDPoVNETtGenesisBlock.IsNull()) {
+            || !params.hashPoVNETGenesisBlock.IsNull()) {
             // recent block is more than 2 hours old
             if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + 2 * 60 * 60) {
                 return bnPowLimit.GetCompact();
@@ -145,7 +145,7 @@ unsigned int GetNextWorkRequiredBTC(const CBlockIndex* pindexLast, const CBlockH
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     if (pindexLast->nHeight + 1 >= params.nPowDGWHeight) {
-        return DarkGravityWave(pindexLast, params);
+        return DarkGravityWave(pindexLast, pblock, params);
     }
     else {
         return GetNextWorkRequiredBTC(pindexLast, pblock, params);

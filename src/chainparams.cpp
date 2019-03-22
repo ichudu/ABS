@@ -422,7 +422,7 @@ public:
         consensus.nPowTargetSpacing = 2 * 60; // ABS: 2 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
-        consensus.nPowKGWHeight = 100; // nPowKGWHeight >= nPowDGWHeight means "no KGW"
+
         consensus.nPowDGWHeight = 100;
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
