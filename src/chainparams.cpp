@@ -549,7 +549,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60; // Absolute: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
-        consensus.nPowKGWHeight = 25; 
+
         consensus.nPowDGWHeight = 25; 
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
