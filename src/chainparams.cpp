@@ -38,6 +38,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.nBits    = nBits;
     genesis.nNonce   = nNonce;
     genesis.nVersion = nVersion;
+    
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
@@ -245,14 +246,20 @@ public:
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
             (  0, uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e"))
+            (  50000, uint256S("0x000000000124f25449c3561f9bb75baf9afb80e6fa5a7ef075b3887a9c820009"))
+            (  150000, uint256S("0x00000000004c2812ed6d8ce5a695c67b64b5df40fcb43858e016f5e27ce244f6"))
+            (  250000, uint256S("0x00000000000640d8897addd4200209b6dd754aa3ca1f39857f8f03f36a44cc02"))
+            (  300000, uint256S("0x00000000000abec2c4fe6aec36d3f37026df8ed8817789a43278392092fe9d1a"))
+            (  350400, uint256S("0x0000000000056195689db2edb979305163b7ed88c1e7ce8875bd2b5feb4c432d"))
+                
 	};
 
         chainTxData = ChainTxData{
 
-            1518598800, // * UNIX timestamp of last known number of transactions
-            0,		// * total number of transactions between genesis and that timestamp
+            2813478628, // * UNIX timestamp of last known number of transactions
+            476506,		// * total number of transactions between genesis and that timestamp
 			//   (the tx=... number in the SetBestChain debug.log lines)
-            2000	//estimated number of transactions per second after that timestamp
+            1	//estimated number of transactions per second after that timestamp
         };
     }
 };
