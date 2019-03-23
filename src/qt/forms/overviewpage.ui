@@ -723,7 +723,7 @@
            <widget class="QListView" name="listTransactions">
             <property name="minimumSize">
              <size>
-              <width>500</width>
+              <width>400</width>
               <height>400</height>
              </size>
             </property>
