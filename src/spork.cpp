@@ -25,7 +25,7 @@ std::map<int, int64_t> mapSporkDefaults = {
     {SPORK_6_NEW_SIGS,                       4070908800ULL}, // OFF
     {SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT, 1518732000},    // Payments start on 2/15/2018 22:00 CET
     {SPORK_9_SUPERBLOCKS_ENABLED,            1527811200},    // Friday 1 June 2018 00:00:00
-    {SPORK_10_MASTERNODE_PAY_UPDATED_NODES,  1553907600},    // Saturday, 30-Mar-19 01:00:00 UTC
+    {SPORK_10_MASTERNODE_PAY_UPDATED_NODES,  1554638400},    // Sunday, 07-Apr-19 12:00:00 UTC
     {SPORK_12_RECONSIDER_BLOCKS,             0},             // 0 BLOCKS
     {SPORK_14_REQUIRE_SENTINEL_FLAG,         1532476800},   // Wednesday, July 25, 2018 12:00:00 AM
 };
