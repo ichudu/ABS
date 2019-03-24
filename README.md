@@ -35,7 +35,7 @@ Development Process
 
 The `master` branch is meant to be stable. Development is normally done in separate branches.
 [Tags](https://github.com/absolute-community/absolute/tags) are created to indicate new official,
-stable release versions of Dash Core.
+stable release versions of Absolute Core.
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
 

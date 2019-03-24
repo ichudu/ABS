@@ -91,6 +91,7 @@ public Q_SLOTS:
     void fontSmaller();
     void setFontSize(int newSize);
 
+    
     /** Wallet repair options */
     void walletSalvage();
     void walletRescan();
@@ -99,6 +100,7 @@ public Q_SLOTS:
     void walletUpgrade();
     void walletReindex();
 
+    
     /** Append the message to the message widget */
     void message(int category, const QString &message, bool html = false);
     /** Set number of connections shown in the UI */

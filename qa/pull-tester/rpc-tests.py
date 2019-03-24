@@ -50,6 +50,7 @@ if 'ENABLE_UTILS' not in vars():
 if 'ENABLE_ZMQ' not in vars():
     ENABLE_ZMQ=0
 
+    
 # python-zmq may not be installed. Handle this gracefully and with some helpful info
 if ENABLE_ZMQ:
     try:
@@ -118,6 +119,7 @@ testScripts = [
     # vv Tests less than 2m vv
     'wallet.py',
     'wallet-accounts.py',
+    'wallet-dump.py',
     'listtransactions.py',
     # vv Tests less than 60s vv
     'sendheaders.py', # NOTE: needs absolute_hash to pass
@@ -159,10 +161,12 @@ testScripts = [
     'preciousblock.py',
     'importprunedfunds.py',
     'signmessages.py',
+    'nulldummy.py',
     'import-rescan.py',
     'rpcnamedargs.py',
     'listsinceblock.py',
     'p2p-leaktests.py',
+    'p2p-compactblocks.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')
@@ -180,7 +184,6 @@ testScriptsExt = [
     'p2p-timeouts.py',
     # vv Tests less than 60s vv
     'bip9-softforks.py',
-    'p2p-feefilter.py',
     'rpcbind_test.py',
     # vv Tests less than 30s vv
     'bip65-cltv.py',

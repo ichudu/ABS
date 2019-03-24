@@ -7,7 +7,6 @@ from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import *
 from test_framework.comptool import TestManager, TestInstance, RejectResult
 from test_framework.blocktools import *
-import time
 from test_framework.key import CECKey
 from test_framework.script import *
 import struct
@@ -99,7 +98,7 @@ class FullBlockTest(ComparisonTestFramework):
     def next_block(self, number, spend=None, additional_coinbase_value=0, script=CScript([OP_TRUE]), solve=True):
         if self.tip == None:
             base_block_hash = self.genesis_hash
-            block_time = int(time.time())+1
+            block_time = get_mocktime() + 1
         else:
             base_block_hash = self.tip.sha256
             block_time = self.tip.nTime + 1
@@ -398,7 +397,7 @@ class FullBlockTest(ComparisonTestFramework):
 
         # Extend the b26 chain to make sure bitcoind isn't accepting b26
         b27 = block(27, spend=out[7])
-        yield rejected(RejectResult(16, b'bad-prevblk'))
+        yield rejected(RejectResult(0, b'bad-prevblk'))
 
         # Now try a too-large-coinbase script
         tip(15)
@@ -410,7 +409,7 @@ class FullBlockTest(ComparisonTestFramework):
 
         # Extend the b28 chain to make sure bitcoind isn't accepting b28
         b29 = block(29, spend=out[7])
-        yield rejected(RejectResult(16, b'bad-prevblk'))
+        yield rejected(RejectResult(0, b'bad-prevblk'))
 
         # b30 has a max-sized coinbase scriptSig.
         tip(23)
@@ -670,7 +669,7 @@ class FullBlockTest(ComparisonTestFramework):
         # A block with timestamp > 2 hrs in the future
         tip(44)
         b48 = block(48, solve=False)
-        b48.nTime = int(time.time()) + 60 * 60 * 3
+        b48.nTime = get_mocktime() + 60 * 60 * 3
         b48.solve()
         yield rejected(RejectResult(16, b'time-too-new'))
 

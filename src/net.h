@@ -8,7 +8,6 @@
 
 #include "addrdb.h"
 #include "addrman.h"
-#include "amount.h"
 #include "bloom.h"
 #include "compat.h"
 #include "hash.h"
@@ -348,6 +347,7 @@ public:
 
     bool AddNode(const std::string& node);
     bool RemoveAddedNode(const std::string& node);
+    bool AddPendingMasternode(const CService& addr);
     std::vector<AddedNodeInfo> GetAddedNodeInfo();
 
     size_t GetNodeCount(NumConnections num);
@@ -409,7 +409,7 @@ private:
     void AcceptConnection(const ListenSocket& hListenSocket);
     void ThreadSocketHandler();
     void ThreadDNSAddressSeed();
-    void ThreadMnbRequestConnections();
+    void ThreadOpenMasternodeConnections();
 
     uint64_t CalculateKeyedNetGroup(const CAddress& ad) const;
 
@@ -475,6 +475,8 @@ private:
     CCriticalSection cs_vOneShots;
     std::vector<std::string> vAddedNodes;
     CCriticalSection cs_vAddedNodes;
+    std::vector<CService> vPendingMasternodes;
+    CCriticalSection cs_vPendingMasternodes;
     std::vector<CNode*> vNodes;
     std::list<CNode*> vNodesDisconnected;
     mutable CCriticalSection cs_vNodes;
@@ -512,7 +514,7 @@ private:
     std::thread threadSocketHandler;
     std::thread threadOpenAddedConnections;
     std::thread threadOpenConnections;
-    std::thread threadMnbRequestConnections;
+    std::thread threadOpenMasternodeConnections;
     std::thread threadMessageHandler;
 };
 extern std::unique_ptr<CConnman> g_connman;
@@ -772,9 +774,6 @@ public:
     // Used for headers announcements - unfiltered blocks to relay
     // Also protected by cs_inventory
     std::vector<uint256> vBlockHashesToAnnounce;
-    // Blocks received by INV while headers chain was too far behind. These are used to delay GETHEADERS messages
-    // Also protected by cs_inventory
-    std::vector<uint256> vBlockHashesFromINV;
     // Used for BIP35 mempool sending, also protected by cs_inventory
     bool fSendMempool;
 
@@ -795,18 +794,11 @@ public:
     std::atomic<int64_t> nMinPingUsecTime;
     // Whether a ping is requested.
     std::atomic<bool> fPingQueued;
-    // Minimum fee rate with which to filter inv's to this node
-    CAmount minFeeFilter;
-    CCriticalSection cs_feeFilter;
-    CAmount lastSentFeeFilter;
-    int64_t nextSendTimeFeeFilter;
 
     CNode(NodeId id, ServiceFlags nLocalServicesIn, int nMyStartingHeightIn, SOCKET hSocketIn, const CAddress &addrIn, uint64_t nKeyedNetGroupIn, uint64_t nLocalHostNonceIn, const std::string &addrNameIn = "", bool fInboundIn = false);
     ~CNode();
 
 private:
-    CCriticalSection cs_nRefCount;
-
     CNode(const CNode&);
     void operator=(const CNode&);
 
@@ -839,7 +831,6 @@ public:
 
     int GetRefCount()
     {
-        LOCK(cs_nRefCount);
         assert(nRefCount >= 0);
         return nRefCount;
     }
@@ -863,16 +854,13 @@ public:
 
     CNode* AddRef()
     {
-        LOCK(cs_nRefCount);
         nRefCount++;
         return this;
     }
 
     void Release()
     {
-        LOCK(cs_nRefCount);
         nRefCount--;
-        assert(nRefCount >= 0);
     }
 
 
@@ -928,12 +916,6 @@ public:
     {
         LOCK(cs_inventory);
         vBlockHashesToAnnounce.push_back(hash);
-    }
-
-    void PushBlockHashFromINV(const uint256 &hash)
-    {
-        LOCK(cs_inventory);
-        vBlockHashesFromINV.push_back(hash);
     }
 
     void AskFor(const CInv& inv);

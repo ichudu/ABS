@@ -7,6 +7,7 @@
 #include "masternode.h"
 #include "masternode-sync.h"
 #include "masternodeman.h"
+#include "netbase.h"
 #include "protocol.h"
 
 // Keep track of the active Masternode
@@ -98,7 +99,7 @@ bool CActiveMasternode::SendMasternodePing(CConnman& connman)
     CMasternodePing mnp(outpoint);
     mnp.nSentinelVersion = nSentinelVersion;
     mnp.fSentinelIsCurrent =
-            (abs(GetAdjustedTime() - nSentinelPingTime) < MASTERNODE_WATCHDOG_MAX_SECONDS);
+            (abs(GetAdjustedTime() - nSentinelPingTime) < MASTERNODE_SENTINEL_PING_MAX_SECONDS);
     if(!mnp.Sign(keyMasternode, pubKeyMasternode)) {
         LogPrintf("CActiveMasternode::SendMasternodePing -- ERROR: Couldn't sign Masternode Ping\n");
         return false;
@@ -121,12 +122,7 @@ bool CActiveMasternode::SendMasternodePing(CConnman& connman)
 bool CActiveMasternode::UpdateSentinelPing(int version)
 {
     nSentinelVersion = version;
-    if(version < MIN_SENTINEL_VERSION ){
-        LogPrintf("CActiveMasternode::UpdateSentinelPing -- Sentinel is out of date please update. Version = %s\n", SafeIntVersionToString(version));
-        return false;
-    }
     nSentinelPingTime = GetAdjustedTime();
-    LogPrint("masternode", "CActiveMasternode::UpdateSentinelPing -- Updated Sentinel Version = %s PingTime = %d\n", SafeIntVersionToString(nSentinelVersion), nSentinelPingTime);
 
     return true;
 }
@@ -186,12 +182,13 @@ void CActiveMasternode::ManageStateInitial(CConnman& connman)
         return;
     }
 
+    // Check socket connectivity
     LogPrintf("CActiveMasternode::ManageStateInitial -- Checking inbound connection to '%s'\n", service.ToString());
+    SOCKET hSocket;
+    bool fConnected = ConnectSocket(service, hSocket, nConnectTimeout) && IsSelectableSocket(hSocket);
+    CloseSocket(hSocket);
 
-    CAddress addr(service, NODE_NETWORK);
-    connman.OpenMasternodeConnection(addr);
-
-    if (!connman.IsConnected(addr, CConnman::AllNodes)) {
+    if (!fConnected) {
         nState = ACTIVE_MASTERNODE_NOT_CAPABLE;
         strNotCapableReason = "Could not connect to " + service.ToString();
         LogPrintf("CActiveMasternode::ManageStateInitial -- %s: %s\n", GetStateString(), strNotCapableReason);
@@ -206,7 +203,7 @@ void CActiveMasternode::ManageStateInitial(CConnman& connman)
 
 void CActiveMasternode::ManageStateRemote()
 {
-    LogPrint("masternode", "CActiveMasternode::ManageStateRemote -- Start status = %s, type = %s, pinger enabled = %d, pubKeyMasternode.GetID() = %s\n", 
+    LogPrint("masternode", "CActiveMasternode::ManageStateRemote -- Start status = %s, type = %s, pinger enabled = %d, pubKeyMasternode.GetID() = %s\n",
              GetStatus(), GetTypeString(), fPingerEnabled, pubKeyMasternode.GetID().ToString());
 
     mnodeman.CheckMasternode(pubKeyMasternode, true);
@@ -232,7 +229,7 @@ void CActiveMasternode::ManageStateRemote()
         }
         if(nState != ACTIVE_MASTERNODE_STARTED) {
             LogPrintf("CActiveMasternode::ManageStateRemote -- STARTED!\n");
-            outpoint = infoMn.vin.prevout;
+            outpoint = infoMn.outpoint;
             service = infoMn.addr;
             fPingerEnabled = true;
             nState = ACTIVE_MASTERNODE_STARTED;

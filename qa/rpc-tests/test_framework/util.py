@@ -49,20 +49,26 @@ class PortSeed:
 #version of the blockchain is used without MOCKTIME
 #then the mempools will not sync due to IBD.
 MOCKTIME = 0
+GENESISTIME = 1417713337
 
-def enable_mocktime():
-    #For backwared compatibility of the python scripts
-    #with previous versions of the cache, set MOCKTIME
-    #to regtest genesis time + (201 * 156)
+def set_mocktime(t):
     global MOCKTIME
-    MOCKTIME = 1417713337 + (201 * 156)
+    MOCKTIME = t
 
 def disable_mocktime():
-    global MOCKTIME
-    MOCKTIME = 0
+    set_mocktime(0)
 
 def get_mocktime():
     return MOCKTIME
+
+def set_cache_mocktime():
+    #For backwared compatibility of the python scripts
+    #with previous versions of the cache, set MOCKTIME
+    #to regtest genesis time + (201 * 156)
+    set_mocktime(GENESISTIME + (201 * 156))
+
+def set_genesis_mocktime():
+    set_mocktime(GENESISTIME)
 
 def enable_coverage(dirname):
     """Maintain a log of which RPC calls are made during testing."""
@@ -239,7 +245,7 @@ def wait_for_bitcoind_start(process, url, i):
                 raise # unknown JSON RPC exception
         time.sleep(0.25)
 
-def initialize_chain(test_dir, num_nodes, cachedir):
+def initialize_chain(test_dir, num_nodes, cachedir, extra_args=None, redirect_stderr=False):
     """
     Create a cache of a 200-block-long chain (with wallet) for MAX_NODES
     Afterward, create num_nodes copies from the cache
@@ -259,13 +265,19 @@ def initialize_chain(test_dir, num_nodes, cachedir):
             if os.path.isdir(os.path.join(cachedir,"node"+str(i))):
                 shutil.rmtree(os.path.join(cachedir,"node"+str(i)))
 
+        set_genesis_mocktime()
         # Create cache directories, run absoluteds:
         for i in range(MAX_NODES):
             datadir=initialize_datadir(cachedir, i)
-            args = [ os.getenv("ABSOLUTED", "absoluted"), "-server", "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args = [ os.getenv("ABSOLUTED", "absoluted"), "-server", "-keypool=1", "-datadir="+datadir, "-discover=0", "-mocktime="+str(GENESISTIME) ]
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
-            bitcoind_processes[i] = subprocess.Popen(args)
+            if extra_args is not None:
+                args += extra_args
+            stderr = None
+            if redirect_stderr:
+                stderr = sys.stdout
+            bitcoind_processes[i] = subprocess.Popen(args, stderr=stderr)
             if os.getenv("PYTHON_DEBUG", ""):
                 print("initialize_chain: absoluted started, waiting for RPC to come up")
             wait_for_bitcoind_start(bitcoind_processes[i], rpc_url(i), i)
@@ -286,9 +298,7 @@ def initialize_chain(test_dir, num_nodes, cachedir):
         # initialize_chain, only 4 nodes will generate coins.
         #
         # blocks are created with timestamps 156 seconds apart
-        # starting from 31356 seconds in the past
-        enable_mocktime()
-        block_time = get_mocktime() - (201 * 156)
+        block_time = GENESISTIME
         for i in range(2):
             for peer in range(4):
                 for j in range(25):
@@ -320,7 +330,6 @@ def initialize_chain_clean(test_dir, num_nodes):
     """
     for i in range(num_nodes):
         datadir=initialize_datadir(test_dir, i)
-
 
 def _rpchost_to_args(rpchost):
     '''Convert optional IP:port spec to rpcconnect/rpcport args'''

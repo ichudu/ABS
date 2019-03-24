@@ -31,8 +31,6 @@
 
 #include <univalue.h>
 
-using namespace std;
-
 /**
  * @note Do not add or change anything in the information returned by this
  * method. `getinfo` exists for backwards-compatibility only. It combines
@@ -49,7 +47,7 @@ using namespace std;
 UniValue getinfo(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 0)
-        throw runtime_error(
+        throw std::runtime_error(
             "getinfo\n"
             "\nDEPRECATED. Returns an object containing various state info.\n"
             "\nResult:\n"
@@ -101,7 +99,7 @@ UniValue getinfo(const JSONRPCRequest& request)
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if(g_connman)
         obj.push_back(Pair("connections",   (int)g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL)));
-    obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
+    obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : std::string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
     obj.push_back(Pair("testnet",       Params().NetworkIDString() == CBaseChainParams::TESTNET));
 #ifdef ENABLE_WALLET
@@ -121,20 +119,20 @@ UniValue getinfo(const JSONRPCRequest& request)
 UniValue debug(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "debug ( 0|1|addrman|alert|bench|coindb|db|lock|rand|rpc|selectcoins|mempool"
             "|mempoolrej|net|proxy|prune|http|libevent|tor|zmq|"
             "absolute|privatesend|instantsend|masternode|spork|keepass|mnpayments|gobject )\n"
-            "Change debug category on the fly. Specify single category or use comma to specify many.\n"
+            "Change debug category on the fly. Specify single category or use '+' to specify many.\n"
             "\nExamples:\n"
             + HelpExampleCli("debug", "absolute")
-            + HelpExampleRpc("debug", "absolute,net")
+            + HelpExampleRpc("debug", "absolute+net")
         );
 
     std::string strMode = request.params[0].get_str();
 
     std::vector<std::string> newMultiArgs;
-    boost::split(newMultiArgs, strMode, boost::is_any_of(","));
+    boost::split(newMultiArgs, strMode, boost::is_any_of("+"));
     ForceSetMultiArgs("-debug", newMultiArgs);
     ForceSetArg("-debug", newMultiArgs[newMultiArgs.size() - 1]);
 
@@ -146,7 +144,7 @@ UniValue debug(const JSONRPCRequest& request)
 UniValue mnsync(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "mnsync [status|next|reset]\n"
             "Returns the sync status, updates to the next step or resets it entirely.\n"
         );
@@ -227,27 +225,52 @@ public:
 */
 UniValue spork(const JSONRPCRequest& request)
 {
-    if(request.params.size() == 1 && request.params[0].get_str() == "show"){
-        UniValue ret(UniValue::VOBJ);
-        for(int nSporkID = SPORK_START; nSporkID <= SPORK_END; nSporkID++){
-            if(sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
-                ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), sporkManager.GetSporkValue(nSporkID)));
+    if (request.params.size() == 1) {
+        // basic mode, show info
+        std:: string strCommand = request.params[0].get_str();
+        if (strCommand == "show") {
+            UniValue ret(UniValue::VOBJ);
+            for(int nSporkID = SPORK_START; nSporkID <= SPORK_END; nSporkID++){
+                if(sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
+                    ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), sporkManager.GetSporkValue(nSporkID)));
+            }
+            return ret;
+        } else if(strCommand == "active"){
+            UniValue ret(UniValue::VOBJ);
+            for(int nSporkID = SPORK_START; nSporkID <= SPORK_END; nSporkID++){
+                if(sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
+                    ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), sporkManager.IsSporkActive(nSporkID)));
+            }
+            return ret;
         }
-        return ret;
-    } else if(request.params.size() == 1 && request.params[0].get_str() == "active"){
-        UniValue ret(UniValue::VOBJ);
-        for(int nSporkID = SPORK_START; nSporkID <= SPORK_END; nSporkID++){
-            if(sporkManager.GetSporkNameByID(nSporkID) != "Unknown")
-                ret.push_back(Pair(sporkManager.GetSporkNameByID(nSporkID), sporkManager.IsSporkActive(nSporkID)));
-        }
-        return ret;
     }
-#ifdef ENABLE_WALLET
-    else if (request.params.size() == 2){
+
+    if (request.fHelp || request.params.size() != 2) {
+        // default help, for basic mode
+        throw std::runtime_error(
+            "spork \"command\"\n"
+            "\nShows information about current state of sporks\n"
+            "\nArguments:\n"
+            "1. \"command\"                     (string, required) 'show' to show all current spork values, 'active' to show which sporks are active\n"
+            "\nResult:\n"
+            "For 'show':\n"
+            "{\n"
+            "  \"SPORK_NAME\" : spork_value,    (number) The value of the specific spork with the name SPORK_NAME\n"
+            "  ...\n"
+            "}\n"
+            "For 'active':\n"
+            "{\n"
+            "  \"SPORK_NAME\" : true|false,     (boolean) 'true' for time-based sporks if spork is active and 'false' otherwise\n"
+            "  ...\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("spork", "show")
+            + HelpExampleRpc("spork", "\"show\""));
+    } else {
+        // advanced mode, update spork values
         int nSporkID = sporkManager.GetSporkIDByName(request.params[0].get_str());
-        if(nSporkID == -1){
-            return "Invalid spork name";
-        }
+        if(nSporkID == -1)
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid spork name");
 
         if (!g_connman)
             throw JSONRPCError(RPC_CLIENT_P2P_DISABLED, "Error: Peer-to-peer functionality missing or disabled");
@@ -260,28 +283,26 @@ UniValue spork(const JSONRPCRequest& request)
             sporkManager.ExecuteSpork(nSporkID, nValue);
             return "success";
         } else {
-            return "failure";
+            throw std::runtime_error(
+                "spork \"name\" value\n"
+                "\nUpdate the value of the specific spork. Requires \"-sporkkey\" to be set to sign the message.\n"
+                "\nArguments:\n"
+                "1. \"name\"              (string, required) The name of the spork to update\n"
+                "2. value               (number, required) The new desired value of the spork\n"
+                "\nResult:\n"
+                "  result               (string) \"success\" if spork value was updated or this help otherwise\n"
+                "\nExamples:\n"
+                + HelpExampleCli("spork", "SPORK_2_INSTANTSEND_ENABLED 4070908800")
+                + HelpExampleRpc("spork", "\"SPORK_2_INSTANTSEND_ENABLED\", 4070908800"));
         }
-
     }
-
-    throw runtime_error(
-        "spork <name> [<value>]\n"
-        "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active\n"
-        "<value> is a epoch datetime to enable or disable spork\n"
-        + HelpRequiringPassphrase());
-#else // ENABLE_WALLET
-    throw runtime_error(
-        "spork <name>\n"
-        "<name> is the corresponding spork name, or 'show' to show all current spork settings, active to show which sporks are active\n");
-#endif // ENABLE_WALLET
 
 }
 
 UniValue validateaddress(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "validateaddress \"address\"\n"
             "\nReturn information about the given absolute address.\n"
             "\nArguments:\n"
@@ -297,6 +318,7 @@ UniValue validateaddress(const JSONRPCRequest& request)
             "  \"pubkey\" : \"publickeyhex\",    (string) The hex value of the raw public key\n"
             "  \"iscompressed\" : true|false,  (boolean) If the address is compressed\n"
             "  \"account\" : \"account\"         (string) DEPRECATED. The account associated with the address, \"\" is the default account\n"
+            "  \"timestamp\" : timestamp,        (number, optional) The creation time of the key if available in seconds since epoch (Jan 1 1970 GMT)\n"
             "  \"hdkeypath\" : \"keypath\"       (string, optional) The HD keypath if the key is HD and available\n"
             "  \"hdchainid\" : \"<hash>\"        (string, optional) The ID of the HD chain\n"
             "}\n"
@@ -319,7 +341,7 @@ UniValue validateaddress(const JSONRPCRequest& request)
     if (isValid)
     {
         CTxDestination dest = address.Get();
-        string currentAddress = address.ToString();
+        std::string currentAddress = address.ToString();
         ret.push_back(Pair("address", currentAddress));
 
         CScript scriptPubKey = GetScriptForDestination(dest);
@@ -334,11 +356,21 @@ UniValue validateaddress(const JSONRPCRequest& request)
         if (pwalletMain && pwalletMain->mapAddressBook.count(dest))
             ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest].name));
         CKeyID keyID;
-        CHDChain hdChainCurrent;
-        if (pwalletMain && address.GetKeyID(keyID) && pwalletMain->mapHdPubKeys.count(keyID) && pwalletMain->GetHDChain(hdChainCurrent))
-        {
-            ret.push_back(Pair("hdkeypath", pwalletMain->mapHdPubKeys[keyID].GetKeyPath()));
-            ret.push_back(Pair("hdchainid", hdChainCurrent.GetID().GetHex()));
+        if (pwalletMain) {
+            const auto& meta = pwalletMain->mapKeyMetadata;
+            auto it = address.GetKeyID(keyID) ? meta.find(keyID) : meta.end();
+            if (it == meta.end()) {
+                it = meta.find(CScriptID(scriptPubKey));
+            }
+            if (it != meta.end()) {
+                ret.push_back(Pair("timestamp", it->second.nCreateTime));
+            }
+
+            CHDChain hdChainCurrent;
+            if (!keyID.IsNull() && pwalletMain->mapHdPubKeys.count(keyID) && pwalletMain->GetHDChain(hdChainCurrent)) {
+                ret.push_back(Pair("hdkeypath", pwalletMain->mapHdPubKeys[keyID].GetKeyPath()));
+                ret.push_back(Pair("hdchainid", hdChainCurrent.GetID().GetHex()));
+            }
         }
 #endif
     }
@@ -355,13 +387,13 @@ CScript _createmultisig_redeemScript(const UniValue& params)
 
     // Gather public keys
     if (nRequired < 1)
-        throw runtime_error("a multisignature address must require at least one key to redeem");
+        throw std::runtime_error("a multisignature address must require at least one key to redeem");
     if ((int)keys.size() < nRequired)
-        throw runtime_error(
+        throw std::runtime_error(
             strprintf("not enough keys supplied "
                       "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
     if (keys.size() > 16)
-        throw runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
+        throw std::runtime_error("Number of addresses involved in the multisignature address creation > 16\nReduce the number");
     std::vector<CPubKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -374,14 +406,14 @@ CScript _createmultisig_redeemScript(const UniValue& params)
         {
             CKeyID keyID;
             if (!address.GetKeyID(keyID))
-                throw runtime_error(
+                throw std::runtime_error(
                     strprintf("%s does not refer to a key",ks));
             CPubKey vchPubKey;
             if (!pwalletMain->GetPubKey(keyID, vchPubKey))
-                throw runtime_error(
+                throw std::runtime_error(
                     strprintf("no full public key for address %s",ks));
             if (!vchPubKey.IsFullyValid())
-                throw runtime_error(" Invalid public key: "+ks);
+                throw std::runtime_error(" Invalid public key: "+ks);
             pubkeys[i] = vchPubKey;
         }
 
@@ -392,18 +424,18 @@ CScript _createmultisig_redeemScript(const UniValue& params)
         {
             CPubKey vchPubKey(ParseHex(ks));
             if (!vchPubKey.IsFullyValid())
-                throw runtime_error(" Invalid public key: "+ks);
+                throw std::runtime_error(" Invalid public key: "+ks);
             pubkeys[i] = vchPubKey;
         }
         else
         {
-            throw runtime_error(" Invalid public key: "+ks);
+            throw std::runtime_error(" Invalid public key: "+ks);
         }
     }
     CScript result = GetScriptForMultisig(nRequired, pubkeys);
 
     if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
-        throw runtime_error(
+        throw std::runtime_error(
                 strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
 
     return result;
@@ -413,7 +445,7 @@ UniValue createmultisig(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() < 2 || request.params.size() > 2)
     {
-        string msg = "createmultisig nrequired [\"key\",...]\n"
+        std::string msg = "createmultisig nrequired [\"key\",...]\n"
             "\nCreates a multi-signature address with n signature of m keys required.\n"
             "It returns a json object with the address and redeemScript.\n"
 
@@ -437,7 +469,7 @@ UniValue createmultisig(const JSONRPCRequest& request)
             "\nAs a json rpc call\n"
             + HelpExampleRpc("createmultisig", "2, \"[\\\"AaCk5RXBVuJxKZn984uLK4cmFHC9p5hbBT\\\",\\\"ARqZAt8WGwcoe8NX8SeFA2GpLQpwVNWQsU\\\"]\"")
         ;
-        throw runtime_error(msg);
+        throw std::runtime_error(msg);
     }
 
     // Construct using pay-to-script-hash:
@@ -455,7 +487,7 @@ UniValue createmultisig(const JSONRPCRequest& request)
 UniValue verifymessage(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 3)
-        throw runtime_error(
+        throw std::runtime_error(
             "verifymessage \"address\" \"signature\" \"message\"\n"
             "\nVerify a signed message\n"
             "\nArguments:\n"
@@ -477,9 +509,9 @@ UniValue verifymessage(const JSONRPCRequest& request)
 
     LOCK(cs_main);
 
-    string strAddress  = request.params[0].get_str();
-    string strSign     = request.params[1].get_str();
-    string strMessage  = request.params[2].get_str();
+    std::string strAddress  = request.params[0].get_str();
+    std::string strSign     = request.params[1].get_str();
+    std::string strMessage  = request.params[2].get_str();
 
     CBitcoinAddress addr(strAddress);
     if (!addr.IsValid())
@@ -490,7 +522,7 @@ UniValue verifymessage(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_TYPE_ERROR, "Address does not refer to key");
 
     bool fInvalid = false;
-    vector<unsigned char> vchSig = DecodeBase64(strSign.c_str(), &fInvalid);
+    std::vector<unsigned char> vchSig = DecodeBase64(strSign.c_str(), &fInvalid);
 
     if (fInvalid)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Malformed base64 encoding");
@@ -509,7 +541,7 @@ UniValue verifymessage(const JSONRPCRequest& request)
 UniValue signmessagewithprivkey(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 2)
-        throw runtime_error(
+        throw std::runtime_error(
             "signmessagewithprivkey \"privkey\" \"message\"\n"
             "\nSign a message with the private key of an address\n"
             "\nArguments:\n"
@@ -526,8 +558,8 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
             + HelpExampleRpc("signmessagewithprivkey", "\"privkey\", \"my message\"")
         );
 
-    string strPrivkey = request.params[0].get_str();
-    string strMessage = request.params[1].get_str();
+    std::string strPrivkey = request.params[0].get_str();
+    std::string strMessage = request.params[1].get_str();
 
     CBitcoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strPrivkey);
@@ -541,7 +573,7 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
     ss << strMessageMagic;
     ss << strMessage;
 
-    vector<unsigned char> vchSig;
+    std::vector<unsigned char> vchSig;
     if (!key.SignCompact(ss.GetHash(), vchSig))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
 
@@ -551,7 +583,7 @@ UniValue signmessagewithprivkey(const JSONRPCRequest& request)
 UniValue setmocktime(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "setmocktime timestamp\n"
             "\nSet the local time to given timestamp (-regtest only)\n"
             "\nArguments:\n"
@@ -560,7 +592,7 @@ UniValue setmocktime(const JSONRPCRequest& request)
         );
 
     if (!Params().MineBlocksOnDemand())
-        throw runtime_error("setmocktime for regression testing (-regtest mode) only");
+        throw std::runtime_error("setmocktime for regression testing (-regtest mode) only");
 
     // For now, don't change mocktime if we're in the middle of validation, as
     // this could have an effect on mempool time-based eviction, as well as
@@ -636,7 +668,7 @@ bool timestampSort(std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta> a,
 UniValue getaddressmempool(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "getaddressmempool\n"
             "\nReturns all mempool deltas for an address (requires addressindex to be enabled).\n"
             "\nArguments:\n"
@@ -707,7 +739,7 @@ UniValue getaddressmempool(const JSONRPCRequest& request)
 UniValue getaddressutxos(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "getaddressutxos\n"
             "\nReturns all unspent outputs for an address (requires addressindex to be enabled).\n"
             "\nArguments:\n"
@@ -774,7 +806,7 @@ UniValue getaddressutxos(const JSONRPCRequest& request)
 UniValue getaddressdeltas(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1 || !request.params[0].isObject())
-        throw runtime_error(
+        throw std::runtime_error(
             "getaddressdeltas\n"
             "\nReturns all changes for an address (requires addressindex to be enabled).\n"
             "\nArguments:\n"
@@ -862,7 +894,7 @@ UniValue getaddressdeltas(const JSONRPCRequest& request)
 UniValue getaddressbalance(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "getaddressbalance\n"
             "\nReturns the balance for an address(es) (requires addressindex to be enabled).\n"
             "\nArguments:\n"
@@ -918,7 +950,7 @@ UniValue getaddressbalance(const JSONRPCRequest& request)
 UniValue getaddresstxids(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1)
-        throw runtime_error(
+        throw std::runtime_error(
             "getaddresstxids\n"
             "\nReturns the txids for an address(es) (requires addressindex to be enabled).\n"
             "\nArguments:\n"
@@ -1001,7 +1033,7 @@ UniValue getaddresstxids(const JSONRPCRequest& request)
 UniValue getspentinfo(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 1 || !request.params[0].isObject())
-        throw runtime_error(
+        throw std::runtime_error(
             "getspentinfo\n"
             "\nReturns the txid and index where an output is spent.\n"
             "\nArguments:\n"
@@ -1064,7 +1096,7 @@ UniValue getmemoryinfo(const JSONRPCRequest& request)
      * as users will undoubtedly confuse it with the other "memory pool"
      */
     if (request.fHelp || request.params.size() != 0)
-        throw runtime_error(
+        throw std::runtime_error(
             "getmemoryinfo\n"
             "Returns an object containing information about memory usage.\n"
             "\nResult:\n"
@@ -1090,7 +1122,7 @@ UniValue getmemoryinfo(const JSONRPCRequest& request)
 UniValue echo(const JSONRPCRequest& request)
 {
     if (request.fHelp)
-        throw runtime_error(
+        throw std::runtime_error(
             "echo|echojson \"message\" ...\n"
             "\nSimply echo back the input arguments. This command is for testing.\n"
             "\nThe difference between echo and echojson is that echojson has argument conversion enabled in the client-side table in"
@@ -1121,7 +1153,7 @@ static const CRPCCommand commands[] =
 
     /* absolute features */
     { "absolute",               "mnsync",                 &mnsync,                 true,  {} },
-    { "absolute",               "spork",                  &spork,                  true,  {"datetime"} },
+    { "absolute",               "spork",                  &spork,                  true,  {"value"} },
 
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true,  {"timestamp"}},

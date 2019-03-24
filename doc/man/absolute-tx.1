@@ -35,6 +35,10 @@ Chain selection options:
 .IP
 Use the test chain
 .HP
+\fB\-povnet=\fR<name>
+.IP
+Use povnet chain with provided name
+.HP
 \fB\-regtest\fR
 .IP
 Enter regression test mode, which uses a special chain in which blocks
@@ -67,13 +71,25 @@ outaddr=VALUE:ADDRESS
 .IP
 Add address\-based output to TX
 .IP
+outpubkey=VALUE:PUBKEY[:FLAGS]
+.IP
+Add pay\-to\-pubkey output to TX. Optionally add the "S" flag to wrap the
+output in a pay\-to\-script\-hash.
+.IP
 outdata=[VALUE:]DATA
 .IP
 Add data\-based output to TX
 .IP
-outscript=VALUE:SCRIPT
+outscript=VALUE:SCRIPT[:FLAGS]
 .IP
-Add raw script output to TX
+Add raw script output to TX. Optionally add the "S" flag to wrap the
+output in a pay\-to\-script\-hash.
+.IP
+outmultisig=VALUE:REQUIRED:PUBKEYS:PUBKEY1:PUBKEY2:....[:FLAGS]
+.IP
+Add Pay To n\-of\-m Multi\-sig output to TX. n = REQUIRED, m = PUBKEYS.
+Optionally add the "S" flag to wrap the output in a
+pay\-to\-script\-hash.
 .IP
 sign=SIGHASH\-FLAGS
 .IP

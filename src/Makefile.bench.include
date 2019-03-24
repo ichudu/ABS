@@ -7,7 +7,7 @@ BENCH_SRCDIR = bench
 BENCH_BINARY = bench/bench_absolute$(EXEEXT)
 
 RAW_TEST_FILES = \
-  bench/data/block413567.raw
+  bench/data/block813851.raw
 GENERATED_TEST_FILES = $(RAW_TEST_FILES:.raw=.raw.h)
 
 bench_bench_absolute_SOURCES = \
@@ -24,7 +24,8 @@ bench_bench_absolute_SOURCES = \
   bench/base58.cpp \
   bench/lockedpool.cpp \
   bench/perf.cpp \
-  bench/perf.h
+  bench/perf.h \
+  bench/string_cast.cpp
 
 nodist_bench_bench_absolute_SOURCES = $(GENERATED_TEST_FILES)
 
@@ -57,7 +58,7 @@ CLEAN_BITCOIN_BENCH = bench/*.gcda bench/*.gcno $(GENERATED_TEST_FILES)
 
 CLEANFILES += $(CLEAN_BITCOIN_BENCH)
 
-bench/checkblock.cpp: bench/data/block413567.raw.h
+bench/checkblock.cpp: bench/data/block813851.raw.h
 
 bitcoin_bench: $(BENCH_BINARY)
 

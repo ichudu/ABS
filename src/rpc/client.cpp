@@ -15,8 +15,6 @@
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
 #include <univalue.h>
 
-using namespace std;
-
 class CRPCConvertParam
 {
 public:
@@ -50,6 +48,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getreceivedbyaddress", 2, "addlockconf" },
     { "getreceivedbyaccount", 1, "minconf" },
     { "getreceivedbyaccount", 2, "addlockconf" },
+    { "listaddressbalances", 0, "minamount" },
     { "listreceivedbyaddress", 0, "minconf" },
     { "listreceivedbyaddress", 1, "addlockconf" },
     { "listreceivedbyaddress", 2, "include_empty" },
@@ -98,6 +97,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "listunspent", 0, "minconf" },
     { "listunspent", 1, "maxconf" },
     { "listunspent", 2, "addresses" },
+    { "listunspent", 3, "include_unsafe" },
     { "getblock", 1, "verbose" },
     { "getblockheader", 1, "verbose" },
     { "getblockheaders", 1, "count" },
@@ -111,6 +111,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "signrawtransaction", 2, "privkeys" },
     { "sendrawtransaction", 1, "allowhighfees" },
     { "sendrawtransaction", 2, "instantsend" },
+    { "sendrawtransaction", 3, "bypasslimits" },
     { "fundrawtransaction", 1, "options" },
     { "gettxout", 1, "n" },
     { "gettxout", 2, "include_mempool" },
@@ -141,7 +142,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "setnetworkactive", 0, "state" },
     { "getmempoolancestors", 1, "verbose" },
     { "getmempooldescendants", 1, "verbose" },
-    { "spork", 1, "datetime" },
+    { "spork", 1, "value" },
     { "voteraw", 1, "tx_index" },
     { "voteraw", 5, "time" },
     { "getblockhashes", 0, "high"},
@@ -205,7 +206,7 @@ UniValue ParseNonRFCJSONValue(const std::string& strVal)
     UniValue jVal;
     if (!jVal.read(std::string("[")+strVal+std::string("]")) ||
         !jVal.isArray() || jVal.size()!=1)
-        throw runtime_error(string("Error parsing JSON:")+strVal);
+        throw std::runtime_error(std::string("Error parsing JSON:")+strVal);
     return jVal[0];
 }
 

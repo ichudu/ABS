@@ -43,7 +43,7 @@
 #ifdef ENABLE_ABSOLUTE_DEBUG
 #define DBG( x ) x
 #else
-#define DBG( x ) 
+#define DBG( x )
 #endif
 
 //Absolute only features
@@ -100,18 +100,18 @@ int LogPrintStr(const std::string &str);
 
 #define LogPrint(category, ...) do { \
     if (LogAcceptCategory((category))) { \
-        LogPrintStr(tfm::format(__VA_ARGS__)); \
+        LogPrintStr(tinyformat::format(__VA_ARGS__)); \
     } \
 } while(0)
 
 #define LogPrintf(...) do { \
-    LogPrintStr(tfm::format(__VA_ARGS__)); \
+    LogPrintStr(tinyformat::format(__VA_ARGS__)); \
 } while(0)
 
 template<typename... Args>
 bool error(const char* fmt, const Args&... args)
 {
-    LogPrintStr("ERROR: " + tfm::format(fmt, args...) + "\n");
+    LogPrintStr("ERROR: " + tinyformat::format(fmt, args...) + "\n");
     return false;
 }
 
@@ -203,7 +203,7 @@ bool SoftSetArg(const std::string& strArg, const std::string& strValue);
  */
 bool SoftSetBoolArg(const std::string& strArg, bool fValue);
 
-// Forces a arg setting, used only in testing
+// Forces a arg setting
 void ForceSetArg(const std::string& strArg, const std::string& strValue);
 void ForceSetMultiArgs(const std::string& strArg, const std::vector<std::string>& values);
 void ForceRemoveArg(const std::string& strArg);
@@ -281,8 +281,6 @@ uint32_t StringVersionToInt(const std::string& strVersion);
  * Throws std::bad_cast if format doesn\t match.
  */
 std::string IntVersionToString(uint32_t nVersion);
-
-
 /**
  * @brief Copy of the IntVersionToString, that returns "Invalid version" string
  * instead of throwing std::bad_cast

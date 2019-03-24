@@ -267,8 +267,8 @@ echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-start" > /etc/sudoers.d/gitian-lxc
 echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-execute" >> /etc/sudoers.d/gitian-lxc
 # make /etc/rc.local script that sets up bridge between guest and host
 echo '#!/bin/sh -e' > /etc/rc.local
-echo 'brctl addbr br0' >> /etc/rc.local
-echo 'ifconfig br0 10.0.3.2/24 up' >> /etc/rc.local
+echo 'brctl addbr lxcbr0' >> /etc/rc.local
+echo 'ifconfig lxcbr0 10.0.3.2/24 up' >> /etc/rc.local
 echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> /etc/rc.local
 echo 'echo 1 > /proc/sys/net/ipv4/ip_forward' >> /etc/rc.local
 echo 'exit 0' >> /etc/rc.local
@@ -308,6 +308,7 @@ Clone the git repositories for Absolute Core and Gitian.
 ```bash
 git clone https://github.com/devrandom/gitian-builder.git
 git clone https://github.com/absolute-community/absolute
+git clone https://github.com/absolute-community//gitian.signatures.git
 ```
 
 Setting up the Gitian image

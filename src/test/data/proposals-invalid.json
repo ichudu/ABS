@@ -1,9 +1,0 @@
-[
-{"end_epoch": 1491368400, "name": "Crypto-Centric-1983", "payment_address": "APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": 25.75, "start_epoch": 1474261086, "type": 1, "url": "https://absolutecoin.net/Crypto-Centric-1983"},
-{"end_epoch": 1491368400, "name": "Crypto-Centric-1983", "payment_address": " APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": 25.75, "start_epoch": 1474261086, "type": 1, "url": "https://absolutecoin.net/Crypto-Centric-1983""},
-{"end_epoch": 1491368400, "name": "Crypto-Centric-1983", "payment_address": "APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": 25.75, "start_epoch": 1474261086, "type": 1, "url": "http://[::1/foo/bad]/bad"},
-{"end_epoch": 1491368400, "name": "Crypto-Centric-1983", "payment_address": "APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": 25.75, "start_epoch": 1474261086, "type": 1, "url": "http://::12.34.56.78]/"},
-{"end_epoch": 1491368400, "name": "Crypto-Centric-1983", "payment_address": "APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": "25.75", "start_epoch": 1474261086, "type": 1, "url": "https://absolutecoin.net/Crypto-Centric-1983"},
-{"end_epoch": "1491368400", "name": "Crypto-Centric-1983", "payment_address": "APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": 25.75, "start_epoch": 1474261086, "type": 1, "url": "https://absolutecoin.net/Crypto-Centric-1983"},
-{"end_epoch": 1491368400, "name": "Crypto-Centric-1983", "payment_address": "APN7JzBt9LFwdEoWAPLs6req7PTNVa1iLF", "payment_amount": 25.75, "start_epoch": "1474261086", "type": 1, "url": "https://absolutecoin.net/Crypto-Centric-1983}
-]

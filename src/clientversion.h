@@ -20,7 +20,8 @@
 #define CLIENT_VERSION_BUILD 5
 
 //! Set to true for release, false for prerelease or test build
-#define CLIENT_VERSION_IS_RELEASE false
+
+#define CLIENT_VERSION_IS_RELEASE true
 
 /**
  * Copyright year (2009-this)
@@ -60,7 +61,7 @@ static const int CLIENT_VERSION =
 extern const std::string CLIENT_NAME;
 extern const std::string CLIENT_BUILD;
 
-
+std::string FormatVersion(int nVersion);
 std::string FormatFullVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 

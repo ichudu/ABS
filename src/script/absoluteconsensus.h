@@ -39,16 +39,24 @@ typedef enum absoluteconsensus_error_t
     absoluteconsensus_ERR_TX_INDEX,
     absoluteconsensus_ERR_TX_SIZE_MISMATCH,
     absoluteconsensus_ERR_TX_DESERIALIZE,
+    absoluteconsensus_ERR_INVALID_FLAGS,
 } absoluteconsensus_error;
+
 
 /** Script verification flags */
 enum
 {
+
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_DERSIG              = (1U << 2), // enforce strict DER (BIP66) compliance
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
     absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH | absoluteconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
+                                                           absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
+                                                           absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY
+
 };
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
