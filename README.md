@@ -1,4 +1,4 @@
-# Absolute 0.12.2.5a
+# Absolute 0.12.2.5a 
 
 Absolute (ABS) is a digital currency inspired by solutions first used in Dash. 
 
