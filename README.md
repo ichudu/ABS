@@ -13,7 +13,7 @@ Absolute Coin gives you the access to the wide range of options created by two-t
 
 | Area | Absolute Setting |
 | ------ | ------ |
-| Block Time | 2 minutes |
+| Block Time | 1.5 minutes |
 | Block Reward | 30 ABS |
 | PoW Algorithm | Lyra2REv2 |
 | MN Collateral | 2500 ABS |
@@ -23,12 +23,13 @@ Absolute Coin gives you the access to the wide range of options created by two-t
 
 | Area | Proof Of View Setting |
 | ------ | ------ |
-| Block Time | On Demand |
+| Platform | On Demand |
 | Block Reward | Max 5% Fee of Block Volume |
 | PoV Node / Escrow Node Collateral | TBA ABS |
 
-
 For building please see INSTALL / proper files in the doc subfolder.
+
+Masternode install scripts are supported on Ubuntu 16.04 and 18.04
 
 Development Process
 -------------------
