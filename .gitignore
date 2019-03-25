@@ -35,6 +35,8 @@ config.log
 config.status
 configure
 libtool
+src/config/dash-config.h
+src/config/dash-config.h.in
 src/config/stamp-h1
 share/setup.nsi
 share/qt/Info.plist
@@ -106,16 +108,16 @@ linux-coverage-build
 linux-build
 win32-build
 qa/pull-tester/tests_config.py
-qa/pull-tester/test.*/*
-qa/tmp
+
 qa/cache/*
-share/BitcoindComparisonTool.jar
+
 
 !src/leveldb*/Makefile
 
 .cproject
 .project
 .autotools
+/doc/doxygen/
 
 libabsoluteconsensus.pc
 contrib/devtools/split-debug.sh
