@@ -12,7 +12,7 @@ abs_unit_file="absmn"
 
 # when new wallet release is published the next two lines needs to be updated
 wallet_ver="v12.2.5"
-wallet_file="absolutecore-0.12.2-x86_64-linux-gnu.tar.gz"
+wallet_file="absolutecore-0.12.2.5-x86_64-linux-gnu.tar.gz"
 
 wallet_url="https://github.com/absolute-community/absolute/releases/download/$wallet_ver"
 
@@ -31,7 +31,8 @@ function printWarning {
 function extractDaemon
 {
 	echo "Extracting..."
-	tar -zxvf "$wallet_file" && mv "$wallet_dir_name" "$wallet_path"
+	tar -zxvf "$wallet_file" && mv "$wallet_dir_name/bin" "$wallet_path"
+	rm -r "$wallet_dir_name"
 	if [ -f "/usr/local/bin/absolute-cli" ]; then
 		rm /usr/local/bin/absolute-cli
 	fi
@@ -163,8 +164,6 @@ printSuccess "...done!"
 echo
 echo "*** Install ABS daemon dependencies ***"
 apt-get install nano mc dbus ufw fail2ban htop git pwgen python virtualenv python-virtualenv software-properties-common -y -qq
-apt-get install libboost-system1.58.0 libboost-filesystem1.58.0 libboost-program-options1.58.0 libboost-thread1.58.0 libboost-chrono1.58.0 -y -qq
-apt-get install libzmq5 libevent-pthreads-2.0-5 libminiupnpc10 libevent-2.0-5 -y -qq
 add-apt-repository ppa:bitcoin/bitcoin -y
 apt-get update -y -qq
 apt-get upgrade -y -qq
