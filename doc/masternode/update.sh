@@ -1,8 +1,8 @@
 #!/bin/sh
 
 VERSION="absolutecore-0.12.2.5"
-echo 'downloading last release'
-wget https://github.com/absolute-community/absolute/releases/download/v12.2.5/a$
+echo 'downloading last release'\
+&& wget https://github.com/absolute-community/absolute/releases/download/v12.2.5/absolutecore-0.12.2.5-x86_64-linux-gnu.tar.gz -O absolute_latest.tar.gz \
 && echo "Extracting" \
 && tar -zxvf absolute_latest.tar.gz \
 && echo "Backuping"\
