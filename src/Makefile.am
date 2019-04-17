@@ -305,7 +305,6 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/hmac_sha512.cpp \
   crypto/hmac_sha512.h \
   crypto/ripemd160.cpp \
-  crypto/aes_helper.c \
   crypto/ripemd160.h \
   crypto/sha1.cpp \
   crypto/sha1.h \
@@ -313,6 +312,7 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/sha256.h \
   crypto/sha512.cpp \
   crypto/sha512.h \
+  crypto/Lyra2RE/aes_helper.c \
   crypto/Lyra2RE/Lyra2RE.c \
   crypto/Lyra2RE/Lyra2RE.h \
   crypto/Lyra2RE/Lyra2.c \
@@ -327,7 +327,7 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/Lyra2RE/sph_cubehash.h \
   crypto/Lyra2RE/blake.c \
   crypto/Lyra2RE/keccak.c \
-  crypto/Lyra2RE/skein.c 
+  crypto/Lyra2RE/skein.c \ 
   crypto/Lyra2RE/bmw.c \
   crypto/Lyra2RE/cubehash.c \
   crypto/Lyra2RE/echo.c \
