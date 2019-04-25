@@ -458,6 +458,13 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nWindowSize = 100;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nThreshold = 50; // 50% of 100
 
+        // Deployment of AIP0003
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].bit = 3;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nStartTime = 1556150400; // Thursday, 25-Apr-19 00:00:00 UTC
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nTimeout = 1587772800; // Saturday, 25-Apr-20 00:00:00 UTC
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nWindowSize = 100;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nThreshold = 50; // 50% of 100
+
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000000000000");
 
@@ -574,6 +581,9 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].bit = 2;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nStartTime = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].bit = 3;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nTimeout = 999999999999ULL;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
