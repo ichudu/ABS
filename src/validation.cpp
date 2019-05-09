@@ -587,9 +587,9 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 {
     int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     bool fDIP0001Active_context = nHeight >= consensusParams.DIP0001Height;
-    bool fAIP003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_AIP003, versionbitscache) == THRESHOLD_ACTIVE;
+    bool fAIP0003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE;
 
-    if (fAIP003Active_context) {
+    if (fAIP0003Active_context) {
         // check version 3 transaction types
         if (tx.nVersion >= 3) {
             if (tx.nType != TRANSACTION_NORMAL) {
