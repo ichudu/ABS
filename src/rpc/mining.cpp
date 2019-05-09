@@ -499,13 +499,9 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     std::vector<CTxOut> voutMasternodePayments;
     if (sporkManager.IsSporkActive(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)
         && !masternodeSync.IsWinnersListSynced()
-<<<<<<< HEAD
-        && !mnpayments.GetBlockPayee(chainActive.Height() + 1, payee))
-            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Absolute Core is downloading masternode winners...");
-=======
+
         && !mnpayments.GetBlockTxOuts(chainActive.Height() + 1, 0, voutMasternodePayments))
-            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Dash Core is downloading masternode winners...");
->>>>>>> 50eb98d90... Prepare for DIP3 operator reward payments and switch to array in getblocktemplate (#2216)
+            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Absolute Core is downloading masternode winners...");
 
     // next bock is a superblock and we need governance info to correctly construct it
     if (sporkManager.IsSporkActive(SPORK_9_SUPERBLOCKS_ENABLED)
