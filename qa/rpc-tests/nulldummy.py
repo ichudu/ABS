@@ -113,7 +113,8 @@ class NULLDUMMYTest(BitcoinTestFramework):
 
 
     def block_submit(self, node, txs, accept = False):
-        block = create_block(self.tip, create_coinbase(self.lastblockheight + 1), self.lastblocktime + 1)
+        aip4_activated = self.lastblockheight + 1 >= 432
+        block = create_block(self.tip, create_coinbase(self.lastblockheight + 1, dip4_activated=aip4_activated), self.lastblocktime + 1)
         block.nVersion = 4
         for tx in txs:
             tx.rehash()
