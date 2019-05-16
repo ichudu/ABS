@@ -328,6 +328,8 @@ UniValue masternode_start_alias(const JSONRPCRequest& request)
 {
     if(request.fHelp || request.params.size() < 2)
         masternode_start_alias_help();
+    if (deterministicMNManager->IsDeterministicMNsSporkActive())
+        throw JSONRPCError(RPC_MISC_ERROR, "start-alias is not supported when deterministic masternode list is active (AIP3)");
 
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
@@ -428,6 +430,8 @@ UniValue masternode_start_all(const JSONRPCRequest& request)
 {
     if(request.fHelp)
         masternode_start_all_help();
+    if (deterministicMNManager->IsDeterministicMNsSporkActive())
+        throw JSONRPCError(RPC_MISC_ERROR, strprintf("start-all is not supported when deterministic masternode list is active (AIP3)"));
 
     if (!EnsureWalletIsAvailable(request.fHelp))
         return NullUniValue;
