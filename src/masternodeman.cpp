@@ -983,7 +983,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, const std::string& strCommand,
     if (deterministicMNManager->IsDeterministicMNsSporkActive())
         return;
 
-    if(fLiteMode) return; // disable all Dash specific functionality
+    if(fLiteMode) return; // disable all Absolute specific functionality
 
     if (strCommand == NetMsgType::MNANNOUNCE) { //Masternode Broadcast
 
@@ -1984,7 +1984,7 @@ void CMasternodeMan::NotifyMasternodeUpdates(CConnman& connman, bool forceAddedC
 
 void CMasternodeMan::DoMaintenance(CConnman& connman)
 {
-    if(fLiteMode) return; // disable all Dash specific functionality
+    if(fLiteMode) return; // disable all Absolute specific functionality
 
     if(!masternodeSync.IsBlockchainSynced() || ShutdownRequested())
         return;
