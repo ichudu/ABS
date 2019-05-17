@@ -3527,7 +3527,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
                               ? pindexPrev->GetMedianTimePast()
                               : block.GetBlockTime();
 
-    bool fAIP0001Active_context = nHeight >= Params().GetConsensus().DIP0001Height;
+    bool fDIP0001Active_context = nHeight >= Params().GetConsensus().DIP0001Height;
     bool fAIP0003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE;
 
     // Size limits
