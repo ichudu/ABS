@@ -14,6 +14,8 @@ bench_bench_absolute_SOURCES = \
   bench/bench_absolute.cpp \
   bench/bench.cpp \
   bench/bench.h \
+  bench/bls.cpp \
+  bench/bls_dkg.cpp \
   bench/checkblock.cpp \
   bench/checkqueue.cpp \
   bench/Examples.cpp \
