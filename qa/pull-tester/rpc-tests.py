@@ -110,6 +110,7 @@ if ENABLE_ZMQ:
 
 testScripts = [
     # longest test should go first, to favor running tests in parallel
+    'aip3-deterministicmns.py', # NOTE: needs dash_hash to pass
     'wallet-hd.py',
     'walletbackup.py',
     # vv Tests less than 5m vv
