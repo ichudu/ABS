@@ -135,7 +135,7 @@ void protx_register_help()
             "\nCreates and sends a ProTx to the network. The resulting transaction will move the specified amount\n"
             "to the address specified by collateralAddress and will then function as the collateral of your\n"
             "masternode.\n"
-            "A few of the limitations you see in the arguments are temporary and might be lifted after DIP3\n"
+            "A few of the limitations you see in the arguments are temporary and might be lifted after AIP3\n"
             "is fully deployed.\n"
             "\nArguments:\n"
             "1. \"collateralAddress\"   (string, required) The Absolute address to send the collateral to.\n"

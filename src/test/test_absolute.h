@@ -71,6 +71,16 @@ struct TestChain100Setup : public TestChainSetup {
     TestChain100Setup() : TestChainSetup(100) {}
 };
 
+struct TestChainAIP3Setup : public TestChainSetup
+{
+    TestChainAIP3Setup() : TestChainSetup(431) {}
+};
+
+struct TestChainAIP3BeforeActivationSetup : public TestChainSetup
+{
+    TestChainAIP3BeforeActivationSetup() : TestChainSetup(430) {}
+};
+
 class CTxMemPoolEntry;
 class CTxMemPool;
 

@@ -3553,7 +3553,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
         return state.DoS(10, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
 
     // Enforce rule that the coinbase starts with serialized block height
-    // After DIP3/DIP4 activation, we don't enforce the height in the input script anymore.
+    // After AIP3/AIP4 activation, we don't enforce the height in the input script anymore.
     // The CbTx special transaction payload will then contain the height, which is checked in CheckCbTx
     if (nHeight >= consensusParams.BIP34Height && !fAIP0003Active_context)
     {

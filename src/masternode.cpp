@@ -152,7 +152,7 @@ CMasternode::CollateralStatus CMasternode::CheckCollateral(const COutPoint& outp
 
         CBlockIndex *pindex = mapBlockIndex[hashBlock];
         if (VersionBitsState(pindex->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE) {
-            LogPrintf("CMasternode::CheckCollateral -- ERROR: Collateral of masternode %s was created after DIP3 activation and is not a ProTx\n", outpoint.ToStringShort());
+            LogPrintf("CMasternode::CheckCollateral -- ERROR: Collateral of masternode %s was created after AIP3 activation and is not a ProTx\n", outpoint.ToStringShort());
             return COLLATERAL_UTXO_NOT_PROTX;
         }
     }
