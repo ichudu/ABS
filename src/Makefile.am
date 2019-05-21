@@ -24,6 +24,7 @@ BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAG
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
 BITCOIN_INCLUDES += $(UNIVALUE_CFLAGS)
 
+BLS_LIBS=-lchiabls -lgmp
 LIBBITCOIN_SERVER=libabsolute_server.a
 LIBBITCOIN_COMMON=libabsolute_common.a
 LIBBITCOIN_CONSENSUS=libabsolute_consensus.a
@@ -317,6 +318,7 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/hmac_sha512.cpp \
   crypto/hmac_sha512.h \
   crypto/ripemd160.cpp \
+  crypto/aes_helper.c \
   crypto/ripemd160.h \
   crypto/sha1.cpp \
   crypto/sha1.h \
@@ -445,6 +447,7 @@ libabsolute_util_a_SOURCES = \
 
 if GLIBC_BACK_COMPAT
 libabsolute_util_a_SOURCES += compat/glibc_compat.cpp
+AM_LDFLAGS += -Wl,--wrap=log2f -Wl,--wrap=__divmoddi4
 endif
 
 # cli: shared between absolute-cli and absolute-qt
@@ -480,7 +483,7 @@ absoluted_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-absoluted_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS)
+absoluted_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(BLS_LIBS)
 
 # absolute-cli binary #
 absolute_cli_SOURCES = absolute-cli.cpp
@@ -497,7 +500,7 @@ absolute_cli_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO)
-absolute_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
+absolute_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(BLS_LIBS)
 #
 
 # absolute-tx binary #
@@ -518,7 +521,7 @@ absolute_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1)
 
-absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 #
 
 # absoluteconsensus library #
@@ -544,7 +547,7 @@ if GLIBC_BACK_COMPAT
 endif
 
 libabsoluteconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libabsoluteconsensus_la_LIBADD = $(LIBSECP256K1)
+libabsoluteconsensus_la_LIBADD = $(LIBSECP256K1) $(BLS_LIBS)
 libabsoluteconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 libabsoluteconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 

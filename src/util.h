@@ -43,7 +43,7 @@
 #ifdef ENABLE_ABSOLUTE_DEBUG
 #define DBG( x ) x
 #else
-#define DBG( x )
+#define DBG( x ) 
 #endif
 
 //Absolute only features
