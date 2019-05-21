@@ -13,7 +13,7 @@
 #include "script/standard.h"
 #include "util.h"
 
-#include <boost/shared_ptr.hpp>
+
 
 class CSuperblock;
 class CGovernanceTriggerManager;
