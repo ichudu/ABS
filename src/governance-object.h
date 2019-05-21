@@ -17,6 +17,7 @@
 #include "sync.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "bls/bls.h"
 
 #include <univalue.h>
 
@@ -261,6 +262,8 @@ public:
     void SetMasternodeOutpoint(const COutPoint& outpoint);
     bool Sign(const CKey& key, const CKeyID& keyID);
     bool CheckSignature(const CKeyID& keyID) const;
+    bool Sign(const CBLSSecretKey& key);
+    bool CheckSignature(const CBLSPublicKey& pubKey) const;
 
     std::string GetSignatureMessage() const;
     uint256 GetSignatureHash() const;

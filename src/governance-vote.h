@@ -9,6 +9,7 @@
 
 #include "key.h"
 #include "primitives/transaction.h"
+#include "bls/bls.h"
 
 #include <boost/lexical_cast.hpp>
 
@@ -100,6 +101,8 @@ public:
 
     bool Sign(const CKey& key, const CKeyID& keyID);
     bool CheckSignature(const CKeyID& keyID) const;
+    bool Sign(const CBLSSecretKey& key);
+    bool CheckSignature(const CBLSPublicKey& pubKey) const;
     bool IsValid(bool useVotingKey) const;
     void Relay(CConnman& connman) const;
 
