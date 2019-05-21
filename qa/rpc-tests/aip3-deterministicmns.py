@@ -59,7 +59,7 @@ class AIP3Test(BitcoinTestFramework):
         # Make sure we're below block 143 (which activates aip3)
         print("testing rejection of ProTx before aip3 activation")
         assert(self.nodes[0].getblockchaininfo()['blocks'] < 143)
-        aip3_deployment = self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']
+        aip3_deployment = self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']
         assert_equal(aip3_deployment['status'], 'defined')
 
         self.test_fail_create_protx(self.nodes[0])
@@ -101,10 +101,10 @@ class AIP3Test(BitcoinTestFramework):
         self.test_instantsend(10, 5)
 
         print("testing rejection of ProTx before aip3 activation (in states defined, started and locked_in)")
-        while self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']['status'] == 'defined':
+        while self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']['status'] == 'defined':
             self.nodes[0].generate(1)
         self.test_fail_create_protx(self.nodes[0])
-        while self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']['status'] == 'started':
+        while self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']['status'] == 'started':
             self.nodes[0].generate(1)
         self.test_fail_create_protx(self.nodes[0])
 
@@ -113,7 +113,7 @@ class AIP3Test(BitcoinTestFramework):
         before_aip3_mn = self.create_mn(self.nodes[0], mn_idx, 'mn-before-aip3')
         mn_idx += 1
 
-        while self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']['status'] == 'locked_in':
+        while self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']['status'] == 'locked_in':
             self.nodes[0].generate(1)
 
         # We have hundreds of blocks to sync here, give it more time
