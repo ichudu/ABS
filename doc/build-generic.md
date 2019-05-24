@@ -39,12 +39,21 @@ Building Absolute Core
 
 ```bash
 $ ./autogen.sh
-$ ./configure --prefix `pwd`/depends/<host>
+
+Pick one of the following configure setups: 
+$ ./configure --prefix `pwd`/depends/i686-pc-linux-gnu
+$ ./configure --prefix `pwd`/depends/x86_64-pc-linux-gnu
+$ ./configure --prefix `pwd`/depends/i686-w64-mingw32
+$ ./configure --prefix `pwd`/depends/x86_64-w64-mingw32
+$ ./configure --prefix `pwd`/depends/x86_64-apple-darwin11
+$ ./configure --prefix `pwd`/depends/arm-linux-gnueabihf
+$ ./configure --prefix `pwd`/depends/aarch64-linux-gnu
+
 $ make
 $ make install # optional
 ```
 
-Please replace `<host>` with your local system's `host-platform-triplet`. The following triplets are usually valid:
+The following triplets are usually valid, use the right one for your host compiler:
 - `i686-pc-linux-gnu` for Linux32
 - `x86_64-pc-linux-gnu` for Linux64
 - `i686-w64-mingw32` for Win32
