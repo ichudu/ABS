@@ -244,7 +244,7 @@ extern const char *GETBLOCKTXN;
  */
 extern const char *BLOCKTXN;
 
-// Dash message types
+// Absolute message types
 // NOTE: do NOT declare non-implmented here, we don't want them to be exposed to the outside
 // TODO: add description
 extern const char *TXLOCKREQUEST;
@@ -269,6 +269,8 @@ extern const char *MNGOVERNANCESYNC;
 extern const char *MNGOVERNANCEOBJECT;
 extern const char *MNGOVERNANCEOBJECTVOTE;
 extern const char *MNVERIFY;
+extern const char *GETMNLISTDIFF;
+extern const char *MNLISTDIFF;
 };
 
 /* Get a vector of all valid message types (see above) */

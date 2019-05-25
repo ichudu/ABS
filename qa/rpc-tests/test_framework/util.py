@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Bitcoin Core developers
-# Copyright (c) 2014-2017 The Dash Core developers
+# Copyright (c) 2014-2019 The Dash Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,7 +30,7 @@ from .authproxy import AuthServiceProxy, JSONRPCException
 COVERAGE_DIR = None
 
 # The maximum number of nodes a single test can spawn
-MAX_NODES = 8
+MAX_NODES = 15
 # Don't assign rpc or p2p ports lower than this
 PORT_MIN = 11000
 # The number of ports to "reserve" for p2p and rpc, each
