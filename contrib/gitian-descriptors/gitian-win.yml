@@ -31,7 +31,7 @@ files: []
 script: |
   WRAP_DIR=$HOME/wrapped
   HOSTS="i686-w64-mingw32 x86_64-w64-mingw32"
-  CONFIGFLAGS="--enable-reduce-exports --disable-bench --disable-gui-tests"
+  CONFIGFLAGS="--enable-reduce-exports --disable-miner --disable-bench --disable-gui-tests"
   FAKETIME_HOST_PROGS="ar ranlib nm windres strip objcopy"
   FAKETIME_PROGS="date makensis zip"
   HOST_CFLAGS="-O2 -g"
@@ -53,12 +53,15 @@ script: |
     export CCACHE_DIR=${GBUILD_PACKAGE_CACHE}/ccache
     # As we later wrap the gcc binaries, this is fast
     export CCACHE_COMPILERCHECK="content"
-    if [ -f ${GBUILD_PACKAGE_CACHE}/ccache.tar.gz ]; then
+    if [ -f ${GBUILD_PACKAGE_CACHE}/ccache.tar ]; then
       pushd ${GBUILD_PACKAGE_CACHE}
-      tar xzf ccache.tar.gz
-      rm ccache.tar.gz
+      tar xf ccache.tar
+      rm ccache.tar
       popd
     fi
+    # instead of compressing ccache.tar, we let ccache handle it by itself
+    # Otherwise we end up uncompressing/compressing a lot of cache files which we actually never use
+    export CCACHE_COMPRESS=1
   else
     CONFIGFLAGS="${CONFIGFLAGS} --disable-ccache"
   fi
@@ -131,9 +134,9 @@ script: |
   create_per-host_faketime_wrappers "2000-01-01 12:00:00"
   create_per-host_linker_wrapper "2000-01-01 12:00:00"
   export PATH=${WRAP_DIR}:${PATH}
+
+
   cd absolute
-  chmod 777 depends/config.sub
-  chmod 777 depends/config.guess
   BASEPREFIX=`pwd`/depends
   # Build dependencies for each host
   for i in $HOSTS; do
@@ -146,8 +149,10 @@ script: |
   create_per-host_faketime_wrappers "${REFERENCE_DATETIME}"
   create_per-host_linker_wrapper "${REFERENCE_DATETIME}"
   export PATH=${WRAP_DIR}:${PATH}
+
+
+
   # Create the release tarball using (arbitrarily) the first host
-  chmod 777 ./autogen.sh
   ./autogen.sh
   CONFIG_SITE=${BASEPREFIX}/`echo "${HOSTS}" | awk '{print $1;}'`/share/config.site ./configure --prefix=/
   make dist
@@ -202,7 +207,7 @@ script: |
   # Compress ccache (otherwise the assert file will get too huge)
   if [ "$CCACHE_DIR" != "" ]; then
     pushd ${GBUILD_PACKAGE_CACHE}
-    tar czf ccache.tar.gz ccache
+    tar cf ccache.tar ccache
     rm -rf ccache
     popd
   fi
