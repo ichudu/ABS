@@ -20,7 +20,7 @@ RUN pip3 install pyzmq # really needed?
 
 # absolute_hash
 RUN git clone https://github.com/absolute-community/absolute_hash
-RUN cd dash_hash && python3 setup.py install
+RUN cd absolute_hash && python3 setup.py install
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
