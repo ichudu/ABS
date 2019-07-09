@@ -68,11 +68,11 @@ script:
     - export TRAVIS_COMMIT_LOG=`git log --format=fuller -1`
     # Our scripts try to be Travis agnostic
     - $DOCKER_RUN_IN_BUILDER ./ci/build_depends.sh;
-    # Skip Absolute Core build if depends build take more than 20 mins.
-    - if [ $SECONDS -lt 1200 ]; then $DOCKER_RUN_IN_BUILDER ./ci/build_src.sh && export SRC_BUILT="true"; fi
+    # Skip Absolute Core build if depends build take more than 30 mins.
+    - if [ $SECONDS -lt 1800 ]; then $DOCKER_RUN_IN_BUILDER ./ci/build_src.sh && export SRC_BUILT="true"; fi
     - |
       if [ "$SRC_BUILT" = "true" ]; then
-        travis_wait 30 $DOCKER_RUN_IN_BUILDER ./ci/test_unittests.sh;
+        travis_wait 40 $DOCKER_RUN_IN_BUILDER ./ci/test_unittests.sh;
         $DOCKER_RUN_IN_BUILDER ./ci/test_integrationtests.sh;
         if [ "$DOCKER_BUILD" = "true" ]; then BUILD_DIR=build-ci/absolutecore-$BUILD_TARGET ./docker/build-docker.sh; fi;
       else
