@@ -254,7 +254,7 @@ First we need to log in as `root` to set up dependencies and make sure that our
 user can use the sudo command. Type/paste the following in the terminal:
 
 ```bash
-apt-get install git ruby sudo apt-cacher-ng qemu-utils debootstrap lxc python-cheetah parted kpartx bridge-utils make ubuntu-archive-keyring curl
+apt-get install git ruby sudo apt-cacher-ng qemu-utils debootstrap lxc python-cheetah parted kpartx bridge-utils make ubuntu-archive-keyring curl net-tools
 adduser debian sudo
 ```
 
@@ -307,15 +307,15 @@ Clone the git repositories for Absolute Core and Gitian.
 
 ```bash
 git clone https://github.com/devrandom/gitian-builder.git
-git clone https://github.com/absolute-community/absolute
-git clone https://github.com/absolute-community//gitian.signatures.git
+git clone https://github.com/absolute-community/absolute.git
+git clone https://github.com/absolute-community/gitian.signatures.git
 ```
 
 Setting up the Gitian image
 -------------------------
 
 Gitian needs a virtual image of the operating system to build in.
-Currently this is Ubuntu Trusty x86_64.
+Currently this is Ubuntu Bionic x86_64.
 This image will be copied and used every time that a build is started to
 make sure that the build is deterministic.
 Creating the image will take a while, but only has to be done once.
