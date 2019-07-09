@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
 # Python stuff
 RUN pip3 install pyzmq # really needed?
 
-# dash_hash
-RUN git clone https://github.com/dashpay/dash_hash
+# absolute_hash
+RUN git clone https://github.com/absolute-community/absolute_hash
 RUN cd dash_hash && python3 setup.py install
 
 ARG USER_ID=1000
