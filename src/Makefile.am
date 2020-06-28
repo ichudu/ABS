@@ -446,7 +446,7 @@ libabsolute_util_a_SOURCES = \
 
 if GLIBC_BACK_COMPAT
 libabsolute_util_a_SOURCES += compat/glibc_compat.cpp
-AM_LDFLAGS += -Wl,--wrap=log2f -Wl,--wrap=__divmoddi4
+AM_LDFLAGS += $(COMPAT_LDFLAGS)
 endif
 
 # cli: shared between absolute-cli and absolute-qt
