@@ -2,6 +2,8 @@ UNIX BUILD NOTES
 ====================
 Some notes on how to build Absolute Core in Unix.
 
+(for OpenBSD specific instructions, see [build-openbsd.md](build-openbsd.md))
+
 Base build dependencies
 -----------------------
 Building the dependencies and Absolute Core requires some essential build tools and libraries to be installed before.

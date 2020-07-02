@@ -108,7 +108,7 @@ class AIP3Test(BitcoinTestFramework):
             self.nodes[0].generate(1)
         self.test_fail_create_protx(self.nodes[0])
 
-        # prepare mn which should still be accepted later when aip3 activates (because it is funded before final activation)
+        # prepare mn which should still be accepted later when aip3 activates
         print("creating collateral for mn-before-aip3")
         before_aip3_mn = self.create_mn(self.nodes[0], mn_idx, 'mn-before-aip3')
         mn_idx += 1
@@ -140,58 +140,89 @@ class AIP3Test(BitcoinTestFramework):
             time.sleep(1)
 
         print("testing if we can start a mn which was created before aip3 activation")
-        mns.append(before_aip3_mn)
-        self.write_mnconf(mns + [after_aip3_mn])
+        self.write_mnconf(mns + [before_aip3_mn, after_aip3_mn])
         self.restart_controller_node()
         self.force_finish_mnsync(self.nodes[0])
 
         print("start MN %s" % before_aip3_mn.alias)
+        mns.append(before_aip3_mn)
         self.start_mn(before_aip3_mn)
         self.wait_for_sporks()
         self.force_finish_mnsync_list(before_aip3_mn.node)
         self.start_alias(self.nodes[0], before_aip3_mn.alias)
 
-        self.wait_for_mnlists(mns, True, False)
+        self.wait_for_mnlists(mns)
         self.wait_for_mnlists_same()
 
-        # Test if nodes deny creating new non-ProTx MNs now
-        print("testing if MN start fails when using collateral which was created after aip3 activation")
-        self.start_alias(self.nodes[0], after_aip3_mn.alias, should_fail=True)
+        # Test if nodes still allow creating new non-ProTx MNs now
+        print("testing if MN start succeeds when using collateral which was created after aip3 activation")
+        print("start MN %s" % after_aip3_mn.alias)
+        mns.append(after_aip3_mn)
+        self.start_mn(after_aip3_mn)
+        self.wait_for_sporks()
+        self.force_finish_mnsync_list(after_aip3_mn.node)
+        self.start_alias(self.nodes[0], after_aip3_mn.alias)
+
+        self.wait_for_mnlists(mns)
+        self.wait_for_mnlists_same()
 
         first_upgrade_count = 5
+        mns_after_upgrade = []
+        mns_to_restart = []
+        mns_to_restart_later = []
+        mns_protx = []
         print("upgrading first %d MNs to use ProTx (but not deterministic MN lists)" % first_upgrade_count)
         for i in range(first_upgrade_count):
-            mns[i] = self.upgrade_mn_protx(mns[i])
+            # let a few of the protx MNs refer to the old collaterals
+            fund = (i % 2) == 0
+            mns[i] = self.upgrade_mn_protx(mns[i], fund)
             self.nodes[0].generate(1)
+
+            if fund:
+                # collateral has moved, so we need to start it again
+                mns_to_restart.append(mns[i])
+            else:
+                # collateral has not moved, so it should still be in the masternode list even after upgrade
+                mns_after_upgrade.append(mns[i])
+                mns_to_restart_later.append(mns[i])
+            mns_protx.append(mns[i])
+        for i in range(first_upgrade_count, len(mns)):
+            mns_after_upgrade.append(mns[i])
         self.write_mnconf(mns)
 
-        print("wait for upgraded MNs to disappear from MN lists (their collateral was spent)")
-        self.wait_for_mnlists(mns, True, False, check=True)
+        print("wait for freshly funded and upgraded MNs to disappear from MN lists (their collateral was spent)")
+        self.wait_for_mnlists(mns_after_upgrade, check=True)
         self.wait_for_mnlists_same()
 
         print("restarting controller and upgraded MNs")
         self.restart_controller_node()
         self.force_finish_mnsync_list(self.nodes[0])
-        for mn in mns:
-            if mn.is_protx:
-                print("restarting MN %s" % mn.alias)
-                self.stop_node(mn.idx)
-                self.start_mn(mn)
-                self.force_finish_mnsync_list(mn.node)
+        for mn in mns_to_restart:
+            print("restarting MN %s" % mn.alias)
+            self.stop_node(mn.idx)
+            self.start_mn(mn)
+            self.force_finish_mnsync_list(mn.node)
         print('start-alias on upgraded nodes')
-        for mn in mns:
-            if mn.is_protx:
-                self.start_alias(self.nodes[0], mn.alias)
+        for mn in mns_to_restart:
+            self.start_alias(self.nodes[0], mn.alias)
 
         print("wait for upgraded MNs to appear in MN list")
-        self.wait_for_mnlists(mns, True, True)
+        self.wait_for_mnlists(mns)
         self.wait_for_mnlists_same()
 
         print("testing MN payment votes (with mixed ProTx and legacy nodes)")
         self.test_mn_votes(10, test_enforcement=True)
 
         print("testing instant send (with mixed ProTx and legacy nodes)")
-        self.test_instantsend(10, 5)
+        self.test_instantsend(10, 3)
+
+        # We still need to restart them as otherwise they won't have the BLS operator key loaded
+        print("restart upgraded nodes which refer to old collaterals")
+        for mn in mns_to_restart_later:
+            print("restarting MN %s" % mn.alias)
+            self.stop_node(mn.idx)
+            self.start_mn(mn)
+            self.force_finish_mnsync_list(mn.node)
 
         print("activating spork15")
         height = self.nodes[0].getblockchaininfo()['blocks']
@@ -203,7 +234,7 @@ class AIP3Test(BitcoinTestFramework):
         for i in range(spork15_offset - 1):
             self.nodes[0].generate(1)
             self.sync_all()
-            self.wait_for_mnlists(mns, True, True)
+            self.wait_for_mnlists(mns)
             self.wait_for_mnlists_same()
 
         print("mining final block which should switch network to deterministic lists")
@@ -214,7 +245,7 @@ class AIP3Test(BitcoinTestFramework):
         ##### From now on, we don't wait for mnlists to become correct anymore, we always assert that they are correct immediately
 
         print("assert that not upgraded MNs disappeared from MN list")
-        self.assert_mnlists(mns, False, True)
+        self.assert_mnlists(mns_protx)
 
         # enable enforcement and keep it on from now on
         self.nodes[0].spork('SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT', 0)
@@ -222,41 +253,42 @@ class AIP3Test(BitcoinTestFramework):
 
         print("test that MNs disappear from the list when the ProTx collateral is spent")
         spend_mns_count = 3
-        mns_tmp = [] + mns
+        mns_tmp = [] + mns_protx
         dummy_txins = []
         for i in range(spend_mns_count):
-            dummy_txin = self.spend_mn_collateral(mns[i], with_dummy_input_output=True)
+            dummy_txin = self.spend_mn_collateral(mns_protx[i], with_dummy_input_output=True)
             dummy_txins.append(dummy_txin)
             self.nodes[0].generate(1)
             self.sync_all()
-            mns_tmp.remove(mns[i])
-            self.assert_mnlists(mns_tmp, False, True)
+            mns_tmp.remove(mns_protx[i])
+            self.assert_mnlists(mns_tmp)
 
         print("test that reverting the blockchain on a single node results in the mnlist to be reverted as well")
         for i in range(spend_mns_count):
             self.nodes[0].invalidateblock(self.nodes[0].getbestblockhash())
-            mns_tmp.append(mns[spend_mns_count - 1 - i])
-            self.assert_mnlist(self.nodes[0], mns_tmp, False, True)
+            mns_tmp.append(mns_protx[spend_mns_count - 1 - i])
+            self.assert_mnlist(self.nodes[0], mns_tmp)
 
         print("cause a reorg with a double spend and check that mnlists are still correct on all nodes")
         self.mine_double_spend(self.nodes[0], dummy_txins, self.nodes[0].getnewaddress(), use_mnmerkleroot_from_tip=True)
         self.nodes[0].generate(spend_mns_count)
         self.sync_all()
-        self.assert_mnlists(mns_tmp, False, True)
+        self.assert_mnlists(mns_tmp)
 
         print("upgrade remaining MNs to ProTx")
         for i in range(first_upgrade_count, len(mns)):
-            mns[i] = self.upgrade_mn_protx(mns[i])
+            mns[i] = self.upgrade_mn_protx(mns[i], True)
             mn = mns[i]
             self.nodes[0].generate(1)
+            mns_protx.append(mn)
             print("restarting MN %s" % mn.alias)
             self.stop_node(mn.idx)
             self.start_mn(mn)
             self.sync_all()
             self.force_finish_mnsync(mn.node)
-            self.assert_mnlists(mns, False, True)
+            self.assert_mnlists(mns_protx)
 
-        self.assert_mnlists(mns, False, True)
+        self.assert_mnlists(mns_protx)
 
         print("test mn payment enforcement with deterministic MNs")
         for i in range(20):
@@ -266,11 +298,89 @@ class AIP3Test(BitcoinTestFramework):
             self.sync_all()
 
         print("testing instant send with deterministic MNs")
-        self.test_instantsend(20, 5)
+        self.test_instantsend(10, 5, timeout=20)
 
         print("testing ProUpServTx")
-        for mn in mns:
+        for mn in mns_protx:
             self.test_protx_update_service(mn)
+
+        print("testing P2SH/multisig for payee addresses")
+        multisig = self.nodes[0].createmultisig(1, [self.nodes[0].getnewaddress(), self.nodes[0].getnewaddress()])['address']
+        self.update_mn_payee(mns_protx[0], multisig)
+        found_multisig_payee = False
+        for i in range(len(mns_protx)):
+            bt = self.nodes[0].getblocktemplate()
+            expected_payee = bt['masternode'][0]['payee']
+            expected_amount = bt['masternode'][0]['amount']
+            self.nodes[0].generate(1)
+            self.sync_all()
+            if expected_payee == multisig:
+                block = self.nodes[0].getblock(self.nodes[0].getbestblockhash())
+                cbtx = self.nodes[0].getrawtransaction(block['tx'][0], 1)
+                for out in cbtx['vout']:
+                    if 'addresses' in out['scriptPubKey']:
+                        if expected_payee in out['scriptPubKey']['addresses'] and out['valueSat'] == expected_amount:
+                            found_multisig_payee = True
+        assert(found_multisig_payee)
+
+        print("testing reusing of collaterals for replaced MNs")
+        for i in range(0, 5):
+            mn = mns_protx[i]
+            # a few of these will actually refer to old ProRegTx internal collaterals,
+            # which should work the same as external collaterals
+            mn = self.create_mn_protx(self.nodes[0], mn.idx, 'mn-protx-%d' % mn.idx, mn.collateral_txid, mn.collateral_vout)
+            mns_protx[i] = mn
+            self.nodes[0].generate(1)
+            self.sync_all()
+            self.assert_mnlists(mns_protx)
+            print("restarting MN %s" % mn.alias)
+            self.stop_node(mn.idx)
+            self.start_mn(mn)
+            self.sync_all()
+
+        print("testing instant send with replaced MNs")
+        self.test_instantsend(10, 3, timeout=20)
+
+        print("testing simple PoSe")
+        self.assert_mnlists(mns_protx)
+        self.nodes[0].spork('SPORK_17_QUORUM_DKG_ENABLED', 0)
+        self.wait_for_sporks()
+
+        height = self.nodes[0].getblockcount()
+        skip_count = 24 - (height % 24)
+        if skip_count != 0:
+            self.nodes[0].generate(skip_count)
+
+        for i in range(len(mns_protx), len(mns_protx) - 2, -1):
+            mn = mns_protx[len(mns_protx) - 1]
+            mns_protx.remove(mn)
+            self.stop_node(mn.idx)
+            self.nodes.remove(mn.node)
+
+            punished = False
+            banned = False
+            t = time.time()
+            while (not punished or not banned) and (time.time() - t) < 120:
+                time.sleep(1)
+
+                # 10 blocks until we can mine the dummy commitment
+                for j in range(10):
+                    self.nodes[0].generate(1)
+                    self.sync_all()
+                    time.sleep(0.5)
+
+                info = self.nodes[0].protx('info', mn.protx_hash)
+                if not punished:
+                    if info['state']['PoSePenalty'] > 0:
+                        punished = True
+                if not banned:
+                    if info['state']['PoSeBanHeight'] != -1:
+                        banned = True
+
+                # Fast-forward to next DKG session
+                self.nodes[0].generate(24 - (self.nodes[0].getblockcount() % 24))
+                self.sync_all()
+            assert(punished and banned)
 
     def create_mn(self, node, idx, alias):
         mn = Masternode()
@@ -297,7 +407,7 @@ class AIP3Test(BitcoinTestFramework):
 
         return mn
 
-    def create_mn_protx(self, node, idx, alias):
+    def create_mn_protx_base(self, node, idx, alias, legacy_mn_key):
         mn = Masternode()
         mn.idx = idx
         mn.alias = alias
@@ -305,22 +415,45 @@ class AIP3Test(BitcoinTestFramework):
         mn.p2p_port = p2p_port(mn.idx)
 
         blsKey = node.bls('generate')
+        mn.fundsAddr = node.getnewaddress()
         mn.ownerAddr = node.getnewaddress()
         mn.operatorAddr = blsKey['public']
         mn.votingAddr = mn.ownerAddr
-        mn.legacyMnkey = node.masternode('genkey')
+        mn.legacyMnkey = node.masternode('genkey') if legacy_mn_key is None else legacy_mn_key
         mn.blsMnkey = blsKey['secret']
+
+        return mn
+
+    # create a protx MN and also fund it (using collateral inside ProRegTx)
+    def create_mn_protx_fund(self, node, idx, alias, legacy_mn_key=None):
+        mn = self.create_mn_protx_base(node, idx, alias, legacy_mn_key=legacy_mn_key)
+        node.sendtoaddress(mn.fundsAddr, 1000.001)
+
         mn.collateral_address = node.getnewaddress()
 
-        mn.collateral_txid = node.protx('register', mn.collateral_address, '1000', '127.0.0.1:%d' % mn.p2p_port, '0', mn.ownerAddr, mn.operatorAddr, mn.votingAddr, 0, mn.collateral_address)
-        rawtx = node.getrawtransaction(mn.collateral_txid, 1)
-
+        mn.protx_hash = node.protx('register_fund', mn.collateral_address, '127.0.0.1:%d' % mn.p2p_port, mn.ownerAddr, mn.operatorAddr, mn.votingAddr, 0, mn.collateral_address, mn.fundsAddr)
+        mn.collateral_txid = mn.protx_hash
         mn.collateral_vout = -1
+
+        rawtx = node.getrawtransaction(mn.collateral_txid, 1)
         for txout in rawtx['vout']:
             if txout['value'] == Decimal(1000):
                 mn.collateral_vout = txout['n']
                 break
         assert(mn.collateral_vout != -1)
+
+        return mn
+
+    # create a protx MN which refers to an existing collateral
+    def create_mn_protx(self, node, idx, alias, collateral_txid, collateral_vout, legacy_mn_key=None):
+        mn = self.create_mn_protx_base(node, idx, alias, legacy_mn_key=legacy_mn_key)
+        node.sendtoaddress(mn.fundsAddr, 0.001)
+
+        mn.rewards_address = node.getnewaddress()
+
+        mn.protx_hash = node.protx('register', collateral_txid, collateral_vout, '127.0.0.1:%d' % mn.p2p_port, mn.ownerAddr, mn.operatorAddr, mn.votingAddr, 0, mn.rewards_address, mn.fundsAddr)
+        mn.collateral_txid = collateral_txid
+        mn.collateral_vout = collateral_vout
 
         return mn
 
@@ -339,23 +472,35 @@ class AIP3Test(BitcoinTestFramework):
     def spend_mn_collateral(self, mn, with_dummy_input_output=False):
         return self.spend_input(mn.collateral_txid, mn.collateral_vout, 1000, with_dummy_input_output)
 
-    def upgrade_mn_protx(self, mn):
-        self.spend_mn_collateral(mn)
-        mn = self.create_mn_protx(self.nodes[0], mn.idx, 'mn-protx-%d' % mn.idx)
+    def upgrade_mn_protx(self, mn, refund):
+        if refund:
+            self.spend_mn_collateral(mn)
+            mn = self.create_mn_protx_fund(self.nodes[0], mn.idx, 'mn-protx-%d' % mn.idx, legacy_mn_key=mn.legacyMnkey)
+        else:
+            mn = self.create_mn_protx(self.nodes[0], mn.idx, 'mn-protx-%d' % mn.idx, mn.collateral_txid, mn.collateral_vout, legacy_mn_key=mn.legacyMnkey)
         return mn
 
+    def update_mn_payee(self, mn, payee):
+        self.nodes[0].sendtoaddress(mn.fundsAddr, 0.001)
+        self.nodes[0].protx('update_registrar', mn.protx_hash, '', '', payee, mn.fundsAddr)
+        self.nodes[0].generate(1)
+        self.sync_all()
+        info = self.nodes[0].protx('info', mn.protx_hash)
+        assert(info['state']['payoutAddress'] == payee)
+
     def test_protx_update_service(self, mn):
-        self.nodes[0].protx('update_service', mn.collateral_txid, '127.0.0.2:%d' % mn.p2p_port, '0', mn.blsMnkey)
+        self.nodes[0].sendtoaddress(mn.fundsAddr, 0.001)
+        self.nodes[0].protx('update_service', mn.protx_hash, '127.0.0.2:%d' % mn.p2p_port, mn.blsMnkey, "", mn.fundsAddr)
         self.nodes[0].generate(1)
         self.sync_all()
         for node in self.nodes:
-            mn_info = node.masternode('info', mn.collateral_txid)
+            protx_info = node.protx('info', mn.protx_hash)
             mn_list = node.masternode('list')
-            assert_equal(mn_info['state']['addr'], '127.0.0.2:%d' % mn.p2p_port)
+            assert_equal(protx_info['state']['addr'], '127.0.0.2:%d' % mn.p2p_port)
             assert_equal(mn_list['%s-%d' % (mn.collateral_txid, mn.collateral_vout)]['address'], '127.0.0.2:%d' % mn.p2p_port)
 
         # undo
-        self.nodes[0].protx('update_service', mn.collateral_txid, '127.0.0.1:%d' % mn.p2p_port, '0', mn.blsMnkey)
+        self.nodes[0].protx('update_service', mn.protx_hash, '127.0.0.1:%d' % mn.p2p_port, mn.blsMnkey, "", mn.fundsAddr)
         self.nodes[0].generate(1)
 
     def force_finish_mnsync(self, node):
@@ -388,6 +533,15 @@ class AIP3Test(BitcoinTestFramework):
                 self.write_mnconf_line(mn, f)
 
     def start_alias(self, node, alias, should_fail=False):
+        # When generating blocks very fast, the logic in miner.cpp:UpdateTime might result in block times ahead of the real time
+        # This can easily accumulate to 30 seconds or more, which results in start-alias to fail as it expects the sigTime
+        # to be less or equal to the confirmation block time
+        # Solution is to sleep in this case.
+        lastblocktime = node.getblock(node.getbestblockhash())['time']
+        sleeptime = lastblocktime - time.time()
+        if sleeptime > 0:
+            time.sleep(sleeptime + 1) # +1 to be extra sure
+
         start_result = node.masternode('start-alias', alias)
         if not should_fail:
             assert_equal(start_result, {'result': 'successful', 'alias': alias})
@@ -452,7 +606,7 @@ class AIP3Test(BitcoinTestFramework):
         if test_enforcement:
             self.nodes[0].spork('SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT', 4070908800)
 
-    def test_instantsend(self, tx_count, repeat):
+    def test_instantsend(self, tx_count, repeat, timeout=20):
         self.nodes[0].spork('SPORK_2_INSTANTSEND_ENABLED', 0)
         self.wait_for_sporks()
 
@@ -482,7 +636,9 @@ class AIP3Test(BitcoinTestFramework):
                         break
                 to_address = to_node.getnewaddress()
                 txid = from_node.instantsendtoaddress(to_address, 0.01)
-                self.wait_for_instant_lock(to_node, to_node_idx, txid)
+                for node in self.nodes:
+                    if node is not None:
+                        self.wait_for_instant_lock(node, to_node_idx, txid, timeout=timeout)
             self.nodes[0].generate(6)
             self.sync_all()
 
@@ -490,10 +646,11 @@ class AIP3Test(BitcoinTestFramework):
         st = time.time()
         while time.time() < st + timeout:
             try:
-                tx = node.gettransaction(txid)
+                tx = node.getrawtransaction(txid, 1)
             except:
-                continue
+                tx = None
             if tx is None:
+                time.sleep(0.5)
                 continue
             if tx['instantlock']:
                 return
@@ -510,30 +667,29 @@ class AIP3Test(BitcoinTestFramework):
             time.sleep(0.5)
         raise AssertionError("wait_for_winners for height {} timed out: {}".format(height, node.masternode('winners')))
 
-    def wait_for_mnlists(self, mns, include_legacy, include_protx, timeout=30, check=False):
+    def wait_for_mnlists(self, mns, timeout=30, check=False):
         for node in self.nodes:
-            self.wait_for_mnlist(node, mns, include_legacy, include_protx, timeout, check=check)
+            self.wait_for_mnlist(node, mns, timeout, check=check)
 
-    def wait_for_mnlist(self, node, mns, include_legacy, include_protx, timeout=30, check=False):
+    def wait_for_mnlist(self, node, mns, timeout=30, check=False):
         st = time.time()
         while time.time() < st + timeout:
             if check:
                 node.masternode('check')
-            if self.compare_mnlist(node, mns, include_legacy, include_protx):
+            if self.compare_mnlist(node, mns):
                 return
             time.sleep(0.5)
         raise AssertionError("wait_for_mnlist timed out")
 
-    def assert_mnlists(self, mns, include_legacy, include_protx):
+    def assert_mnlists(self, mns):
         for node in self.nodes:
-            self.assert_mnlist(node, mns, include_legacy, include_protx)
+            self.assert_mnlist(node, mns)
 
-    def assert_mnlist(self, node, mns, include_legacy, include_protx):
-        if not self.compare_mnlist(node, mns, include_legacy, include_protx):
+    def assert_mnlist(self, node, mns):
+        if not self.compare_mnlist(node, mns):
             expected = []
             for mn in mns:
-                if (mn.is_protx and include_protx) or (not mn.is_protx and include_legacy):
-                    expected.append('%s-%d' % (mn.collateral_txid, mn.collateral_vout))
+                expected.append('%s-%d' % (mn.collateral_txid, mn.collateral_vout))
             print('mnlist: ' + str(node.masternode('list', 'status')))
             print('expected: ' + str(expected))
             raise AssertionError("mnlists does not match provided mns")
@@ -554,26 +710,13 @@ class AIP3Test(BitcoinTestFramework):
                 return False
         return True
 
-    def compare_mnlist(self, node, mns, include_legacy, include_protx):
+    def compare_mnlist(self, node, mns):
         mnlist = node.masternode('list', 'status')
         for mn in mns:
             s = '%s-%d' % (mn.collateral_txid, mn.collateral_vout)
             in_list = s in mnlist
-
-            if mn.is_protx:
-                if include_protx:
-                    if not in_list:
-                        return False
-                else:
-                    if in_list:
-                        return False
-            else:
-                if include_legacy:
-                    if not in_list:
-                        return False
-                else:
-                    if in_list:
-                        return False
+            if not in_list:
+                return False
             mnlist.pop(s, None)
         if len(mnlist) != 0:
             return False
@@ -596,16 +739,20 @@ class AIP3Test(BitcoinTestFramework):
 
     def test_fail_create_protx(self, node):
         # Try to create ProTx (should still fail)
+        fund_address = node.getnewaddress()
         address = node.getnewaddress()
+        node.sendtoaddress(fund_address, 1000.001) # +0.001 for fees
         key = node.getnewaddress()
         blsKey = node.bls('generate')
-        assert_raises_jsonrpc(None, "bad-tx-type", node.protx, 'register', address, '1000', '127.0.0.1:10000', '0', key, blsKey['public'], key, 0, address)
+        assert_raises_jsonrpc(None, "bad-tx-type", node.protx, 'register_fund', address, '127.0.0.1:10000', key, blsKey['public'], key, 0, address, fund_address)
 
     def test_success_create_protx(self, node):
+        fund_address = node.getnewaddress()
         address = node.getnewaddress()
+        txid = node.sendtoaddress(fund_address, 1000.001) # +0.001 for fees
         key = node.getnewaddress()
         blsKey = node.bls('generate')
-        txid = node.protx('register', address, '1000', '127.0.0.1:10000', '0', key, blsKey['public'], key, 0, address)
+        node.protx('register_fund', address, '127.0.0.1:10000', key, blsKey['public'], key, 0, address, fund_address)
         rawtx = node.getrawtransaction(txid, 1)
         self.mine_double_spend(node, rawtx['vin'], address, use_mnmerkleroot_from_tip=True)
         self.sync_all()
@@ -684,7 +831,7 @@ class AIP3Test(BitcoinTestFramework):
 
         # We can't really use this one as it would result in invalid merkle roots for masternode lists
         if len(bt['coinbase_payload']) != 0:
-            cbtx = FromHex(CCbTx(), bt['coinbase_payload'])
+            cbtx = FromHex(CCbTx(version=1), bt['coinbase_payload'])
             if use_mnmerkleroot_from_tip:
                 if 'cbTx' in tip_block:
                     cbtx.merkleRootMNList = int(tip_block['cbTx']['merkleRootMNList'], 16)
@@ -698,6 +845,13 @@ class AIP3Test(BitcoinTestFramework):
 
         block = create_block(int(tip_hash, 16), coinbase)
         block.vtx += vtx
+
+        # Add quorum commitments from template
+        for tx in bt['transactions']:
+            tx2 = FromHex(CTransaction(), tx['data'])
+            if tx2.nType == 6:
+                block.vtx.append(tx2)
+
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
         result = node.submitblock(ToHex(block))

@@ -3,7 +3,7 @@ $(package)_version=3.7.1
 $(package)_download_path=https://github.com/ccache/ccache/releases/download/v$($(package)_version)
 $(package)_file_name=ccache-$($(package)_version).tar.bz2
 $(package)_sha256_hash=1c6501d5bd01952f5535c3f11ca774aedf4711e373a7bea7e0b1f487f0789b19
-
+https://github.com/ccache/ccache/releases/download/v3.7.1/ccache-3.7.1.tar.bz2
 define $(package)_set_vars
 $(package)_config_opts=
 endef

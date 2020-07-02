@@ -207,8 +207,9 @@ MASTERNODE_COLLATERAL = 1000
 
 
 class MasternodeInfo:
-    def __init__(self, key, collateral_id, collateral_out):
+    def __init__(self, key, blsKey, collateral_id, collateral_out):
         self.key = key
+        self.blsKey = blsKey
         self.collateral_id = collateral_id
         self.collateral_out = collateral_out
 
@@ -226,7 +227,7 @@ class DashTestFramework(BitcoinTestFramework):
 
     def create_simple_node(self):
         idx = len(self.nodes)
-        args = ["-debug"] + self.extra_args
+        args = self.extra_args
         self.nodes.append(start_node(idx, self.options.tmpdir,
                                      args))
         for i in range(0, idx):
@@ -238,6 +239,7 @@ class DashTestFramework(BitcoinTestFramework):
     def prepare_masternodes(self):
         for idx in range(0, self.mn_count):
             key = self.nodes[0].masternode("genkey")
+            blsKey = self.nodes[0].bls('generate')['secret']
             address = self.nodes[0].getnewaddress()
             txid = self.nodes[0].sendtoaddress(address, MASTERNODE_COLLATERAL)
             txrow = self.nodes[0].getrawtransaction(txid, True)
@@ -248,7 +250,7 @@ class DashTestFramework(BitcoinTestFramework):
                     collateral_vout = vout_idx
             self.nodes[0].lockunspent(False,
                                       [{"txid": txid, "vout": collateral_vout}])
-            self.mninfo.append(MasternodeInfo(key, txid, collateral_vout))
+            self.mninfo.append(MasternodeInfo(key, blsKey, txid, collateral_vout))
 
     def write_mn_config(self):
         conf = self.get_mnconf_file()
@@ -262,8 +264,9 @@ class DashTestFramework(BitcoinTestFramework):
 
     def create_masternodes(self):
         for idx in range(0, self.mn_count):
-            args = ['-debug=masternode', '-externalip=127.0.0.1', '-masternode=1',
-                    '-masternodeprivkey=%s' % self.mninfo[idx].key] + self.extra_args
+            args = ['-externalip=127.0.0.1', '-masternode=1',
+                    '-masternodeprivkey=%s' % self.mninfo[idx].key,
+                    '-masternodeblsprivkey=%s' % self.mninfo[idx].blsKey] + self.extra_args
             self.nodes.append(start_node(idx + 1, self.options.tmpdir, args))
             for i in range(0, idx + 1):
                 connect_nodes(self.nodes[i], idx + 1)
@@ -271,7 +274,7 @@ class DashTestFramework(BitcoinTestFramework):
     def setup_network(self):
         self.nodes = []
         # create faucet node for collateral and transactions
-        args = ["-debug"] + self.extra_args
+        args = self.extra_args
         self.nodes.append(start_node(0, self.options.tmpdir, args))
         required_balance = MASTERNODE_COLLATERAL * self.mn_count + 1
         while self.nodes[0].getbalance() < required_balance:
@@ -282,8 +285,7 @@ class DashTestFramework(BitcoinTestFramework):
         self.prepare_masternodes()
         self.write_mn_config()
         stop_node(self.nodes[0], 0)
-        args = ["-debug",
-                "-sporkkey=cP4EKFyJsHT39LDqgdcB43Y3YXjNyjb5Fuas1GQSeAtjnZWmZEQK"] + \
+        args = ["-sporkkey=cP4EKFyJsHT39LDqgdcB43Y3YXjNyjb5Fuas1GQSeAtjnZWmZEQK"] + \
                self.extra_args
         self.nodes[0] = start_node(0, self.options.tmpdir,
                                    args)
@@ -298,11 +300,10 @@ class DashTestFramework(BitcoinTestFramework):
         self.sync_all()
         set_mocktime(get_mocktime() + 1)
         set_node_times(self.nodes, get_mocktime())
-        sync_masternodes(self.nodes)
+        sync_masternodes(self.nodes, True)
         for i in range(1, self.mn_count + 1):
             res = self.nodes[0].masternode("start-alias", "mn%d" % i)
             assert (res["result"] == 'successful')
-        sync_masternodes(self.nodes)
         mn_info = self.nodes[0].masternodelist("status")
         assert (len(mn_info) == self.mn_count)
         for status in mn_info.values():
