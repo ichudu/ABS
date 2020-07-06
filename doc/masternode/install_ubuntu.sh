@@ -71,18 +71,18 @@ echo "Step 1 : Updating packages"
 {
 	echo "Step 2 : Downloading binaries - extract"
 	
-	if [ ! -f absolutecore-0.12.3.1-x86_64-linux-gnu.tar.gz ]; then
+	if [ ! -f absolutecore-0.12.3-x86_64-linux-gnu.tar.gz ]; then
 		echo "Dowloading..."
-		wget https://github.com/absolute-community/absolute/releases/download/v12.3.1/absolutecore-0.12.3.1-x86_64-linux-gnu.tar.gz -O absolutecore-0.12.3.1-x86_64-linux-gnu.tar.gz -q
+		wget https://github.com/absolute-community/absolute/releases/download/v12.3.1/absolutecore-0.12.3-x86_64-linux-gnu.tar.gz -O absolutecore-0.12.3-x86_64-linux-gnu.tar.gz -q
 	else
 		printWarning "File already exist"
 	fi
 
 	if [ ! -d Absolute ]; then
 		echo "Extracting"
-		tar -zxvf absolutecore-0.12.3.1-x86_64-linux-gnu.tar.gz &&
+		tar -zxvf absolutecore-0.12.3-x86_64-linux-gnu.tar.gz &&
 		echo "Rename daemon folder"
-		mv absolutecore-0.12.3.1/bin Absolute
+		mv absolutecore-0.12.3/bin Absolute
 		sudo ln -s $root_path/Absolute/absolute-cli /usr/local/bin/absolute-cli
 		sudo ln -s $root_path/Absolute/absoluted /usr/local/bin/absoluted
 	else
@@ -90,7 +90,7 @@ echo "Step 1 : Updating packages"
 	fi
 		printSuccess "Done"
 		
-} || {
+} || {absolutecore-0.12.3-x86_64-linux-gnu
 	printError "Fail"
 	exit 1
 }

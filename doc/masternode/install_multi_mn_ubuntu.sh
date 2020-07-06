@@ -12,7 +12,7 @@ abs_unit_file="absmn"
 
 # when new wallet release is published the next two lines needs to be updated
 wallet_ver="v12.3.1"
-wallet_file="absolutecore-0.12.3.1-x86_64-linux-gnu.tar.gz"
+wallet_file="absolutecore-0.12.3-x86_64-linux-gnu"
 
 wallet_url="https://github.com/absolute-community/absolute/releases/download/$wallet_ver"
 
@@ -112,6 +112,21 @@ printf "\n%s\n" "===== ABS multinode vps install ====="
 printf "\n%s" "Installed OS: $(cut -d':' -f2 <<< "$(lsb_release -d)")"
 printf "\n%s\n" "We are now in $(pwd) directory"
 printf "ABS nodes will be installed in curent path!\n\n"
+
+# check ubuntu version - we need 16.04	
+if [ -r /etc/os-release ]; then	
+	. /etc/os-release	
+	if [ "${VERSION_ID}" != "ubuntu" ] ; then	
+		echo "Script needs Ubuntu 16.04, exiting!"	
+		echo	
+		exit 1	
+	fi	
+else	
+	echo "Operating system is not Ubuntu 16.04, exiting!"	
+	echo	
+	exit 1	
+fi	
+
 
 # check syntax
 if [ $# == 0 ]; then
