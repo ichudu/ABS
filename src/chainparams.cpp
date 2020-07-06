@@ -284,27 +284,27 @@ public:
         strNetworkID = "test";
         consensus.nSubsidyHalvingInterval = 500; // Blocks per year
         consensus.nMasternodePaymentsStartBlock = 400; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
-        consensus.nMasternodePaymentsIncreaseBlock = 410; // increase after 250 blocks
-        consensus.nMasternodePaymentsIncreasePeriod = 10; // increase every 10 blocks
+        consensus.nMasternodePaymentsIncreaseBlock = 250; // increase after 6 weeks first
+        consensus.nMasternodePaymentsIncreasePeriod = 350; // increase every 4 weeks afterwards
         consensus.nInstantSendKeepLock = 6;
         consensus.nBudgetPaymentsStartBlock =450;
-        consensus.nBudgetPaymentsCycleBlocks = 100;
-        consensus.nBudgetPaymentsWindowBlocks = 50;
+        consensus.nBudgetPaymentsCycleBlocks = 150;
+        consensus.nBudgetPaymentsWindowBlocks = 100;
 
-        consensus.nSuperblockStartBlock = 100;
-        consensus.nSuperblockCycle = 100; // Superblocks can be issued hourly on testnet
+        consensus.nSuperblockStartBlock = 450;
+        consensus.nSuperblockCycle = 150; // Superblocks can be issued hourly on testnet
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
 
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x0000e585b5b736b3a33ae8999fa2d63e036fb42e56ea5b6e5eacf3b473dd4e6");
-        consensus.BIP65Height = 550; //
-        consensus.BIP66Height = 555; //
+        consensus.BIP65Height = 800; //
+        consensus.BIP66Height = 950; //
 
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 1 * 60 * 60; // Absolute: 1 day
-        consensus.nPowTargetSpacing = 0.1* 60; // Absolute: 1 minutes
+        consensus.nPowTargetSpacing = 1* 60; // Absolute: 1 minutes
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
         consensus.nPowDGWHeight = 100;
