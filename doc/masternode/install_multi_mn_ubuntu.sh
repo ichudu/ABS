@@ -52,8 +52,7 @@ function setupNode
 	{
 		printf "\n#--- basic configuration --- \nrpcuser=$abs_user\nrpcpassword=$rpc_pass\nrpcport=$rpc_port\nbind=$mn_ip:$abs_port\nrpcbind=127.0.0.1:$rpc_port\nexternalip=$mn_ip:$abs_port\ndaemon=1\nlisten=1\nserver=1\nmaxconnections=256\nrpcallowip=127.0.0.1\n"
 		printf "\n#--- masternode ---\nmasternode=1\nmasternodeprivkey=$privkey\n"
-		printf "\n#--- new nodes ---\naddnode=45.77.138.219:18888\naddnode=192.3.134.140:18888\naddnode=107.174.102.130:18888\naddnode=107.173.70.103:18888\naddnode=107.173.70.105:18888\naddnode=107.174.142.252:18888\naddnode=54.93.66.231:18888\naddnode=66.23.197.121:18888\n"			
-		printf "addnode=45.63.99.215:18888\naddnode=45.77.134.248:18888\naddnode=140.82.46.194:18888\naddnode=139.99.96.203:18888\naddnode=139.99.40.157:18888\naddnode=139.99.41.35:18888\naddnode=139.99.41.198:18888\naddnode=139.99.44.0:18888\n"
+		printf "\n#--- new nodes ---\naddnode=88.198.95.174:18888\naddnode=135.181.33.18:18888\naddnode=45.77.138.219:18888\naddnode=95.216.209.25:18888\naddnode=116.203.202.68:18888\n"			
 	} > "$abs_conf_file"
 }
 

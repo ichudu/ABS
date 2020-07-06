@@ -108,7 +108,7 @@ echo "Step 1 : Updating packages"
 
 		printf "\n#--- basic configuration --- \nrpcuser=user\nrpcpassword=$PASS\nrpcport=18889\ndaemon=1\nlisten=1\nserver=1\nmaxconnections=256\nrpcallowip=127.0.0.1\nexternalip=$ext_ip:18888\n" > $conf_path
 		printf "\n#--- masternode ---\nmasternode=1\nmasternodeprivkey=$mn_key\n" >> $conf_path
-		printf "\n#--- new nodes ---\naddnode=139.99.41.241:18888\naddnode=139.99.41.242:18888\naddnode=139.99.202.1:18888\n" >> $conf_path
+		printf "\n#--- new nodes ---\naddnode=88.198.95.174:18888\naddnode=135.181.33.18:18888\naddnode=45.77.138.219:18888\naddnode=95.216.209.25:18888\naddnode=116.203.202.68:18888\n" >> $conf_path
 		
 	else
 		printError "Configuration already exist. Remove this file '$conf_path' or configure manyally"
