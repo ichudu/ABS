@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef INSTANTX_H
@@ -27,15 +27,9 @@ extern CInstantSend instantsend;
     (1000/2900.0)**5 = 0.004875397277841433
 */
 
-// The INSTANTSEND_DEPTH is the "pseudo block depth" level assigned to locked
-// txs to indicate the degree of confidence in their eventual confirmation and
-// inability to be double-spent (adjustable via command line argument)
-static const int MIN_INSTANTSEND_DEPTH              = 0;
-static const int MAX_INSTANTSEND_DEPTH              = 60;
-/// Default number of "pseudo-confirmations" for an InstantSend tx
-static const int DEFAULT_INSTANTSEND_DEPTH          = 5;
+static const int MIN_INSTANTSEND_PROTO_VERSION      = 70211;
 
-static const int MIN_INSTANTSEND_PROTO_VERSION      = 70209;
+static const int MIN_INSTANTSEND_WITHOUT_FEE_PROTO_VERSION = 70211;
 
 /// For how long we are going to accept votes/locks
 /// after we saw the first one for a specific transaction
@@ -45,7 +39,6 @@ static const int INSTANTSEND_LOCK_TIMEOUT_SECONDS   = 15;
 static const int INSTANTSEND_FAILED_TIMEOUT_SECONDS = 60;
 
 extern bool fEnableInstantSend;
-extern int nInstantSendDepth;
 extern int nCompleteTXLocks;
 
 /**
@@ -54,6 +47,11 @@ extern int nCompleteTXLocks;
 class CInstantSend
 {
 private:
+    static const std::string SERIALIZATION_VERSION_STRING;
+    /// Automatic locks of "simple" transactions are only allowed
+    /// when mempool usage is lower than this threshold
+    static const double AUTO_IX_MEMPOOL_THRESHOLD;
+
     // Keep track of current block height
     int nCachedBlockHeight;
 
@@ -89,10 +87,38 @@ private:
     void UpdateLockedTransaction(const CTxLockCandidate& txLockCandidate);
     bool ResolveConflicts(const CTxLockCandidate& txLockCandidate);
 
-    bool IsInstantSendReadyToLock(const uint256 &txHash);
-
 public:
-    CCriticalSection cs_instantsend;
+    mutable CCriticalSection cs_instantsend;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        std::string strVersion;
+        if(ser_action.ForRead()) {
+            READWRITE(strVersion);
+        }
+        else {
+            strVersion = SERIALIZATION_VERSION_STRING;
+            READWRITE(strVersion);
+        }
+
+        READWRITE(mapLockRequestAccepted);
+        READWRITE(mapLockRequestRejected);
+        READWRITE(mapTxLockVotes);
+        READWRITE(mapTxLockVotesOrphan);
+        READWRITE(mapTxLockCandidates);
+        READWRITE(mapVotedOutpoints);
+        READWRITE(mapLockedOutpoints);
+        READWRITE(mapMasternodeOrphanVotes);
+        READWRITE(nCachedBlockHeight);
+
+        if(ser_action.ForRead() && (strVersion != SERIALIZATION_VERSION_STRING)) {
+            Clear();
+        }
+    }
+
+    void Clear();
 
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
@@ -114,8 +140,6 @@ public:
     bool IsLockedInstantSendTransaction(const uint256& txHash);
     /// Get the actual number of accepted lock signatures
     int GetTransactionLockSignatures(const uint256& txHash);
-    /// Get instantsend confirmations (only)
-    int GetConfirmations(const uint256 &nTXHash);
 
     /// Remove expired entries from maps
     void CheckAndRemove();
@@ -127,7 +151,15 @@ public:
     void UpdatedBlockTip(const CBlockIndex *pindex);
     void SyncTransaction(const CTransaction& tx, const CBlockIndex *pindex, int posInBlock);
 
-    std::string ToString();
+    std::string ToString() const;
+
+    void DoMaintenance() { CheckAndRemove(); }
+
+    /// checks if we can automatically lock "simple" transactions
+    static bool CanAutoLock();
+
+    /// flag of the AutoLock Bip9 activation
+    static std::atomic<bool> isAutoLockBip9Active;
 };
 
 /**
@@ -137,6 +169,9 @@ class CTxLockRequest
 {
 private:
     static const CAmount MIN_FEE            = 0.0001 * COIN;
+    /// If transaction has less or equal inputs than MAX_INPUTS_FOR_AUTO_IX,
+    /// it will be automatically locked
+    static const int MAX_INPUTS_FOR_AUTO_IX = 4;
 
 public:
     /// Warn for a large number of inputs to an IS tx - fees could be substantial
@@ -147,6 +182,7 @@ public:
 
     CTxLockRequest() : tx(MakeTransactionRef()) {}
     CTxLockRequest(const CTransaction& _tx) : tx(MakeTransactionRef(_tx)) {};
+    CTxLockRequest(const CTransactionRef& _tx) : tx(_tx) {};
 
     ADD_SERIALIZE_METHODS;
 
@@ -156,8 +192,11 @@ public:
     }
 
     bool IsValid() const;
-    CAmount GetMinFee() const;
+    CAmount GetMinFee(bool fForceMinFee) const;
     int GetMaxSignatures() const;
+
+    // checks if related transaction is "simple" to lock it automatically
+    bool IsSimple() const;
 
     const uint256 &GetHash() const {
         return tx->GetHash();
@@ -265,12 +304,23 @@ public:
     static const int SIGNATURES_REQUIRED        = 6;
     static const int SIGNATURES_TOTAL           = 10;
 
+    COutPointLock() {}
+
     COutPointLock(const COutPoint& outpointIn) :
         outpoint(outpointIn),
         mapMasternodeVotes()
         {}
 
     COutPoint GetOutpoint() const { return outpoint; }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(outpoint);
+        READWRITE(mapMasternodeVotes);
+        READWRITE(fAttacked);
+    }
 
     bool AddVote(const CTxLockVote& vote);
     std::vector<CTxLockVote> GetVotes() const;
@@ -292,6 +342,11 @@ private:
     int64_t nTimeCreated;
 
 public:
+    CTxLockCandidate() :
+        nConfirmedHeight(-1),
+        nTimeCreated(GetTime())
+    {}
+
     CTxLockCandidate(const CTxLockRequest& txLockRequestIn) :
         nConfirmedHeight(-1),
         nTimeCreated(GetTime()),
@@ -301,6 +356,16 @@ public:
 
     CTxLockRequest txLockRequest;
     std::map<COutPoint, COutPointLock> mapOutPointLocks;
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(txLockRequest);
+        READWRITE(mapOutPointLocks);
+        READWRITE(nTimeCreated);
+        READWRITE(nConfirmedHeight);
+    }
 
     uint256 GetHash() const { return txLockRequest.GetHash(); }
 

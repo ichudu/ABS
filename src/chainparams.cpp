@@ -1,7 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -38,7 +38,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     genesis.nBits    = nBits;
     genesis.nNonce   = nNonce;
     genesis.nVersion = nVersion;
-    
+
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
@@ -151,8 +151,8 @@ public:
         consensus.nMasternodeMinimumConfirmations = 15;
         consensus.BIP34Height = 0;
         consensus.BIP34Hash = uint256S("0x00000de52875a68d7bf6a5bb5ad1b89fd7df4d67a9603669327949923dc74d7e");
-        consensus.BIP65Height = 390000; 
-        consensus.BIP66Height = 395000; 
+        consensus.BIP65Height = 390000;
+        consensus.BIP66Height = 395000;
         consensus.DIP0001Height = 450000;
         consensus.powLimit = uint256S("00000fffff000000000000000000000000000000000000000000000000000000");
         consensus.nPowTargetTimespan = 7.5 * 60; // 5 blocks
@@ -184,6 +184,13 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 1561680000; // Friday, 28-Jun-19
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nWindowSize = 4032;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nThreshold = 3226; // 80% of 4032
+
+        // Deployment of InstantSend autolocks
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].bit = 4;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nStartTime = 1533945600; // Aug 11th, 2018
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nTimeout = 1565481600; // Aug 11th, 2020
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nWindowSize = 4032;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nThreshold = 3226; // 80% of 4032
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100000");
@@ -220,7 +227,7 @@ public:
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,23);
         // Absolute script addresses start with 's'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,125);
-        // Absolute private keys start with 'm'
+        // Absolute private keys start with 'h'
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,110);
         // Absolute BIP32 pubkeys start with 'xpub' (Bitcoin defaults)
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x88)(0xB2)(0x1E).convert_to_container<std::vector<unsigned char> >();
@@ -235,13 +242,16 @@ public:
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
+        fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = false;
         fAllowMultipleAddressesFromGroup = false;
         fAllowMultiplePorts = false;
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
-        strSporkPubKey = "04ef78a6e3c69ce24e01f929bcfff56844320c78f840b4febcf21d634e3951d213c94c4d7830f6d8a987fd04ad82982efb85e471b763b13841bc93f427929302cf";
+
+        vSporkAddresses = {"AYZX23zmfNQgCZtzq7JsWHRKKyuzzxYHfD"};
+        nMinSporkKeys = 1;
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -251,15 +261,21 @@ public:
             (  250000, uint256S("0x00000000000640d8897addd4200209b6dd754aa3ca1f39857f8f03f36a44cc02"))
             (  300000, uint256S("0x00000000000abec2c4fe6aec36d3f37026df8ed8817789a43278392092fe9d1a"))
             (  350400, uint256S("0x0000000000056195689db2edb979305163b7ed88c1e7ce8875bd2b5feb4c432d"))
-                
+			(  400000, uint256S("0x00000000000c0e8ce3c39cc777ad1e02b23ad5b4dc8eac6c3ea0cd0e742ce2bf"))
+			(  450000, uint256S("0x0000000001abd905352d4394804c249add2842fb4f4ff72c5d4bce3c16644c0a"))
+			(  500000, uint256S("0x000000000c65d825e79473571c04e3de2c94d9c0c9abbbc78b8849c2e6bcf48e"))
+			(  550000, uint256S("0x00000000003b29d12245a3347521ecfb8206a54846a3177f175d5d93c7bd2cc4"))
+			(  600000, uint256S("0x00000000001398fddff3d3618ecc9c5a5821dfc9427602b4bacd0ef83e75e5c6"))
+			(  650000, uint256S("0x00000000000509ff01583ea601b6e72cb2f0c68bd7b9583614da872b5a613c6a"))
+
 	};
 
         chainTxData = ChainTxData{
 
-            2813478628, // * UNIX timestamp of last known number of transactions
-            476506,		// * total number of transactions between genesis and that timestamp
+            1594068448, // * UNIX timestamp of last known number of transactions
+            859693,		// * total number of transactions between genesis and that timestamp
 			//   (the tx=... number in the SetBestChain debug.log lines)
-            1	//estimated number of transactions per second after that timestamp
+            0.05	//estimated number of transactions per second after that timestamp
         };
     }
 };
@@ -319,9 +335,16 @@ public:
         // Deployment of BIP147
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].bit = 2;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nStartTime = 1517792400; // Feb 5th, 2018
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 1549328400; // Feb 5th, 2019
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 1549328400; // Feb 5th, 2020
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nWindowSize = 100;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nThreshold = 50; // 50% of 100
+
+        // Deployment of InstantSend autolocks
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].bit = 4;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nStartTime = 1532476800; // Jul 25th, 2018
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nTimeout = 1564012800; // Jul 25th, 2020
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nWindowSize = 100;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nThreshold = 50; // 50% of 100
 
         // The best chain should have at least this much work.
         // not used currently
@@ -350,9 +373,11 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x12844a9cbf517654e272975506ab56af4d5c8dde0332a0ee48ba159c72daae03"));
 
         vFixedSeeds.clear();
+        vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
+
         vSeeds.clear();
 	// nodes with support for servicebits filtering should be at the top
-		vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed1.absolutecoin.net"));
+		    vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed1.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed2.absolutecoin.net"));
         vSeeds.push_back(CDNSSeedData("absolutecoin.net", "tseed3.absolutecoin.net"));
 
@@ -374,13 +399,16 @@ public:
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
+        fRequireRoutableExternalIP = true;
         fMineBlocksOnDemand = true;
         fAllowMultipleAddressesFromGroup = false;
         fAllowMultiplePorts = false;
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
-        strSporkPubKey = "044cff76819f7fafc4fd1b2de299e7052cc60c137330485d1b0018e9f14fdebe3d1b0595f716851837655a61dbea5a2f80727d43b7aa7a598b0222e3f547eeefa2";
+
+        vSporkAddresses = {"yQzniXSTqRwaEujSkvZicJsYZkt7wpa4NJ"};
+        nMinSporkKeys = 1;
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -452,9 +480,23 @@ public:
         // Deployment of BIP147
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].bit = 2;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nStartTime = 1517792400; // Feb 5th, 2018
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 1549328400; // Feb 5th, 2019
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 1549328400; // Feb 5th, 2020
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nWindowSize = 100;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nThreshold = 50; // 50% of 100
+
+        // Deployment of AIP0003
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].bit = 3;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nStartTime = 1556150400; // Thursday, 25-Apr-19 00:00:00 UTC
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nTimeout = 1587772800; // Saturday, 25-Apr-20 00:00:00 UTC
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nWindowSize = 100;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nThreshold = 50; // 50% of 100
+
+        // Deployment of InstantSend autolocks
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].bit = 4;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nStartTime = 1535752800; // Sep 1st, 2018
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nTimeout = 1567288800; // Sep 1st, 2020
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nWindowSize = 100;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nThreshold = 50; // 50% of 100
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000000000000");
@@ -505,7 +547,9 @@ public:
 
         nPoolMaxTransactions = 3;
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
-        strSporkPubKey = "046f78dcf911fbd61910136f7f0f8d90578f68d0b3ac973b5040fb7afb501b5939f39b108b0569dca71488f5bbf498d92e4d1194f6f941307ffd95f75e76869f0e";
+
+        vSporkAddresses = {"yQzniXSTqRwaEujSkvZicJsYZkt7wpa4NJ"};
+        nMinSporkKeys = 1;
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -557,7 +601,7 @@ public:
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
 
-        consensus.nPowDGWHeight = 25; 
+        consensus.nPowDGWHeight = 25;
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -572,6 +616,13 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].bit = 2;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nStartTime = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP147].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].bit = 3;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_AIP0003].nTimeout = 999999999999ULL;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].bit = 4;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_ISAUTOLOCKS].nTimeout = 999999999999ULL;
+
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
@@ -601,11 +652,16 @@ public:
         fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = true;
         fRequireStandard = false;
+        fRequireRoutableExternalIP = false;
         fMineBlocksOnDemand = true;
         fAllowMultipleAddressesFromGroup = true;
         fAllowMultiplePorts = true;
 
         nFulfilledRequestExpireTime = 5*60; // fulfilled requests expire in 5 minutes
+
+        // privKey: cP4EKFyJsHT39LDqgdcB43Y3YXjNyjb5Fuas1GQSeAtjnZWmZEQK
+        vSporkAddresses = {"ydUCk8yb3HJ9BsUjfi6snQxHKw3cEDCiNW"};
+        nMinSporkKeys = 1;
 
         checkpointData = (CCheckpointData){
             boost::assign::map_list_of

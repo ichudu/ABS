@@ -50,7 +50,7 @@ if 'ENABLE_UTILS' not in vars():
 if 'ENABLE_ZMQ' not in vars():
     ENABLE_ZMQ=0
 
-    
+
 # python-zmq may not be installed. Handle this gracefully and with some helpful info
 if ENABLE_ZMQ:
     try:
@@ -110,17 +110,22 @@ if ENABLE_ZMQ:
 
 testScripts = [
     # longest test should go first, to favor running tests in parallel
+    'aip3-deterministicmns.py', # NOTE: needs dash_hash to pass
     'wallet-hd.py',
     'walletbackup.py',
     # vv Tests less than 5m vv
     'p2p-fullblocktest.py', # NOTE: needs absolute_hash to pass
     'fundrawtransaction.py',
     'fundrawtransaction-hd.py',
+    'p2p-autoinstantsend.py',
+    'autoix-mempool.py',
     # vv Tests less than 2m vv
+    'p2p-instantsend.py',
     'wallet.py',
     'wallet-accounts.py',
     'wallet-dump.py',
     'listtransactions.py',
+    'multikeysporks.py',
     # vv Tests less than 60s vv
     'sendheaders.py', # NOTE: needs absolute_hash to pass
     'zapwallettxes.py',
@@ -167,6 +172,7 @@ testScripts = [
     'listsinceblock.py',
     'p2p-leaktests.py',
     'p2p-compactblocks.py',
+    'sporks.py',
 ]
 if ENABLE_ZMQ:
     testScripts.append('zmq_test.py')
@@ -196,8 +202,7 @@ testScriptsExt = [
     'forknotify.py',
     'invalidateblock.py',
     'maxblocksinflight.py',
-    'p2p-acceptblock.py', # NOTE: needs absolute_hash to pass
-    # 'replace-by-fee.py', # RBF is disabled in absolute Core
+    'p2p-acceptblock.py', # NOTE: needs dash_hash to pass
 ]
 
 

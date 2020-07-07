@@ -1,26 +1,22 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "privatesend.h"
 
 #include "activemasternode.h"
 #include "consensus/validation.h"
-#include "governance.h"
-#include "init.h"
-#include "instantx.h"
 #include "masternode-payments.h"
 #include "masternode-sync.h"
 #include "masternodeman.h"
 #include "messagesigner.h"
-#include "netfulfilledman.h"
 #include "netmessagemaker.h"
 #include "script/sign.h"
 #include "txmempool.h"
 #include "util.h"
 #include "utilmoneystr.h"
 
-#include <boost/lexical_cast.hpp>
+#include <string>
 
 bool CDarkSendEntry::AddScriptSig(const CTxIn& txin)
 {
@@ -40,7 +36,14 @@ bool CDarkSendEntry::AddScriptSig(const CTxIn& txin)
 
 uint256 CDarksendQueue::GetSignatureHash() const
 {
-    return SerializeHash(*this);
+    // Remove after migration to 70211
+    {
+    masternode_info_t mnInfo;
+    mnodeman.GetMasternodeInfo(masternodeOutpoint, mnInfo);
+    return SerializeHash(*this, SER_GETHASH, mnInfo.nProtocolVersion);
+    }
+    // END remove, replace with the code below
+    // return SerializeHash(*this);
 }
 
 bool CDarksendQueue::Sign()
@@ -49,30 +52,34 @@ bool CDarksendQueue::Sign()
 
     std::string strError = "";
 
-    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+        uint256 hash = GetSignatureHash();
+        CBLSSignature sig = activeMasternodeInfo.blsKeyOperator->Sign(hash);
+        sig.GetBuf(vchSig);
+    } else if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
         uint256 hash = GetSignatureHash();
 
-        if (!CHashSigner::SignHash(hash, activeMasternode.keyMasternode, vchSig)) {
+        if (!CHashSigner::SignHash(hash, activeMasternodeInfo.legacyKeyOperator, vchSig)) {
             LogPrintf("CDarksendQueue::Sign -- SignHash() failed\n");
             return false;
         }
 
-        if (!CHashSigner::VerifyHash(hash, activeMasternode.pubKeyMasternode, vchSig, strError)) {
+        if (!CHashSigner::VerifyHash(hash, activeMasternodeInfo.legacyKeyIDOperator, vchSig, strError)) {
             LogPrintf("CDarksendQueue::Sign -- VerifyHash() failed, error: %s\n", strError);
             return false;
         }
     } else {
         std::string strMessage = CTxIn(masternodeOutpoint).ToString() +
-                        boost::lexical_cast<std::string>(nDenom) +
-                        boost::lexical_cast<std::string>(nTime) +
-                        boost::lexical_cast<std::string>(fReady);
+                        std::to_string(nDenom) +
+                        std::to_string(nTime) +
+                        std::to_string(fReady);
 
-        if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternode.keyMasternode)) {
+        if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternodeInfo.legacyKeyOperator)) {
             LogPrintf("CDarksendQueue::Sign -- SignMessage() failed, %s\n", ToString());
             return false;
         }
 
-        if(!CMessageSigner::VerifyMessage(activeMasternode.pubKeyMasternode, vchSig, strMessage, strError)) {
+        if(!CMessageSigner::VerifyMessage(activeMasternodeInfo.legacyKeyIDOperator, vchSig, strMessage, strError)) {
             LogPrintf("CDarksendQueue::Sign -- VerifyMessage() failed, error: %s\n", strError);
             return false;
         }
@@ -81,25 +88,33 @@ bool CDarksendQueue::Sign()
     return true;
 }
 
-bool CDarksendQueue::CheckSignature(const CPubKey& pubKeyMasternode) const
+bool CDarksendQueue::CheckSignature(const CKeyID& keyIDOperator, const CBLSPublicKey& blsPubKey) const
 {
     std::string strError = "";
-
-    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
         uint256 hash = GetSignatureHash();
 
-        if (!CHashSigner::VerifyHash(hash, pubKeyMasternode, vchSig, strError)) {
+        CBLSSignature sig;
+        sig.SetBuf(vchSig);
+        if (!sig.IsValid() || !sig.VerifyInsecure(blsPubKey, hash)) {
+            LogPrintf("CTxLockVote::CheckSignature -- VerifyInsecure() failed\n");
+            return false;
+        }
+    } else if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+        uint256 hash = GetSignatureHash();
+
+        if (!CHashSigner::VerifyHash(hash, keyIDOperator, vchSig, strError)) {
             // we don't care about queues with old signature format
             LogPrintf("CDarksendQueue::CheckSignature -- VerifyHash() failed, error: %s\n", strError);
             return false;
         }
     } else {
         std::string strMessage = CTxIn(masternodeOutpoint).ToString() +
-                        boost::lexical_cast<std::string>(nDenom) +
-                        boost::lexical_cast<std::string>(nTime) +
-                        boost::lexical_cast<std::string>(fReady);
+                        std::to_string(nDenom) +
+                        std::to_string(nTime) +
+                        std::to_string(fReady);
 
-        if(!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
+        if(!CMessageSigner::VerifyMessage(keyIDOperator, vchSig, strMessage, strError)) {
             LogPrintf("CDarksendQueue::CheckSignature -- Got bad Masternode queue signature: %s; error: %s\n", ToString(), strError);
             return false;
         }
@@ -129,27 +144,32 @@ bool CDarksendBroadcastTx::Sign()
 
     std::string strError = "";
 
-    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
         uint256 hash = GetSignatureHash();
 
-        if (!CHashSigner::SignHash(hash, activeMasternode.keyMasternode, vchSig)) {
+        CBLSSignature sig = activeMasternodeInfo.blsKeyOperator->Sign(hash);
+        sig.GetBuf(vchSig);
+    } else if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+        uint256 hash = GetSignatureHash();
+
+        if (!CHashSigner::SignHash(hash, activeMasternodeInfo.legacyKeyOperator, vchSig)) {
             LogPrintf("CDarksendBroadcastTx::Sign -- SignHash() failed\n");
             return false;
         }
 
-        if (!CHashSigner::VerifyHash(hash, activeMasternode.pubKeyMasternode, vchSig, strError)) {
+        if (!CHashSigner::VerifyHash(hash, activeMasternodeInfo.legacyKeyIDOperator, vchSig, strError)) {
             LogPrintf("CDarksendBroadcastTx::Sign -- VerifyHash() failed, error: %s\n", strError);
             return false;
         }
     } else {
-        std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
+        std::string strMessage = tx->GetHash().ToString() + std::to_string(sigTime);
 
-        if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternode.keyMasternode)) {
+        if(!CMessageSigner::SignMessage(strMessage, vchSig, activeMasternodeInfo.legacyKeyOperator)) {
             LogPrintf("CDarksendBroadcastTx::Sign -- SignMessage() failed\n");
             return false;
         }
 
-        if(!CMessageSigner::VerifyMessage(activeMasternode.pubKeyMasternode, vchSig, strMessage, strError)) {
+        if(!CMessageSigner::VerifyMessage(activeMasternodeInfo.legacyKeyIDOperator, vchSig, strMessage, strError)) {
             LogPrintf("CDarksendBroadcastTx::Sign -- VerifyMessage() failed, error: %s\n", strError);
             return false;
         }
@@ -158,22 +178,31 @@ bool CDarksendBroadcastTx::Sign()
     return true;
 }
 
-bool CDarksendBroadcastTx::CheckSignature(const CPubKey& pubKeyMasternode) const
+bool CDarksendBroadcastTx::CheckSignature(const CKeyID& keyIDOperator, const CBLSPublicKey& blsPubKey) const
 {
     std::string strError = "";
 
-    if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
         uint256 hash = GetSignatureHash();
 
-        if (!CHashSigner::VerifyHash(hash, pubKeyMasternode, vchSig, strError)) {
+        CBLSSignature sig;
+        sig.SetBuf(vchSig);
+        if (!sig.IsValid() || !sig.VerifyInsecure(blsPubKey, hash)) {
+            LogPrintf("CTxLockVote::CheckSignature -- VerifyInsecure() failed\n");
+            return false;
+        }
+    } else if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
+        uint256 hash = GetSignatureHash();
+
+        if (!CHashSigner::VerifyHash(hash, keyIDOperator, vchSig, strError)) {
             // we don't care about dstxes with old signature format
             LogPrintf("CDarksendBroadcastTx::CheckSignature -- VerifyHash() failed, error: %s\n", strError);
             return false;
         }
     } else {
-        std::string strMessage = tx->GetHash().ToString() + boost::lexical_cast<std::string>(sigTime);
+        std::string strMessage = tx->GetHash().ToString() + std::to_string(sigTime);
 
-        if(!CMessageSigner::VerifyMessage(pubKeyMasternode, vchSig, strMessage, strError)) {
+        if(!CMessageSigner::VerifyMessage(keyIDOperator, vchSig, strMessage, strError)) {
             LogPrintf("CDarksendBroadcastTx::CheckSignature -- Got bad dstx signature, error: %s\n", strError);
             return false;
         }
@@ -188,35 +217,57 @@ bool CDarksendBroadcastTx::IsExpired(int nHeight)
     return (nConfirmedHeight != -1) && (nHeight - nConfirmedHeight > 24);
 }
 
-void CPrivateSendBase::SetNull()
+void CPrivateSendBaseSession::SetNull()
 {
     // Both sides
+    LOCK(cs_darksend);
     nState = POOL_STATE_IDLE;
     nSessionID = 0;
     nSessionDenom = 0;
-    nSessionInputCount = 0;
     vecEntries.clear();
     finalMutableTransaction.vin.clear();
     finalMutableTransaction.vout.clear();
     nTimeLastSuccessfulStep = GetTime();
 }
 
-void CPrivateSendBase::CheckQueue()
+void CPrivateSendBaseManager::SetNull()
 {
-    TRY_LOCK(cs_darksend, lockDS);
+    LOCK(cs_vecqueue);
+    vecDarksendQueue.clear();
+}
+
+void CPrivateSendBaseManager::CheckQueue()
+{
+    TRY_LOCK(cs_vecqueue, lockDS);
     if(!lockDS) return; // it's ok to fail here, we run this quite frequently
 
     // check mixing queue objects for timeouts
     std::vector<CDarksendQueue>::iterator it = vecDarksendQueue.begin();
     while(it != vecDarksendQueue.end()) {
         if((*it).IsExpired()) {
-            LogPrint("privatesend", "CPrivateSendBase::%s -- Removing expired queue (%s)\n", __func__, (*it).ToString());
+            LogPrint("privatesend", "CPrivateSendBaseManager::%s -- Removing expired queue (%s)\n", __func__, (*it).ToString());
             it = vecDarksendQueue.erase(it);
         } else ++it;
     }
 }
 
-std::string CPrivateSendBase::GetStateString() const
+bool CPrivateSendBaseManager::GetQueueItemAndTry(CDarksendQueue& dsqRet)
+{
+    TRY_LOCK(cs_vecqueue, lockDS);
+    if(!lockDS) return false; // it's ok to fail here, we run this quite frequently
+
+    for (auto& dsq : vecDarksendQueue) {
+        // only try each queue once
+        if(dsq.fTried || dsq.IsExpired()) continue;
+        dsq.fTried = true;
+        dsqRet = dsq;
+        return true;
+    }
+
+    return false;
+}
+
+std::string CPrivateSendBaseSession::GetStateString() const
 {
     switch(nState) {
         case POOL_STATE_IDLE:                   return "IDLE";
@@ -297,7 +348,7 @@ bool CPrivateSend::IsCollateralValid(const CTransaction& txCollateral)
     {
         LOCK(cs_main);
         CValidationState validationState;
-        if(!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), false, NULL, NULL, false, maxTxFee, true)) {
+        if(!AcceptToMemoryPool(mempool, validationState, MakeTransactionRef(txCollateral), false, NULL, false, maxTxFee, true)) {
             LogPrint("privatesend", "CPrivateSend::IsCollateralValid -- didn't pass AcceptToMemoryPool()\n");
             return false;
         }
@@ -418,8 +469,8 @@ int CPrivateSend::GetDenominationsByAmounts(const std::vector<CAmount>& vecAmoun
     CScript scriptTmp = CScript();
     std::vector<CTxOut> vecTxOut;
 
-    BOOST_REVERSE_FOREACH(CAmount nAmount, vecAmount) {
-        CTxOut txout(nAmount, scriptTmp);
+    for (auto it = vecAmount.rbegin(); it != vecAmount.rend(); ++it) {
+        CTxOut txout((*it), scriptTmp);
         vecTxOut.push_back(txout);
     }
 
@@ -459,7 +510,6 @@ std::string CPrivateSend::GetMessageByID(PoolMessage nMessageID)
         case MSG_NOERR:                 return _("No errors detected.");
         case MSG_SUCCESS:               return _("Transaction created successfully.");
         case MSG_ENTRIES_ADDED:         return _("Your entries added successfully.");
-        case ERR_INVALID_INPUT_COUNT:   return _("Invalid input count.");
         default:                        return _("Unknown response.");
     }
 }
@@ -509,60 +559,5 @@ void CPrivateSend::SyncTransaction(const CTransaction& tx, const CBlockIndex *pi
 
     // When tx is 0-confirmed or conflicted, posInBlock is SYNC_TRANSACTION_NOT_IN_BLOCK and nConfirmedHeight should be set to -1
     mapDSTX[txHash].SetConfirmedHeight(posInBlock == CMainSignals::SYNC_TRANSACTION_NOT_IN_BLOCK ? -1 : pindex->nHeight);
-    LogPrint("privatesend", "CPrivateSendClient::SyncTransaction -- txid=%s\n", txHash.ToString());
-}
-
-//TODO: Rename/move to core
-void ThreadCheckPrivateSend(CConnman& connman)
-{
-    if(fLiteMode) return; // disable all Absolute specific functionality
-
-    static bool fOneThread;
-    if(fOneThread) return;
-    fOneThread = true;
-
-    // Make this thread recognisable as the PrivateSend thread
-    RenameThread("absolute-ps");
-
-    unsigned int nTick = 0;
-
-    while (true)
-    {
-        MilliSleep(1000);
-
-        // try to sync from all available nodes, one step at a time
-        masternodeSync.ProcessTick(connman);
-
-        if(masternodeSync.IsBlockchainSynced() && !ShutdownRequested()) {
-
-            nTick++;
-
-            // make sure to check all masternodes first
-            mnodeman.Check();
-
-            mnodeman.ProcessPendingMnbRequests(connman);
-            mnodeman.ProcessPendingMnvRequests(connman);
-
-            // check if we should activate or ping every few minutes,
-            // slightly postpone first run to give net thread a chance to connect to some peers
-            if(nTick % MASTERNODE_MIN_MNP_SECONDS == 15)
-                activeMasternode.ManageState(connman);
-
-            if(nTick % 60 == 0) {
-                netfulfilledman.CheckAndRemove();
-                mnodeman.ProcessMasternodeConnections(connman);
-                mnodeman.CheckAndRemove(connman);
-                mnodeman.WarnMasternodeDaemonUpdates();
-                mnpayments.CheckAndRemove();
-                instantsend.CheckAndRemove();
-            }
-            if(fMasternodeMode && (nTick % (60 * 5) == 0)) {
-                mnodeman.DoFullVerificationStep(connman);
-            }
-
-            if(nTick % (60 * 5) == 0) {
-                governance.DoMaintenance(connman);
-            }
-        }
-    }
+    LogPrint("privatesend", "CPrivateSend::SyncTransaction -- txid=%s\n", txHash.ToString());
 }

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,6 +13,7 @@
 
 #include "support/allocators/secure.h"
 #include "chainparamsbase.h"
+#include "ctpl.h"
 #include "random.h"
 #include "serialize.h"
 #include "sync.h"
@@ -755,8 +756,8 @@ bool TruncateFile(FILE *file, unsigned int length) {
 }
 
 /**
- * this function tries to raise the file descriptor limit to the requested number.
- * It returns the actual file descriptor limit (which may be more or less than nMinFD)
+ * this function tries to raise the file descriptor limit to the most that we can support.
+ * It returns the actual file descriptor limit (which may be more or less than nMinFD).
  */
 int RaiseFileDescriptorLimit(int nMinFD) {
 #if defined(WIN32)
@@ -764,16 +765,32 @@ int RaiseFileDescriptorLimit(int nMinFD) {
 #else
     struct rlimit limitFD;
     if (getrlimit(RLIMIT_NOFILE, &limitFD) != -1) {
+	    // first request at least the amount passed in
         if (limitFD.rlim_cur < (rlim_t)nMinFD) {
             limitFD.rlim_cur = nMinFD;
             if (limitFD.rlim_cur > limitFD.rlim_max)
                 limitFD.rlim_cur = limitFD.rlim_max;
             setrlimit(RLIMIT_NOFILE, &limitFD);
-            getrlimit(RLIMIT_NOFILE, &limitFD);
+
         }
-        return limitFD.rlim_cur;
+        // then try to raise to the max we can
+        if (limitFD.rlim_cur < limitFD.rlim_max) {
+            limitFD.rlim_cur = limitFD.rlim_max;
+            setrlimit(RLIMIT_NOFILE, &limitFD);
+        }
+
+         if (getrlimit(RLIMIT_NOFILE, &limitFD) != -1) {
+            if (limitFD.rlim_cur < (rlim_t)nMinFD) {
+                LogPrintf("RaiseFileDescriptorLimit: could not raise limit to %lu fds, only %lu\n",
+                          (unsigned long)nMinFD,
+                          (unsigned long)limitFD.rlim_cur);
+            }
+            return limitFD.rlim_cur;
+        }
     }
-    return nMinFD; // getrlimit failed, assume it's fine
+    LogPrintf("RaiseFileDescriptorLimit error: getrlimit(RLIMIT_NOFILE) returned %s\n", strerror(errno));
+
+     return nMinFD; // getrlimit failed, try to proceed
 #endif
 }
 
@@ -904,6 +921,25 @@ std::string GetThreadName()
     // no get_name here
 #endif
     return std::string(name);
+}
+
+void RenameThreadPool(ctpl::thread_pool& tp, const char* baseName)
+{
+    auto cond = std::make_shared<std::condition_variable>();
+    auto mutex = std::make_shared<std::mutex>();
+    std::atomic<int> doneCnt(0);
+    for (size_t i = 0; i < tp.size(); i++) {
+        tp.push([baseName, i, cond, mutex, &doneCnt](int threadId) {
+            RenameThread(strprintf("%s-%d", baseName, i).c_str());
+            doneCnt++;
+            std::unique_lock<std::mutex> l(*mutex);
+            cond->wait(l);
+        });
+    }
+    while (doneCnt != tp.size()) {
+        MilliSleep(10);
+    }
+    cond->notify_all();
 }
 
 void SetupEnvironment()

@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -206,7 +206,7 @@ void AdvertiseLocal(CNode *pnode)
 // learn a new local address
 bool AddLocal(const CService& addr, int nScore)
 {
-    if (!addr.IsRoutable())
+    if (!addr.IsRoutable() && Params().RequireRoutableExternalIP())
         return false;
 
     if (!fDiscover && nScore < LOCAL_MANUAL)
@@ -2239,8 +2239,8 @@ void CConnman::SetNetworkActive(bool active)
 }
 
 CConnman::CConnman(uint64_t nSeed0In, uint64_t nSeed1In) :
-        nSeed0(nSeed0In), nSeed1(nSeed1In),
-        addrman(Params().AllowMultiplePorts())
+        addrman(Params().AllowMultiplePorts()),
+        nSeed0(nSeed0In), nSeed1(nSeed1In)
 {
     fNetworkActive = true;
     setBannedIsDirty = false;
@@ -2625,6 +2625,21 @@ void CConnman::RelayInv(CInv &inv, const int minProtoVersion) {
     for (const auto& pnode : vNodes)
         if(pnode->nVersion >= minProtoVersion)
             pnode->PushInventory(inv);
+}
+
+void CConnman::RelayInvFiltered(CInv &inv, const CTransaction& relatedTx, const int minProtoVersion)
+{
+    LOCK(cs_vNodes);
+    for (const auto& pnode : vNodes) {
+        if(pnode->nVersion < minProtoVersion)
+            continue;
+        {
+            LOCK(pnode->cs_filter);
+            if(pnode->pfilter && !pnode->pfilter->IsRelevantAndUpdate(relatedTx))
+                continue;
+        }
+        pnode->PushInventory(inv);
+    }
 }
 
 void CConnman::RecordBytesRecv(uint64_t bytes)

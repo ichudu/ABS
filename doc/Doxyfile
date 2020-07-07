@@ -41,7 +41,7 @@ PROJECT_NAME           = "Absolute Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.12.2.5
+PROJECT_NUMBER         = 0.12.3.1
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2353,8 +2353,8 @@ DIRECTORY_GRAPH        = YES
 # to make the SVG files visible in IE 9+ (other browsers do not have this
 # requirement).
 # Possible values are: png, jpg, gif, svg, png:gd, png:gd:gd, png:cairo,
-# png:cairo:gd, png:cairo:cairo, png:cairo:gdiplus, png:gdiplus and
-# png:gdiplus:gdiplus.
+# png:cairo:gd, png:cairo:cairo, png:cairo:gaiplus, png:gaiplus and
+# png:gaiplus:gaiplus.
 # The default value is: png.
 # This tag requires that the tag HAVE_DOT is set to YES.
 

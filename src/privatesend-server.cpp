@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include "privatesend-server.h"
@@ -46,10 +46,8 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
 
         LogPrint("privatesend", "DSACCEPT -- nDenom %d (%s)  txCollateral %s", dsa.nDenom, CPrivateSend::GetDenominationsToString(dsa.nDenom), dsa.txCollateral.ToString());
 
-        if(dsa.nInputCount < 0 || dsa.nInputCount > PRIVATESEND_ENTRY_MAX_SIZE) return;
-
         masternode_info_t mnInfo;
-        if(!mnodeman.GetMasternodeInfo(activeMasternode.outpoint, mnInfo)) {
+        if(!mnodeman.GetMasternodeInfo(activeMasternodeInfo.outpoint, mnInfo)) {
             PushStatus(pfrom, STATUS_REJECTED, ERR_MN_LIST, connman);
             return;
         }
@@ -77,7 +75,7 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
         }
 
     } else if(strCommand == NetMsgType::DSQUEUE) {
-        TRY_LOCK(cs_darksend, lockRecv);
+        TRY_LOCK(cs_vecqueue, lockRecv);
         if(!lockRecv) return;
 
         if(pfrom->nVersion < MIN_PRIVATESEND_PEER_PROTO_VERSION) {
@@ -101,12 +99,11 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
         LogPrint("privatesend", "DSQUEUE -- %s new\n", dsq.ToString());
 
         if(dsq.IsExpired()) return;
-        if(dsq.nInputCount < 0 || dsq.nInputCount > PRIVATESEND_ENTRY_MAX_SIZE) return;
 
         masternode_info_t mnInfo;
         if(!mnodeman.GetMasternodeInfo(dsq.masternodeOutpoint, mnInfo)) return;
 
-        if(!dsq.CheckSignature(mnInfo.pubKeyMasternode)) {
+        if(!dsq.CheckSignature(mnInfo.legacyKeyIDOperator, mnInfo.blsPubKeyOperator)) {
             // we probably have outdated info
             mnodeman.AskForMN(pfrom, dsq.masternodeOutpoint, connman);
             return;
@@ -166,18 +163,6 @@ void CPrivateSendServer::ProcessMessage(CNode* pfrom, const std::string& strComm
         if(entry.vecTxOut.size() > PRIVATESEND_ENTRY_MAX_SIZE) {
             LogPrintf("DSVIN -- ERROR: too many outputs! %d/%d\n", entry.vecTxOut.size(), PRIVATESEND_ENTRY_MAX_SIZE);
             PushStatus(pfrom, STATUS_REJECTED, ERR_MAXIMUM, connman);
-            return;
-        }
-
-        if(nSessionInputCount != 0 && entry.vecTxDSIn.size() != nSessionInputCount) {
-            LogPrintf("DSVIN -- ERROR: incorrect number of inputs! %d/%d\n", entry.vecTxDSIn.size(), nSessionInputCount);
-            PushStatus(pfrom, STATUS_REJECTED, ERR_INVALID_INPUT_COUNT, connman);
-            return;
-        }
-
-        if(nSessionInputCount != 0 && entry.vecTxOut.size() != nSessionInputCount) {
-            LogPrintf("DSVIN -- ERROR: incorrect number of outputs! %d/%d\n", entry.vecTxOut.size(), nSessionInputCount);
-            PushStatus(pfrom, STATUS_REJECTED, ERR_INVALID_INPUT_COUNT, connman);
             return;
         }
 
@@ -283,7 +268,8 @@ void CPrivateSendServer::SetNull()
     // MN side
     vecSessionCollaterals.clear();
 
-    CPrivateSendBase::SetNull();
+    CPrivateSendBaseSession::SetNull();
+    CPrivateSendBaseManager::SetNull();
 }
 
 //
@@ -350,7 +336,7 @@ void CPrivateSendServer::CommitFinalTransaction(CConnman& connman)
         TRY_LOCK(cs_main, lockMain);
         CValidationState validationState;
         mempool.PrioritiseTransaction(hashTx, hashTx.ToString(), 1000, 0.1*COIN);
-        if(!lockMain || !AcceptToMemoryPool(mempool, validationState, finalTransaction, false, NULL, NULL, false, maxTxFee, true))
+        if(!lockMain || !AcceptToMemoryPool(mempool, validationState, finalTransaction, false, NULL, false, maxTxFee, true))
         {
             LogPrintf("CPrivateSendServer::CommitFinalTransaction -- AcceptToMemoryPool() error: Transaction not valid\n");
             SetNull();
@@ -364,7 +350,7 @@ void CPrivateSendServer::CommitFinalTransaction(CConnman& connman)
 
     // create and sign masternode dstx transaction
     if(!CPrivateSend::GetDSTX(hashTx)) {
-        CDarksendBroadcastTx dstxNew(finalTransaction, activeMasternode.outpoint, GetAdjustedTime());
+        CDarksendBroadcastTx dstxNew(finalTransaction, activeMasternodeInfo.outpoint, GetAdjustedTime());
         dstxNew.Sign();
         CPrivateSend::AddDSTX(dstxNew);
     }
@@ -446,13 +432,13 @@ void CPrivateSendServer::ChargeFees(CConnman& connman)
     std::random_shuffle(vecOffendersCollaterals.begin(), vecOffendersCollaterals.end());
 
     if(nState == POOL_STATE_ACCEPTING_ENTRIES || nState == POOL_STATE_SIGNING) {
-        LogPrintf("CPrivateSendServer::ChargeFees -- found uncooperative node (didn't %s transaction), charging fees: %s\n",
+        LogPrintf("CPrivateSendServer::ChargeFees -- found uncooperative node (didn't %s transaction), charging fees: %s",
                 (nState == POOL_STATE_SIGNING) ? "sign" : "send", vecOffendersCollaterals[0]->ToString());
 
         LOCK(cs_main);
 
         CValidationState state;
-        if(!AcceptToMemoryPool(mempool, state, vecOffendersCollaterals[0], false, NULL, NULL, false, maxTxFee)) {
+        if(!AcceptToMemoryPool(mempool, state, vecOffendersCollaterals[0], false, NULL, false, maxTxFee)) {
             // should never really happen
             LogPrintf("CPrivateSendServer::ChargeFees -- ERROR: AcceptToMemoryPool failed!\n");
         } else {
@@ -484,7 +470,7 @@ void CPrivateSendServer::ChargeRandomFees(CConnman& connman)
         LogPrintf("CPrivateSendServer::ChargeRandomFees -- charging random fees, txCollateral=%s", txCollateral->ToString());
 
         CValidationState state;
-        if(!AcceptToMemoryPool(mempool, state, txCollateral, false, NULL, NULL, false, maxTxFee)) {
+        if(!AcceptToMemoryPool(mempool, state, txCollateral, false, NULL, false, maxTxFee)) {
             // should never really happen
             LogPrintf("CPrivateSendServer::ChargeRandomFees -- ERROR: AcceptToMemoryPool failed!\n");
         } else {
@@ -525,7 +511,7 @@ void CPrivateSendServer::CheckForCompleteQueue(CConnman& connman)
     if(nState == POOL_STATE_QUEUE && IsSessionReady()) {
         SetState(POOL_STATE_ACCEPTING_ENTRIES);
 
-        CDarksendQueue dsq(nSessionDenom, nSessionInputCount, activeMasternode.outpoint, GetAdjustedTime(), true);
+        CDarksendQueue dsq(nSessionDenom, activeMasternodeInfo.outpoint, GetAdjustedTime(), true);
         LogPrint("privatesend", "CPrivateSendServer::CheckForCompleteQueue -- queue is ready, signing and relaying (%s)\n", dsq.ToString());
         dsq.Sign();
         dsq.Relay(connman);
@@ -703,12 +689,6 @@ bool CPrivateSendServer::IsAcceptableDSA(const CDarksendAccept& dsa, PoolMessage
         return false;
     }
 
-    if(dsa.nInputCount < 0 || dsa.nInputCount > PRIVATESEND_ENTRY_MAX_SIZE) {
-        LogPrint("privatesend", "CPrivateSendServer::%s -- requested count is not valid!\n", __func__);
-        nMessageIDRet = ERR_INVALID_INPUT_COUNT;
-        return false;
-    }
-
     return true;
 }
 
@@ -731,16 +711,13 @@ bool CPrivateSendServer::CreateNewSession(const CDarksendAccept& dsa, PoolMessag
     nMessageIDRet = MSG_NOERR;
     nSessionID = GetRandInt(999999)+1;
     nSessionDenom = dsa.nDenom;
-    // nInputCount is not covered by legacy signature, require SPORK_6_NEW_SIGS to activate to use new algo
-    // (to make sure nInputCount wasn't modified by some intermediary node)
-    nSessionInputCount = sporkManager.IsSporkActive(SPORK_6_NEW_SIGS) ? dsa.nInputCount : 0;
 
     SetState(POOL_STATE_QUEUE);
     nTimeLastSuccessfulStep = GetTime();
 
     if(!fUnitTest) {
         //broadcast that I'm accepting entries, only if it's the first entry through
-        CDarksendQueue dsq(dsa.nDenom, dsa.nInputCount, activeMasternode.outpoint, GetAdjustedTime(), false);
+        CDarksendQueue dsq(nSessionDenom, activeMasternodeInfo.outpoint, GetAdjustedTime(), false);
         LogPrint("privatesend", "CPrivateSendServer::CreateNewSession -- signing and relaying new queue: %s\n", dsq.ToString());
         dsq.Sign();
         dsq.Relay(connman);
@@ -776,21 +753,14 @@ bool CPrivateSendServer::AddUserToExistingSession(const CDarksendAccept& dsa, Po
         return false;
     }
 
-    if(dsa.nInputCount != nSessionInputCount) {
-        LogPrintf("CPrivateSendServer::AddUserToExistingSession -- incompatible count %d != nSessionInputCount %d\n",
-                    dsa.nInputCount, nSessionInputCount);
-        nMessageIDRet = ERR_INVALID_INPUT_COUNT;
-        return false;
-    }
-
     // count new user as accepted to an existing session
 
     nMessageIDRet = MSG_NOERR;
     nTimeLastSuccessfulStep = GetTime();
     vecSessionCollaterals.push_back(MakeTransactionRef(dsa.txCollateral));
 
-    LogPrintf("CPrivateSendServer::AddUserToExistingSession -- new user accepted, nSessionID: %d  nSessionDenom: %d (%s)  nSessionInputCount: %d  vecSessionCollaterals.size(): %d\n",
-            nSessionID, nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), nSessionInputCount, vecSessionCollaterals.size());
+    LogPrintf("CPrivateSendServer::AddUserToExistingSession -- new user accepted, nSessionID: %d  nSessionDenom: %d (%s)  vecSessionCollaterals.size(): %d\n",
+            nSessionID, nSessionDenom, CPrivateSend::GetDenominationsToString(nSessionDenom), vecSessionCollaterals.size());
 
     return true;
 }
@@ -891,29 +861,14 @@ void CPrivateSendServer::SetState(PoolState nStateNew)
     nState = nStateNew;
 }
 
-//TODO: Rename/move to core
-void ThreadCheckPrivateSendServer(CConnman& connman)
+void CPrivateSendServer::DoMaintenance(CConnman& connman)
 {
-    if(fLiteMode) return; // disable all Dash specific functionality
+    if(fLiteMode) return; // disable all Absolute specific functionality
     if(!fMasternodeMode) return; // only run on masternodes
 
-    static bool fOneThread;
-    if(fOneThread) return;
-    fOneThread = true;
+    if(!masternodeSync.IsBlockchainSynced() || ShutdownRequested())
+        return;
 
-    // Make this thread recognisable as the PrivateSend thread
-    RenameThread("absolute-ps-server");
-
-    unsigned int nTick = 0;
-
-    while (true)
-    {
-        MilliSleep(1000);
-
-        if(masternodeSync.IsBlockchainSynced() && !ShutdownRequested()) {
-            nTick++;
-            privateSendServer.CheckTimeout(connman);
-            privateSendServer.CheckForCompleteQueue(connman);
-        }
-    }
+    privateSendServer.CheckTimeout(connman);
+    privateSendServer.CheckForCompleteQueue(connman);
 }

@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -31,7 +31,7 @@ public: // Types
 
     typedef vote_l_t::const_iterator vote_l_cit;
 
-    typedef std::map<uint256,vote_l_it> vote_m_t;
+    typedef std::map<uint256, vote_l_it> vote_m_t;
 
     typedef vote_m_t::iterator vote_m_it;
 
@@ -66,7 +66,8 @@ public:
      */
     bool SerializeVoteToStream(const uint256& nHash, CDataStream& ss) const;
 
-    int GetVoteCount() {
+    int GetVoteCount()
+    {
         return nMemoryVotes;
     }
 
@@ -81,13 +82,13 @@ public:
     {
         READWRITE(nMemoryVotes);
         READWRITE(listVotes);
-        if(ser_action.ForRead()) {
+        if (ser_action.ForRead()) {
             RebuildIndex();
         }
     }
+
 private:
     void RebuildIndex();
-
 };
 
 #endif

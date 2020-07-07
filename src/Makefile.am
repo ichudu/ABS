@@ -24,6 +24,7 @@ BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAG
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
 BITCOIN_INCLUDES += $(UNIVALUE_CFLAGS)
 
+BLS_LIBS=-lchiabls -lgmp
 LIBBITCOIN_SERVER=libabsolute_server.a
 LIBBITCOIN_COMMON=libabsolute_common.a
 LIBBITCOIN_CONSENSUS=libabsolute_consensus.a
@@ -105,6 +106,13 @@ BITCOIN_CORE_H = \
   core_io.h \
   core_memusage.h \
   cuckoocache.h \
+  ctpl.h \
+  evo/evodb.h \
+  evo/specialtx.h \
+  evo/providertx.h \
+  evo/deterministicmns.h \
+  evo/cbtx.h \
+  evo/simplifiedmns.h \
   privatesend.h \
   privatesend-client.h \
   privatesend-server.h \
@@ -147,7 +155,6 @@ BITCOIN_CORE_H = \
   noui.h \
   policy/fees.h \
   policy/policy.h \
-  policy/rbf.h \
   pow.h \
   protocol.h \
   random.h \
@@ -215,6 +222,12 @@ libabsolute_server_a_SOURCES = \
   chain.cpp \
   checkpoints.cpp \
   dsnotificationinterface.cpp \
+  evo/evodb.cpp \
+  evo/specialtx.cpp \
+  evo/providertx.cpp \
+  evo/deterministicmns.cpp \
+  evo/cbtx.cpp \
+  evo/simplifiedmns.cpp \
   httprpc.cpp \
   httpserver.cpp \
   init.cpp \
@@ -251,6 +264,7 @@ libabsolute_server_a_SOURCES = \
   rpc/misc.cpp \
   rpc/net.cpp \
   rpc/rawtransaction.cpp \
+  rpc/rpcevo.cpp \
   rpc/server.cpp \
   script/sigcache.cpp \
   script/ismine.cpp \
@@ -290,7 +304,6 @@ libabsolute_wallet_a_SOURCES = \
   wallet/rpcwallet.cpp \
   wallet/wallet.cpp \
   wallet/walletdb.cpp \
-  policy/rbf.cpp \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
@@ -305,7 +318,6 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/hmac_sha512.cpp \
   crypto/hmac_sha512.h \
   crypto/ripemd160.cpp \
-  crypto/aes_helper.c \
   crypto/ripemd160.h \
   crypto/sha1.cpp \
   crypto/sha1.h \
@@ -313,6 +325,7 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/sha256.h \
   crypto/sha512.cpp \
   crypto/sha512.h \
+  crypto/Lyra2RE/aes_helper.c \
   crypto/Lyra2RE/Lyra2RE.c \
   crypto/Lyra2RE/Lyra2RE.h \
   crypto/Lyra2RE/Lyra2.c \
@@ -320,44 +333,28 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/Lyra2RE/Sponge.c \
   crypto/Lyra2RE/Sponge.h \
   crypto/Lyra2RE/sph_blake.h \
-  crypto/Lyra2RE/sph_bmw.h \
-  crypto/Lyra2RE/sph_cubehash.h \
   crypto/Lyra2RE/sph_groestl.h \
   crypto/Lyra2RE/sph_keccak.h \
   crypto/Lyra2RE/sph_skein.h \
   crypto/Lyra2RE/sph_types.h \
+  crypto/Lyra2RE/sph_cubehash.h \
   crypto/Lyra2RE/blake.c \
-  crypto/Lyra2RE/groestl.c \
   crypto/Lyra2RE/keccak.c \
   crypto/Lyra2RE/skein.c \
+  crypto/Lyra2RE/bmw.c \
   crypto/Lyra2RE/cubehash.c \
-  crypto/Lyra2RE/bmw.c
-
-# x11
-crypto_libabsolute_crypto_a_SOURCES += \
-  crypto/blake.c \
-  crypto/bmw.c \
-  crypto/cubehash.c \
-  crypto/echo.c \
-  crypto/groestl.c \
-  crypto/jh.c \
-  crypto/keccak.c \
-  crypto/luffa.c \
-  crypto/shavite.c \
-  crypto/simd.c \
-  crypto/skein.c \
-  crypto/sph_blake.h \
-  crypto/sph_bmw.h \
-  crypto/sph_cubehash.h \
-  crypto/sph_echo.h \
-  crypto/sph_groestl.h \
-  crypto/sph_jh.h \
-  crypto/sph_keccak.h \
-  crypto/sph_luffa.h \
-  crypto/sph_shavite.h \
-  crypto/sph_simd.h \
-  crypto/sph_skein.h \
-  crypto/sph_types.h
+  crypto/Lyra2RE/echo.c \
+  crypto/Lyra2RE/groestl.c \
+  crypto/Lyra2RE/jh.c \
+  crypto/Lyra2RE/luffa.c \
+  crypto/Lyra2RE/shavite.c \
+  crypto/Lyra2RE/simd.c \
+  crypto/Lyra2RE/sph_bmw.h \
+  crypto/Lyra2RE/sph_echo.h \
+  crypto/Lyra2RE/sph_jh.h \
+  crypto/Lyra2RE/sph_luffa.h \
+  crypto/Lyra2RE/sph_shavite.h \
+  crypto/Lyra2RE/sph_simd.h
 
 # consensus: shared between all executables that validate any consensus rules.
 libabsolute_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -366,6 +363,8 @@ libabsolute_consensus_a_SOURCES = \
   amount.h \
   arith_uint256.cpp \
   arith_uint256.h \
+  bls/bls.cpp \
+  bls/bls.h \
   consensus/merkle.cpp \
   consensus/merkle.h \
   consensus/params.h \
@@ -424,6 +423,10 @@ libabsolute_common_a_SOURCES = \
 libabsolute_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libabsolute_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libabsolute_util_a_SOURCES = \
+  bls/bls_ies.cpp \
+  bls/bls_ies.h \
+  bls/bls_worker.cpp \
+  bls/bls_worker.h \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
@@ -443,6 +446,7 @@ libabsolute_util_a_SOURCES = \
 
 if GLIBC_BACK_COMPAT
 libabsolute_util_a_SOURCES += compat/glibc_compat.cpp
+AM_LDFLAGS += $(COMPAT_LDFLAGS)
 endif
 
 # cli: shared between absolute-cli and absolute-qt
@@ -478,7 +482,7 @@ absoluted_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-absoluted_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS)
+absoluted_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(BLS_LIBS)
 
 # absolute-cli binary #
 absolute_cli_SOURCES = absolute-cli.cpp
@@ -495,7 +499,7 @@ absolute_cli_LDADD = \
   $(LIBUNIVALUE) \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO)
-absolute_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS)
+absolute_cli_LDADD += $(BOOST_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_LIBS) $(BLS_LIBS)
 #
 
 # absolute-tx binary #
@@ -516,7 +520,7 @@ absolute_tx_LDADD = \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBSECP256K1)
 
-absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
+absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 #
 
 # absoluteconsensus library #
@@ -542,7 +546,7 @@ if GLIBC_BACK_COMPAT
 endif
 
 libabsoluteconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libabsoluteconsensus_la_LIBADD = $(LIBSECP256K1)
+libabsoluteconsensus_la_LIBADD = $(LIBSECP256K1) $(BLS_LIBS)
 libabsoluteconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
 libabsoluteconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
@@ -569,9 +573,12 @@ CLEANFILES += wallet/*.gcda wallet/*.gcno
 CLEANFILES += wallet/test/*.gcda wallet/test/*.gcno
 CLEANFILES += zmq/*.gcda zmq/*.gcno
 
+IMMER_DIST = immer
+
 DISTCLEANFILES = obj/build.h
 
 EXTRA_DIST = $(CTAES_DIST)
+EXTRA_DIST += $(IMMER_DIST)
 
 
 config/absolute-config.h: config/stamp-h1

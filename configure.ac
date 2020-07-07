@@ -2,8 +2,8 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 0)
 define(_CLIENT_VERSION_MINOR, 12)
-define(_CLIENT_VERSION_REVISION, 2)
-define(_CLIENT_VERSION_BUILD, 5)
+define(_CLIENT_VERSION_REVISION, 3)
+define(_CLIENT_VERSION_BUILD, 1)
 define(_CLIENT_VERSION_IS_RELEASE, true)
 define(_COPYRIGHT_YEAR, 2018)
 define(_COPYRIGHT_HOLDERS,[The %s developers])
@@ -53,8 +53,8 @@ case $host in
      lt_cv_deplibs_check_method="pass_all"
   ;;
 esac
-dnl Require C++11 compiler (no GNU extensions)
-AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory], [nodefault])
+dnl Require C++14 compiler (no GNU extensions)
+AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory], [nodefault])
 dnl Check if -latomic is required for <std::atomic>
 CHECK_ATOMIC
 
@@ -163,6 +163,12 @@ AC_ARG_ENABLE([glibc-back-compat],
   [enable backwards compatibility with glibc])],
   [use_glibc_compat=$enableval],
   [use_glibc_compat=no])
+
+AC_ARG_ENABLE([threadlocal],
+  [AS_HELP_STRING([--enable-threadlocal],
+  [enable features that depend on the c++ thread_local keyword (currently just thread names in debug logs). (default is to enabled if there is platform support and glibc-back-compat is not enabled)])],
+  [use_thread_local=$enableval],
+  [use_thread_local=auto])
 
 AC_ARG_WITH([system-univalue],
   [AS_HELP_STRING([--with-system-univalue],
@@ -486,6 +492,8 @@ if test x$use_glibc_compat != xno; then
     [ fdelt_type="long int"])
   AC_MSG_RESULT($fdelt_type)
   AC_DEFINE_UNQUOTED(FDELT_TYPE, $fdelt_type,[parameter and return value type for __fdelt_chk])
+  AX_CHECK_LINK_FLAG([[-Wl,--wrap=__divmoddi4]], [COMPAT_LDFLAGS="$COMPAT_LDFLAGS -Wl,--wrap=__divmoddi4"])
+  AX_CHECK_LINK_FLAG([[-Wl,--wrap=log2f]], [COMPAT_LDFLAGS="$COMPAT_LDFLAGS -Wl,--wrap=log2f"])
 else
   AC_SEARCH_LIBS([clock_gettime],[rt])
 fi
@@ -580,9 +588,48 @@ AC_LINK_IFELSE([AC_LANG_SOURCE([
   ]
 )
 
-if test x$use_reduce_exports = xyes; then
-  AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],[RE_CXXFLAGS="-fvisibility=hidden"],
-  [AC_MSG_ERROR([Cannot set default symbol visibility. Use --disable-reduce-exports.])])
+if test "x$use_thread_local" = xyes || { test "x$use_thread_local" = xauto && test "x$use_glibc_compat" = xno; }; then
+  TEMP_LDFLAGS="$LDFLAGS"
+  LDFLAGS="$TEMP_LDFLAGS $PTHREAD_CFLAGS"
+  AC_MSG_CHECKING([for thread_local support])
+  AC_LINK_IFELSE([AC_LANG_SOURCE([
+    #include <thread>
+    static thread_local int foo = 0;
+    static void run_thread() { foo++;}
+    int main(){
+    for(int i = 0; i < 10; i++) { std::thread(run_thread).detach();}
+    return foo;
+    }
+    ])],
+    [
+     case $host in
+       *mingw*)
+          # mingw32's implementation of thread_local has also been shown to behave
+          # erroneously under concurrent usage; see:
+          # https://gist.github.com/jamesob/fe9a872051a88b2025b1aa37bfa98605
+          AC_MSG_RESULT(no)
+          ;;
+        *darwin*)
+          # TODO enable thread_local on later versions of Darwin where it is
+          # supported (per https://stackoverflow.com/a/29929949)
+          AC_MSG_RESULT(no)
+          ;;
+        *freebsd*)
+          # FreeBSD's implementation of thread_local is also buggy (per
+          # https://groups.google.com/d/msg/bsdmailinglist/22ncTZAbDp4/Dii_pII5AwAJ)
+          AC_MSG_RESULT(no)
+          ;;
+        *)
+          AC_DEFINE(HAVE_THREAD_LOCAL,1,[Define if thread_local is supported.])
+          AC_MSG_RESULT(yes)
+          ;;
+      esac
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LDFLAGS="$TEMP_LDFLAGS"
 fi
 
 LEVELDB_CPPFLAGS=
@@ -1085,6 +1132,11 @@ AC_SUBST(BITCOIN_CLI_NAME)
 AC_SUBST(BITCOIN_TX_NAME)
 
 AC_SUBST(RELDFLAGS)
+AC_SUBST(DEBUG_CPPFLAGS)
+AC_SUBST(WARN_CXXFLAGS)
+AC_SUBST(NOWARN_CXXFLAGS)
+AC_SUBST(DEBUG_CXXFLAGS)
+AC_SUBST(COMPAT_LDFLAGS)
 AC_SUBST(ERROR_CXXFLAGS)
 AC_SUBST(HARDENED_CXXFLAGS)
 AC_SUBST(HARDENED_CPPFLAGS)
@@ -1162,7 +1214,7 @@ case ${OS} in
    ;;
 esac
 
-echo 
+echo
 echo "Options used to compile and link:"
 echo "  with wallet   = $enable_wallet"
 echo "  with gui / qt = $bitcoin_enable_qt"
@@ -1176,7 +1228,7 @@ echo "  with bench    = $use_bench"
 echo "  with upnp     = $use_upnp"
 echo "  debug enabled = $enable_debug"
 echo "  werror        = $enable_werror"
-echo 
+echo
 echo "  target os     = $TARGET_OS"
 echo "  build os      = $BUILD_OS"
 echo
@@ -1186,4 +1238,4 @@ echo "  CPPFLAGS      = $CPPFLAGS"
 echo "  CXX           = $CXX"
 echo "  CXXFLAGS      = $CXXFLAGS"
 echo "  LDFLAGS       = $LDFLAGS"
-echo 
+echo

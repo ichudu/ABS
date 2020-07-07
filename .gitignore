@@ -35,8 +35,8 @@ config.log
 config.status
 configure
 libtool
-src/config/dash-config.h
-src/config/dash-config.h.in
+src/config/absolute-config.h
+src/config/absolute-config.h.in
 src/config/stamp-h1
 share/setup.nsi
 share/qt/Info.plist
@@ -82,6 +82,7 @@ libconftest.dylib*
 Makefile
 absolute-qt
 Absolute-Qt.app
+!/depends/Makefile
 
 # Unit-tests
 Makefile.test
@@ -108,7 +109,7 @@ linux-coverage-build
 linux-build
 win32-build
 qa/pull-tester/tests_config.py
-
+qa/pull-tester/tests_config.ini
 qa/cache/*
 
 

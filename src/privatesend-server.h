@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,7 +16,7 @@ extern CPrivateSendServer privateSendServer;
 
 /** Used to keep track of current status of mixing pool
  */
-class CPrivateSendServer : public CPrivateSendBase
+class CPrivateSendServer : public CPrivateSendBaseSession, public CPrivateSendBaseManager
 {
 private:
     // Mixing uses collateral transactions to trust parties entering the pool
@@ -67,15 +67,14 @@ private:
     void SetNull();
 
 public:
-    CPrivateSendServer() :
-        fUnitTest(false) { SetNull(); }
+    CPrivateSendServer() : vecSessionCollaterals(), fUnitTest(false) {}
 
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
     void CheckTimeout(CConnman& connman);
     void CheckForCompleteQueue(CConnman& connman);
-};
 
-void ThreadCheckPrivateSendServer(CConnman& connman);
+    void DoMaintenance(CConnman& connman);
+};
 
 #endif

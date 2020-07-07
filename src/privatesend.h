@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,6 +13,7 @@
 #include "sync.h"
 #include "tinyformat.h"
 #include "timedata.h"
+#include "bls/bls.h"
 
 class CPrivateSend;
 class CConnman;
@@ -24,7 +25,7 @@ static const int PRIVATESEND_QUEUE_TIMEOUT          = 30;
 static const int PRIVATESEND_SIGNING_TIMEOUT        = 15;
 
 //! minimum peer version accepted by mixing pool
-static const int MIN_PRIVATESEND_PEER_PROTO_VERSION = 70209;
+static const int MIN_PRIVATESEND_PEER_PROTO_VERSION = 70211;
 
 static const size_t PRIVATESEND_ENTRY_MAX_SIZE      = 9;
 
@@ -52,7 +53,6 @@ enum PoolMessage {
     MSG_NOERR,
     MSG_SUCCESS,
     MSG_ENTRIES_ADDED,
-    ERR_INVALID_INPUT_COUNT,
     MSG_POOL_MIN = ERR_ALREADY_HAVE,
     MSG_POOL_MAX = MSG_ENTRIES_ADDED
 };
@@ -101,18 +101,15 @@ class CDarksendAccept
 {
 public:
     int nDenom;
-    int nInputCount;
     CMutableTransaction txCollateral;
 
     CDarksendAccept() :
         nDenom(0),
-        nInputCount(0),
         txCollateral(CMutableTransaction())
         {};
 
-    CDarksendAccept(int nDenom, int nInputCount, const CMutableTransaction& txCollateral) :
+    CDarksendAccept(int nDenom, const CMutableTransaction& txCollateral) :
         nDenom(nDenom),
-        nInputCount(nInputCount),
         txCollateral(txCollateral)
         {};
 
@@ -122,10 +119,9 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nDenom);
         int nVersion = s.GetVersion();
-        if (nVersion > 70208) {
+        if (nVersion > 70208 && nVersion <= 70210) {
+            int nInputCount = 0;
             READWRITE(nInputCount);
-        } else if (ser_action.ForRead()) {
-            nInputCount = 0;
         }
         READWRITE(txCollateral);
     }
@@ -180,7 +176,7 @@ class CDarksendQueue
 {
 public:
     int nDenom;
-    int nInputCount;
+    int nInputCount; // not used for anything but to calculate correct hash, remove after migration to 70211
     COutPoint masternodeOutpoint;
     int64_t nTime;
     bool fReady; //ready for submit
@@ -198,9 +194,9 @@ public:
         fTried(false)
         {}
 
-    CDarksendQueue(int nDenom, int nInputCount, COutPoint outpoint, int64_t nTime, bool fReady) :
+    CDarksendQueue(int nDenom, COutPoint outpoint, int64_t nTime, bool fReady) :
         nDenom(nDenom),
-        nInputCount(nInputCount),
+        nInputCount(0),
         masternodeOutpoint(outpoint),
         nTime(nTime),
         fReady(fReady),
@@ -214,25 +210,10 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nDenom);
         int nVersion = s.GetVersion();
-        if (nVersion > 70208) {
+        if (nVersion > 70208 && nVersion <= 70210) {
             READWRITE(nInputCount);
-        } else if (ser_action.ForRead()) {
-            nInputCount = 0;
         }
-        if (nVersion == 70208 && (s.GetType() & SER_NETWORK)) {
-            // converting from/to old format
-            CTxIn txin{};
-            if (ser_action.ForRead()) {
-                READWRITE(txin);
-                masternodeOutpoint = txin.prevout;
-            } else {
-                txin = CTxIn(masternodeOutpoint);
-                READWRITE(txin);
-            }
-        } else {
-            // using new format directly
-            READWRITE(masternodeOutpoint);
-        }
+        READWRITE(masternodeOutpoint);
         READWRITE(nTime);
         READWRITE(fReady);
         if (!(s.GetType() & SER_GETHASH)) {
@@ -250,7 +231,7 @@ public:
      */
     bool Sign();
     /// Check if we have a valid Masternode address
-    bool CheckSignature(const CPubKey& pubKeyMasternode) const;
+    bool CheckSignature(const CKeyID& keyIDOperator, const CBLSPublicKey& blsPubKey) const;
 
     bool Relay(CConnman &connman);
 
@@ -259,13 +240,13 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("nDenom=%d, nInputCount=%d, nTime=%lld, fReady=%s, fTried=%s, masternode=%s",
-                        nDenom, nInputCount, nTime, fReady ? "true" : "false", fTried ? "true" : "false", masternodeOutpoint.ToStringShort());
+        return strprintf("nDenom=%d, nTime=%lld, fReady=%s, fTried=%s, masternode=%s",
+                        nDenom, nTime, fReady ? "true" : "false", fTried ? "true" : "false", masternodeOutpoint.ToStringShort());
     }
 
     friend bool operator==(const CDarksendQueue& a, const CDarksendQueue& b)
     {
-        return a.nDenom == b.nDenom && a.nInputCount == b.nInputCount && a.masternodeOutpoint == b.masternodeOutpoint && a.nTime == b.nTime && a.fReady == b.fReady;
+        return a.nDenom == b.nDenom && a.masternodeOutpoint == b.masternodeOutpoint && a.nTime == b.nTime && a.fReady == b.fReady;
     }
 };
 
@@ -305,21 +286,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(tx);
-        int nVersion = s.GetVersion();
-        if (nVersion == 70208 && (s.GetType() & SER_NETWORK)) {
-            // converting from/to old format
-            CTxIn txin{};
-            if (ser_action.ForRead()) {
-                READWRITE(txin);
-                masternodeOutpoint = txin.prevout;
-            } else {
-                txin = CTxIn(masternodeOutpoint);
-                READWRITE(txin);
-            }
-        } else {
-            // using new format directly
-            READWRITE(masternodeOutpoint);
-        }
+        READWRITE(masternodeOutpoint);
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(vchSig);
         }
@@ -342,20 +309,17 @@ public:
     uint256 GetSignatureHash() const;
 
     bool Sign();
-    bool CheckSignature(const CPubKey& pubKeyMasternode) const;
+    bool CheckSignature(const CKeyID& keyIDOperator, const CBLSPublicKey& blsPubKey) const;
 
     void SetConfirmedHeight(int nConfirmedHeightIn) { nConfirmedHeight = nConfirmedHeightIn; }
     bool IsExpired(int nHeight);
 };
 
 // base class
-class CPrivateSendBase
+class CPrivateSendBaseSession
 {
 protected:
     mutable CCriticalSection cs_darksend;
-
-    // The current mixing sessions in progress on the network
-    std::vector<CDarksendQueue> vecDarksendQueue;
 
     std::vector<CDarkSendEntry> vecEntries; // Masternode/clients entries
 
@@ -367,19 +331,42 @@ protected:
     CMutableTransaction finalMutableTransaction; // the finalized transaction ready for signing
 
     void SetNull();
-    void CheckQueue();
 
 public:
-    int nSessionDenom; //Users must submit an denom matching this
-    int nSessionInputCount; //Users must submit a count matching this
+    int nSessionDenom; //Users must submit a denom matching this
 
-    CPrivateSendBase() { SetNull(); }
+    CPrivateSendBaseSession() :
+        vecEntries(),
+        nState(POOL_STATE_IDLE),
+        nTimeLastSuccessfulStep(0),
+        nSessionID(0),
+        finalMutableTransaction(),
+        nSessionDenom(0)
+        {}
 
-    int GetQueueSize() const { return vecDarksendQueue.size(); }
     int GetState() const { return nState; }
     std::string GetStateString() const;
 
     int GetEntriesCount() const { return vecEntries.size(); }
+};
+
+// base class
+class CPrivateSendBaseManager
+{
+protected:
+    mutable CCriticalSection cs_vecqueue;
+
+    // The current mixing sessions in progress on the network
+    std::vector<CDarksendQueue> vecDarksendQueue;
+
+    void SetNull();
+    void CheckQueue();
+
+public:
+    CPrivateSendBaseManager() : vecDarksendQueue() {}
+
+    int GetQueueSize() const { return vecDarksendQueue.size(); }
+    bool GetQueueItemAndTry(CDarksendQueue& dsqRet);
 };
 
 // helper class
@@ -437,7 +424,5 @@ public:
     static void UpdatedBlockTip(const CBlockIndex *pindex);
     static void SyncTransaction(const CTransaction& tx, const CBlockIndex *pindex, int posInBlock);
 };
-
-void ThreadCheckPrivateSend(CConnman& connman);
 
 #endif

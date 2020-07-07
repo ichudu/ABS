@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2017 The Dash Core developers
-// Copyright (c) 2018 The Absolute Core developers
+// Copyright (c) 2014-2020 The Dash Core developers
+// Copyright (c) 2018-2020 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -136,7 +136,6 @@ public:
 
     /// Ask (source) node for mnb
     void AskForMN(CNode *pnode, const COutPoint& outpoint, CConnman& connman);
-    void AskForMnb(CNode *pnode, const uint256 &hash);
 
     bool PoSeBan(const COutPoint &outpoint);
     bool AllowMixing(const COutPoint &outpoint);
@@ -149,6 +148,9 @@ public:
     void CheckAndRemove(CConnman& connman);
     /// This is dummy overload to be used for dumping/loading mncache.dat
     void CheckAndRemove() {}
+
+    void AddDeterministicMasternodes();
+    void RemoveNonDeterministicMasternodes();
 
     /// Clear Masternode vector
     void Clear();
@@ -169,8 +171,9 @@ public:
     bool Get(const COutPoint& outpoint, CMasternode& masternodeRet);
     bool Has(const COutPoint& outpoint);
 
+    bool GetMasternodeInfo(const uint256& proTxHash, masternode_info_t& mnInfoRet);
     bool GetMasternodeInfo(const COutPoint& outpoint, masternode_info_t& mnInfoRet);
-    bool GetMasternodeInfo(const CPubKey& pubKeyMasternode, masternode_info_t& mnInfoRet);
+    bool GetMasternodeInfo(const CKeyID& keyIDOperator, masternode_info_t& mnInfoRet);
     bool GetMasternodeInfo(const CScript& payee, masternode_info_t& mnInfoRet);
 
     /// Find an entry in the masternode list that is next to be paid
@@ -181,7 +184,7 @@ public:
     /// Find a random entry
     masternode_info_t FindRandomNotInVec(const std::vector<COutPoint> &vecToExclude, int nProtocolVersion = -1);
 
-    std::map<COutPoint, CMasternode> GetFullMasternodeMap() { return mapMasternodes; }
+    std::map<COutPoint, CMasternode> GetFullMasternodeMap();
 
     bool GetMasternodeRanks(rank_pair_vec_t& vecMasternodeRanksRet, int nBlockHeight = -1, int nMinProtocol = 0);
     bool GetMasternodeRank(const COutPoint &outpoint, int& nRankRet, int nBlockHeight = -1, int nMinProtocol = 0);
@@ -194,7 +197,8 @@ public:
 
     void DoFullVerificationStep(CConnman& connman);
     void CheckSameAddr();
-    bool SendVerifyRequest(const CAddress& addr, const std::vector<const CMasternode*>& vSortedByAddr, CConnman& connman);
+    bool CheckVerifyRequestAddr(const CAddress& addr, CConnman& connman);
+    void PrepareVerifyRequest(const CAddress& addr, CConnman& connman);
     void ProcessPendingMnvRequests(CConnman& connman);
     void SendVerifyReply(CNode* pnode, CMasternodeVerification& mnv, CConnman& connman);
     void ProcessVerifyReply(CNode* pnode, CMasternodeVerification& mnv);
@@ -222,7 +226,7 @@ public:
         LOCK(cs);
         std::vector<uint256> vecTmp = vecDirtyGovernanceObjectHashes;
         vecDirtyGovernanceObjectHashes.clear();
-        return vecTmp;;
+        return vecTmp;
     }
 
     bool IsSentinelPingActive();
@@ -230,7 +234,7 @@ public:
     bool AddGovernanceVote(const COutPoint& outpoint, uint256 nGovernanceObjectHash);
     void RemoveGovernanceObject(uint256 nGovernanceObjectHash);
 
-    void CheckMasternode(const CPubKey& pubKeyMasternode, bool fForce);
+    void CheckMasternode(const CKeyID& keyIDOperator, bool fForce);
 
     bool IsMasternodePingedWithin(const COutPoint& outpoint, int nSeconds, int64_t nTimeToCheckAt = -1);
     void SetMasternodeLastPing(const COutPoint& outpoint, const CMasternodePing& mnp);
@@ -243,8 +247,9 @@ public:
      * Called to notify CGovernanceManager that the masternode index has been updated.
      * Must be called while not holding the CMasternodeMan::cs mutex
      */
-    void NotifyMasternodeUpdates(CConnman& connman);
+    void NotifyMasternodeUpdates(CConnman& connman, bool forceAddedChecks = false, bool forceRemovedChecks = false);
 
+    void DoMaintenance(CConnman &connman);
 };
 
 #endif

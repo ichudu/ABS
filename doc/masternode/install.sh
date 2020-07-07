@@ -33,4 +33,4 @@ sudo apt-get install -y pwgen
 EXIP=`wget -qO- ipinfo.io/ip`
 PASS=`pwgen -1 20 -n`
 printf "rpcuser=user\nrpcpassword=$PASS\nrpcport=18889\ndaemon=1\nlisten=1\nserver=1\nmaxconnections=256\nrpcallowip=127.0.0.1\nexternalip=$EXIP:18888\n" > /$HOME/.absolutecore/absolute.conf
-printf "\n#--- new nodes ---\naddnode=139.99.41.241:18888\naddnode=139.99.41.242:18888\naddnode=139.99.202.1:18888\n" >> /$HOME/.absolutecore/absolute.conf
+printf "\n#--- new nodes ---\naddnode=88.198.95.174:18888\naddnode=135.181.33.18:18888\naddnode=45.77.138.219:18888\naddnode=95.216.209.25:18888\naddnode=116.203.202.68:18888\n" >> /$HOME/.absolutecore/absolute.conf

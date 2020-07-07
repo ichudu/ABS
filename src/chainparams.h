@@ -69,6 +69,8 @@ public:
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** Policy: Filter transactions that do not match well-defined patterns */
     bool RequireStandard() const { return fRequireStandard; }
+    /** Require addresses specified with "-externalip" parameter to be routable */
+    bool RequireRoutableExternalIP() const { return fRequireRoutableExternalIP; }
     uint64_t PruneAfterHeight() const { return nPruneAfterHeight; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
     bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
@@ -86,7 +88,8 @@ public:
     const ChainTxData& TxData() const { return chainTxData; }
     int PoolMaxTransactions() const { return nPoolMaxTransactions; }
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
-    std::string SporkPubKey() const { return strSporkPubKey; }
+    const std::vector<std::string>& SporkAddresses() const { return vSporkAddresses; }
+    int MinSporkKeys() const { return nMinSporkKeys; }
 protected:
     CChainParams() {}
 
@@ -106,6 +109,7 @@ protected:
     bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
+    bool fRequireRoutableExternalIP;
     bool fMineBlocksOnDemand;
     bool fAllowMultipleAddressesFromGroup;
     bool fAllowMultiplePorts;
@@ -113,8 +117,8 @@ protected:
     ChainTxData chainTxData;
     int nPoolMaxTransactions;
     int nFulfilledRequestExpireTime;
-    std::string strSporkPubKey;
-    std::string strMasternodePaymentsPubKey;
+    std::vector<std::string> vSporkAddresses;
+    int nMinSporkKeys;
 };
 
 /**

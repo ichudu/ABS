@@ -1,4 +1,4 @@
-Absolute 0.12.2
+Absolute 0.12.3.1
 =====================
 
 You may find below instructions for setting up Absolute wallet.
