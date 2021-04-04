@@ -16,7 +16,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over /Applications/Absolute-Qt (on Mac) or
-absoluted/absolute-qt (on Linux). If you upgrade after AIP0003 activation you will
+absoluted/absolute-qt (on Linux). If you upgrade after DIP0003 activation you will
 have to reindex (start with -reindex-chainstate or -reindex) to make sure
 your wallet has all the new data synced (only if you were using version < 0.12.3).
 
@@ -67,7 +67,7 @@ Downgrade warning
 
 ### Downgrade to a version < 0.12.3.1
 
-Downgrading to a version smaller than 0.12.3.1 is only supported as long as AIP2/AIP3
+Downgrading to a version smaller than 0.12.3.1 is only supported as long as DIP2/DIP3
 has not been activated. Activation will happen when enough miners signal compatibility
 through a BIP9 (bit 3) deployment.
 

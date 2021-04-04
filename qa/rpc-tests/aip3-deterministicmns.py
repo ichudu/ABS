@@ -15,11 +15,11 @@ from test_framework.util import *
 class Masternode(object):
     pass
 
-class AIP3Test(BitcoinTestFramework):
+class DIP3Test(BitcoinTestFramework):
     def __init__(self):
         super().__init__()
         self.num_initial_mn = 11 # Should be >= 11 to make sure quorums are not always the same MNs
-        self.num_nodes = 1 + self.num_initial_mn + 2 # +1 for controller, +1 for mn-qt, +1 for mn created after aip3 activation
+        self.num_nodes = 1 + self.num_initial_mn + 2 # +1 for controller, +1 for mn-qt, +1 for mn created after dip3 activation
         self.setup_clean_chain = True
 
         self.extra_args = ["-budgetparams=240:100:240"]
@@ -56,11 +56,11 @@ class AIP3Test(BitcoinTestFramework):
             self.nodes[0].generate(1) # generate enough for collaterals
         print("controller node has {} absolute".format(self.nodes[0].getbalance()))
 
-        # Make sure we're below block 143 (which activates aip3)
-        print("testing rejection of ProTx before aip3 activation")
+        # Make sure we're below block 143 (which activates dip3)
+        print("testing rejection of ProTx before dip3 activation")
         assert(self.nodes[0].getblockchaininfo()['blocks'] < 143)
-        aip3_deployment = self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']
-        assert_equal(aip3_deployment['status'], 'defined')
+        dip3_deployment = self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']
+        assert_equal(dip3_deployment['status'], 'defined')
 
         self.test_fail_create_protx(self.nodes[0])
 
@@ -100,29 +100,29 @@ class AIP3Test(BitcoinTestFramework):
         print("testing instant send")
         self.test_instantsend(10, 5)
 
-        print("testing rejection of ProTx before aip3 activation (in states defined, started and locked_in)")
-        while self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']['status'] == 'defined':
+        print("testing rejection of ProTx before dip3 activation (in states defined, started and locked_in)")
+        while self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']['status'] == 'defined':
             self.nodes[0].generate(1)
         self.test_fail_create_protx(self.nodes[0])
-        while self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']['status'] == 'started':
+        while self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']['status'] == 'started':
             self.nodes[0].generate(1)
         self.test_fail_create_protx(self.nodes[0])
 
-        # prepare mn which should still be accepted later when aip3 activates
-        print("creating collateral for mn-before-aip3")
-        before_aip3_mn = self.create_mn(self.nodes[0], mn_idx, 'mn-before-aip3')
+        # prepare mn which should still be accepted later when dip3 activates
+        print("creating collateral for mn-before-dip3")
+        before_dip3_mn = self.create_mn(self.nodes[0], mn_idx, 'mn-before-dip3')
         mn_idx += 1
 
-        while self.nodes[0].getblockchaininfo()['bip9_softforks']['aip0003']['status'] == 'locked_in':
+        while self.nodes[0].getblockchaininfo()['bip9_softforks']['dip0003']['status'] == 'locked_in':
             self.nodes[0].generate(1)
 
         # We have hundreds of blocks to sync here, give it more time
         print("syncing blocks for all nodes")
         sync_blocks(self.nodes, timeout=120)
 
-        # AIP3 has activated here
+        # DIP3 has activated here
 
-        print("testing rejection of ProTx right before aip3 activation")
+        print("testing rejection of ProTx right before dip3 activation")
         best_block = self.nodes[0].getbestblockhash()
         self.nodes[0].invalidateblock(best_block)
         self.test_fail_create_protx(self.nodes[0])
@@ -132,36 +132,36 @@ class AIP3Test(BitcoinTestFramework):
         self.sync_all()
         self.test_success_create_protx(self.nodes[0])
 
-        print("creating collateral for mn-after-aip3")
-        after_aip3_mn = self.create_mn(self.nodes[0], mn_idx, 'mn-after-aip3')
+        print("creating collateral for mn-after-dip3")
+        after_dip3_mn = self.create_mn(self.nodes[0], mn_idx, 'mn-after-dip3')
         # mature collaterals
         for i in range(3):
             self.nodes[0].generate(1)
             time.sleep(1)
 
-        print("testing if we can start a mn which was created before aip3 activation")
-        self.write_mnconf(mns + [before_aip3_mn, after_aip3_mn])
+        print("testing if we can start a mn which was created before dip3 activation")
+        self.write_mnconf(mns + [before_dip3_mn, after_dip3_mn])
         self.restart_controller_node()
         self.force_finish_mnsync(self.nodes[0])
 
-        print("start MN %s" % before_aip3_mn.alias)
-        mns.append(before_aip3_mn)
-        self.start_mn(before_aip3_mn)
+        print("start MN %s" % before_dip3_mn.alias)
+        mns.append(before_dip3_mn)
+        self.start_mn(before_dip3_mn)
         self.wait_for_sporks()
-        self.force_finish_mnsync_list(before_aip3_mn.node)
-        self.start_alias(self.nodes[0], before_aip3_mn.alias)
+        self.force_finish_mnsync_list(before_dip3_mn.node)
+        self.start_alias(self.nodes[0], before_dip3_mn.alias)
 
         self.wait_for_mnlists(mns)
         self.wait_for_mnlists_same()
 
         # Test if nodes still allow creating new non-ProTx MNs now
-        print("testing if MN start succeeds when using collateral which was created after aip3 activation")
-        print("start MN %s" % after_aip3_mn.alias)
-        mns.append(after_aip3_mn)
-        self.start_mn(after_aip3_mn)
+        print("testing if MN start succeeds when using collateral which was created after dip3 activation")
+        print("start MN %s" % after_dip3_mn.alias)
+        mns.append(after_dip3_mn)
+        self.start_mn(after_dip3_mn)
         self.wait_for_sporks()
-        self.force_finish_mnsync_list(after_aip3_mn.node)
-        self.start_alias(self.nodes[0], after_aip3_mn.alias)
+        self.force_finish_mnsync_list(after_dip3_mn.node)
+        self.start_alias(self.nodes[0], after_dip3_mn.alias)
 
         self.wait_for_mnlists(mns)
         self.wait_for_mnlists_same()
@@ -879,4 +879,4 @@ class AIP3Test(BitcoinTestFramework):
         self.mine_block(node, mn_amount=1, expected_error='bad-cb-payee')
 
 if __name__ == '__main__':
-    AIP3Test().main()
+    DIP3Test().main()
