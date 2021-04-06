@@ -47,7 +47,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
 
 static CBlock CreateDevNetGenesisBlock(const uint256 &prevBlockHash, const std::string& DevNetName, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    assert(!DevNetName.empty());
+    assert(!devNetName.empty());
 
     CMutableTransaction txNew;
     txNew.nVersion = 4;
@@ -88,8 +88,8 @@ static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits
 
 static CBlock FindDevNetGenesisBlock(const Consensus::Params& params, const CBlock &prevBlock, const CAmount& reward)
 {
-    std::string DevNetName = GetDevNetName();
-    assert(!DevNetName.empty());
+    std::string devNetName = GetDevNetName();
+    assert(!devNetName.empty());
 
     CBlock block = CreateDevNetGenesisBlock(prevBlock.GetHash(), DevNetName.c_str(), prevBlock.nTime + 1, 0, prevBlock.nBits, prevBlock.nVersion, reward);
 
@@ -106,7 +106,7 @@ static CBlock FindDevNetGenesisBlock(const Consensus::Params& params, const CBlo
 
     // This is very unlikely to happen as we start the DevNet with a very low difficulty. In many cases even the first
     // iteration of the above loop will give a result already
-    error("FindDevNetGenesisBlock: could not find DevNet genesis block for %s", DevNetName);
+    error("FindDevNetGenesisBlock: could not find devnet genesis block for %s", devNetName);
     assert(false);
 }
 /**
@@ -427,7 +427,7 @@ public:
 static CTestNetParams testNetParams;
 
 /**
- * DevNet
+ * Devnet
  */
 class CDevNetParams : public CChainParams {
 public:
@@ -517,8 +517,8 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"));
         assert(genesis.hashMerkleRoot == uint256S("0xe0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"));
 
-        DevNetGenesis = FindDevNetGenesisBlock(consensus, genesis, 50 * COIN);
-        consensus.hashDevNetGenesisBlock = DevNetGenesis.GetHash();
+        devnetGenesis = FindDevNetGenesisBlock(consensus, genesis, 50 * COIN);
+        consensus.hashDevnetGenesisBlock = devnetGenesis.GetHash();
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -554,17 +554,17 @@ public:
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
             (      0, uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"))
-            (      1, DevNetGenesis.GetHash())
+            (      1, devnetGenesis.GetHash())
         };
 
         chainTxData = ChainTxData{
-            DevNetGenesis.GetBlockTime(), // * UNIX timestamp of devnet genesis block
+            devnetGenesis.GetBlockTime(), // * UNIX timestamp of devnet genesis block
             2,                            // * we only have 2 coinbase transactions when a devnet is started up
             0.01                          // * estimated number of transactions per second
         };
     }
 };
-static CDevNetParams *DevNetParams;
+static CDevNetParams *devNetParams;
 
 
 /**
@@ -721,7 +721,9 @@ CChainParams& Params(const std::string& chain)
 void SelectParams(const std::string& network)
 {
     if (network == CBaseChainParams::DEVNET) {
-        DevNetParams = new CDevNetParams();
+        devNetParams = (CDevNetParams*)new uint8_t[sizeof(CDevNetParams)];
+        memset(devNetParams, 0, sizeof(CDevNetParams));
+        new (devNetParams) CDevNetParams();
     }
     SelectBaseParams(network);
     pCurrentParams = &Params(network);
