@@ -3173,11 +3173,11 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const 
         return state.DoS(50, false, REJECT_INVALID, "high-hash", false, "proof of work failed");
 
     // Check PoVNet
-    if (!consensusParams.hashPoVNETGenesisBlock.IsNull() &&
+    if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
             block.hashPrevBlock == consensusParams.hashGenesisBlock &&
-            block.GetHash() != consensusParams.hashPoVNETGenesisBlock) {
-        return state.DoS(100, error("CheckBlockHeader(): wrong povnet genesis"),
-                         REJECT_INVALID, "povnet-genesis");
+            block.GetHash() != consensusParams.hashDevnetGenesisBlock) {
+        return state.DoS(100, error("CheckBlockHeader(): wrong devnet genesis"),
+                         REJECT_INVALID, "devnet-genesis");
     }
     return true;
 }
@@ -4113,11 +4113,11 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!AddGenesisBlock(chainparams, chainparams.GenesisBlock(), state))
                 return false;
 
-            if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-                // We can't continue if povnet genesis block is invalid
-                std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(chainparams.PoVNETGenesisBlock());
-                bool fProcessPoVNETGenesisBlock = ProcessNewBlock(chainparams, shared_pblock, true, NULL);
-                assert(fProcessPoVNETGenesisBlock);
+            if (chainparams.NetworkIDString() == CBaseChainParams::DEVNET) {
+                // We can't continue if devnet genesis block is invalid
+                std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(chainparams.DevNetGenesisBlock());
+                bool fProcessDevnetGenesisBlock = ProcessNewBlock(chainparams, shared_pblock, true, NULL);
+                assert(fProcessDevnetGenesisBlock);
             }
             // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
             return FlushStateToDisk(state, FLUSH_STATE_ALWAYS);

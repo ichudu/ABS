@@ -121,9 +121,9 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     blockHeader.nTime = 1408732505; // Block #123457
     BOOST_CHECK_EQUAL(GetNextWorkRequired(&blockIndexLast, &blockHeader, params), 0x1b1441de); // Block #123457 has 0x1b1441de
 
-    // test special rules for slow blocks on povnet/testnet
-    SoftSetBoolArg("-povnet", true);
-    SelectParams(CBaseChainParams::POVNET);
+    // test special rules for slow blocks on devnet/testnet
+    SoftSetBoolArg("-devnet", true);
+    SelectParams(CBaseChainParams::DEVNET);
     const Consensus::Params& paramspov = Params().GetConsensus();
 
     // make sure normal rules apply

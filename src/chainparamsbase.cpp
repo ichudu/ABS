@@ -12,7 +12,7 @@
 
 const std::string CBaseChainParams::MAIN = "main";
 const std::string CBaseChainParams::TESTNET = "test";
-const std::string CBaseChainParams::POVNET = "pov";
+const std::string CBaseChainParams::DEVNET = "pov";
 const std::string CBaseChainParams::REGTEST = "regtest";
 
 void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp)
@@ -54,18 +54,18 @@ public:
 static CBaseTestNetParams testNetParams;
 
 /**
- * PoVNET
+ * Devnet
  */
-class CBasePoVNETParams : public CBaseChainParams
+class CBaseDevNetParams : public CBaseChainParams
 {
 public:
-    CBasePoVNETParams(const std::string &dataDir)
+    CBaseDevNetParams(const std::string &dataDir)
     {
         nRPCPort = 18890;
         strDataDir = dataDir;
     }
 };
-static CBasePoVNETParams *PoVNETParams;
+static CBaseDevNetParams *devNetParams;
 /*
  * Regression test
  */
@@ -94,9 +94,9 @@ CBaseChainParams& BaseParams(const std::string& chain)
         return mainParams;
     else if (chain == CBaseChainParams::TESTNET)
         return testNetParams;
-    else if (chain == CBaseChainParams::POVNET) {
-        assert(PoVNETParams);
-        return *PoVNETParams;
+    else if (chain == CBaseChainParams::DEVNET) {
+        assert(devNetParams);
+        return *devNetParams;
     } else if (chain == CBaseChainParams::REGTEST)
         return regTestParams;
     else
@@ -105,10 +105,13 @@ CBaseChainParams& BaseParams(const std::string& chain)
 
 void SelectBaseParams(const std::string& chain)
 {
-    if (chain == CBaseChainParams::POVNET) {
-        std::string PoVNETName = GetPoVNETName();
-        assert(!PoVNETName.empty());
-        PoVNETParams = new CBasePoVNETParams(PoVNETName);
+    if (chain == CBaseChainParams::DEVNET) {
+        std::string devNetName = GetDevNetName();
+        assert(!devNetName.empty());
+
+        devNetParams = (CBaseDevNetParams*)new uint8_t[sizeof(CBaseDevNetParams)];
+        memset(devNetParams, 0, sizeof(CBaseDevNetParams));
+        new (devNetParams) CBaseDevNetParams(devNetName);
     }
     pCurrentBaseParams = &BaseParams(chain);
 }
@@ -116,15 +119,15 @@ void SelectBaseParams(const std::string& chain)
 std::string ChainNameFromCommandLine()
 {
     bool fRegTest = GetBoolArg("-regtest", false);
-    bool fPoVNet = IsArgSet("-povnet");
+    bool fDevNet = IsArgSet("-devnet");
     bool fTestNet = GetBoolArg("-testnet", false);
 
-    int nameParamsCount = (fRegTest ? 1 : 0) + (fPoVNet ? 1 : 0) + (fTestNet ? 1 : 0);
+    int nameParamsCount = (fRegTest ? 1 : 0) + (fDevNet ? 1 : 0) + (fTestNet ? 1 : 0);
     if (nameParamsCount > 1)
-        throw std::runtime_error("Only one of -regtest, -testnet or -povnet can be used.");
+        throw std::runtime_error("Only one of -regtest, -testnet or -devnet can be used.");
 
-    if (fPoVNet)
-        return CBaseChainParams::POVNET;
+    if (fDevNet)
+        return CBaseChainParams::DEVNET;
     if (fRegTest)
         return CBaseChainParams::REGTEST;
     if (fTestNet)
@@ -132,12 +135,12 @@ std::string ChainNameFromCommandLine()
     return CBaseChainParams::MAIN;
 }
 
-std::string GetPoVNETName()
+std::string GetDevNetName()
 {
     // This function should never be called for non-devnets
-    assert(IsArgSet("-povnet"));
-    std::string devNetName = GetArg("-povnet", "");
-    return "povnet" + (devNetName.empty() ? "" : "-" + devNetName);
+    assert(IsArgSet("-devnet"));
+    std::string devNetName = GetArg("-devnet", "");
+    return "devnet" + (devNetName.empty() ? "" : "-" + devNetName);
 }
 
 bool AreBaseParamsConfigured()

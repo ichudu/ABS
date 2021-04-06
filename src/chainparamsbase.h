@@ -18,7 +18,7 @@ public:
     /** BIP70 chain name strings (main, test or regtest) */
     static const std::string MAIN;
     static const std::string TESTNET;
-    static const std::string POVNET;
+    static const std::string DEVNET;
     static const std::string REGTEST;
 
     const std::string& DataDir() const { return strDataDir; }
@@ -53,7 +53,7 @@ void SelectBaseParams(const std::string& chain);
  * @return CBaseChainParams::MAX_NETWORK_TYPES if an invalid combination is given. CBaseChainParams::MAIN by default.
  */
 std::string ChainNameFromCommandLine();
-std::string GetPoVNETName();
+std::string GetDevNetName();
 
 /**
  * Return true if SelectBaseParamsFromCommandLine() has been called to select

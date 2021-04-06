@@ -45,16 +45,16 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
     return genesis;
 }
 
-static CBlock CreatePoVNETGenesisBlock(const uint256 &prevBlockHash, const std::string& PoVNETName, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
+static CBlock CreateDevNetGenesisBlock(const uint256 &prevBlockHash, const std::string& DevNetName, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    assert(!PoVNETName.empty());
+    assert(!DevNetName.empty());
 
     CMutableTransaction txNew;
     txNew.nVersion = 4;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
-    // put height (BIP34) and povnet name into coinbase
-    txNew.vin[0].scriptSig = CScript() << 1 << std::vector<unsigned char>(PoVNETName.begin(), PoVNETName.end());
+    // put height (BIP34) and devnet name into coinbase
+    txNew.vin[0].scriptSig = CScript() << 1 << std::vector<unsigned char>(DevNetName.begin(), DevNetName.end());
     txNew.vout[0].nValue = genesisReward;
     txNew.vout[0].scriptPubKey = CScript() << OP_RETURN;
 
@@ -86,12 +86,12 @@ static CBlock CreateGenesisBlock(uint32_t nTime, uint32_t nNonce, uint32_t nBits
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTime, nNonce, nBits, nVersion, genesisReward);
 }
 
-static CBlock FindPoVNETGenesisBlock(const Consensus::Params& params, const CBlock &prevBlock, const CAmount& reward)
+static CBlock FindDevNetGenesisBlock(const Consensus::Params& params, const CBlock &prevBlock, const CAmount& reward)
 {
-    std::string PoVNETName = GetPoVNETName();
-    assert(!PoVNETName.empty());
+    std::string DevNetName = GetDevNetName();
+    assert(!DevNetName.empty());
 
-    CBlock block = CreatePoVNETGenesisBlock(prevBlock.GetHash(), PoVNETName.c_str(), prevBlock.nTime + 1, 0, prevBlock.nBits, prevBlock.nVersion, reward);
+    CBlock block = CreateDevNetGenesisBlock(prevBlock.GetHash(), DevNetName.c_str(), prevBlock.nTime + 1, 0, prevBlock.nBits, prevBlock.nVersion, reward);
 
     arith_uint256 bnTarget;
     bnTarget.SetCompact(block.nBits);
@@ -104,9 +104,9 @@ static CBlock FindPoVNETGenesisBlock(const Consensus::Params& params, const CBlo
             return block;
     }
 
-    // This is very unlikely to happen as we start the PoVNET with a very low difficulty. In many cases even the first
+    // This is very unlikely to happen as we start the DevNet with a very low difficulty. In many cases even the first
     // iteration of the above loop will give a result already
-    error("FindPoVNETGenesisBlock: could not find PoVNET genesis block for %s", PoVNETName);
+    error("FindDevNetGenesisBlock: could not find DevNet genesis block for %s", DevNetName);
     assert(false);
 }
 /**
@@ -427,11 +427,11 @@ public:
 static CTestNetParams testNetParams;
 
 /**
- * PoVNET
+ * DevNet
  */
-class CPoVNETParams : public CChainParams {
+class CDevNetParams : public CChainParams {
 public:
-    CPoVNETParams() {
+    CDevNetParams() {
         strNetworkID = "PoV";
         consensus.nSubsidyHalvingInterval = 350400;
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but its ok as long as its less then nMasternodePaymentsIncreaseBlock
@@ -448,10 +448,10 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.BIP34Height = 1; // BIP34 activated immediately on povnet
-        consensus.BIP65Height = 1; // BIP65 activated immediately on povnet
-        consensus.BIP66Height = 1; // BIP66 activated immediately on povnet
-        consensus.DIP0001Height = 2; // DIP0001 activated immediately on povnet
+        consensus.BIP34Height = 1; // BIP34 activated immediately on devnet
+        consensus.BIP65Height = 1; // BIP65 activated immediately on devnet
+        consensus.BIP66Height = 1; // BIP66 activated immediately on devnet
+        consensus.DIP0001Height = 2; // DIP0001 activated immediately on devnet
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // ABS: 1 day
         consensus.nPowTargetSpacing = 2 * 60; // ABS: 2 minutes
@@ -517,8 +517,8 @@ public:
         assert(consensus.hashGenesisBlock == uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"));
         assert(genesis.hashMerkleRoot == uint256S("0xe0028eb9648db56b1ac77cf090b99048a8007e2bb64b68f092c03c7f56a662c7"));
 
-        PoVNETGenesis = FindPoVNETGenesisBlock(consensus, genesis, 50 * COIN);
-        consensus.hashPoVNETGenesisBlock = PoVNETGenesis.GetHash();
+        DevNetGenesis = FindDevNetGenesisBlock(consensus, genesis, 50 * COIN);
+        consensus.hashDevNetGenesisBlock = DevNetGenesis.GetHash();
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -554,17 +554,17 @@ public:
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
             (      0, uint256S("0x000008ca1832a4baf228eb1553c03d3a2c8e02399550dd6ea8d65cec3ef23d2e"))
-            (      1, PoVNETGenesis.GetHash())
+            (      1, DevNetGenesis.GetHash())
         };
 
         chainTxData = ChainTxData{
-            PoVNETGenesis.GetBlockTime(), // * UNIX timestamp of povnet genesis block
-            2,                            // * we only have 2 coinbase transactions when a povnet is started up
+            DevNetGenesis.GetBlockTime(), // * UNIX timestamp of devnet genesis block
+            2,                            // * we only have 2 coinbase transactions when a devnet is started up
             0.01                          // * estimated number of transactions per second
         };
     }
 };
-static CPoVNETParams *PoVNETParams;
+static CDevNetParams *DevNetParams;
 
 
 /**
@@ -709,9 +709,9 @@ CChainParams& Params(const std::string& chain)
             return mainParams;
     else if (chain == CBaseChainParams::TESTNET)
             return testNetParams;
-    else if (chain == CBaseChainParams::POVNET) {
-            assert(PoVNETParams);
-            return *PoVNETParams;
+    else if (chain == CBaseChainParams::DEVNET) {
+            assert(devNetParams);
+            return *devNetParams;
     } else if (chain == CBaseChainParams::REGTEST)
             return regTestParams;
     else
@@ -720,8 +720,8 @@ CChainParams& Params(const std::string& chain)
 
 void SelectParams(const std::string& network)
 {
-    if (network == CBaseChainParams::POVNET) {
-        PoVNETParams = new CPoVNETParams();
+    if (network == CBaseChainParams::DEVNET) {
+        DevNetParams = new CDevNetParams();
     }
     SelectBaseParams(network);
     pCurrentParams = &Params(network);

@@ -571,8 +571,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
     AppendParamsHelpMessages(strUsage, showDebug);
     strUsage += HelpMessageOpt("-litemode=<n>", strprintf(_("Disable all Absolute specific functionality (Masternodes, PrivateSend, InstantSend, Governance) (0-1, default: %u)"), 0));
-    strUsage += HelpMessageOpt("-sporkaddr=<hex>", strprintf(_("Override spork address. Only useful for regtest and povnet. Using this on mainnet or testnet will ban you.")));
-    strUsage += HelpMessageOpt("-minsporkkeys=<n>", strprintf(_("Overrides minimum spork signers to change spork value. Only useful for regtest and povnet. Using this on mainnet or testnet will ban you.")));
+    strUsage += HelpMessageOpt("-sporkaddr=<hex>", strprintf(_("Override spork address. Only useful for regtest and devnet. Using this on mainnet or testnet will ban you.")));
+    strUsage += HelpMessageOpt("-minsporkkeys=<n>", strprintf(_("Overrides minimum spork signers to change spork value. Only useful for regtest and devnet. Using this on mainnet or testnet will ban you.")));
 
     strUsage += HelpMessageGroup(_("Masternode options:"));
     strUsage += HelpMessageOpt("-masternode=<n>", strprintf(_("Enable the client to act as a masternode (0-1, default: %u)"), 0));
@@ -1073,15 +1073,15 @@ bool AppInitParameterInteraction()
 
     }
 
-    if (IsArgSet("-povnet")) {
-        // Require setting of ports when running povnet
+    if (IsArgSet("-devnet")) {
+        // Require setting of ports when running devnet
         if (GetArg("-listen", DEFAULT_LISTEN) && !IsArgSet("-port"))
-            return InitError(_("-port must be specified when -povnet and -listen are specified"));
+            return InitError(_("-port must be specified when -devnet and -listen are specified"));
         if (GetArg("-server", false) && !IsArgSet("-rpcport"))
-            return InitError(_("-rpcport must be specified when -povnet and -server are specified"));
+            return InitError(_("-rpcport must be specified when -devnet and -server are specified"));
 
-        if (mapMultiArgs.count("-povnet") > 1)
-            return InitError(_("-povnet can only be specified once"));
+        if (mapMultiArgs.count("-devnet") > 1)
+            return InitError(_("-devnet can only be specified once"));
     }
 
     fAllowPrivateNet = GetBoolArg("-allowprivatenet", DEFAULT_ALLOWPRIVATENET);
@@ -1441,9 +1441,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
 
-    if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-        // Add povnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own povnet
-        uacomments.push_back(strprintf("povnet=%s", GetPoVNETName()));
+    if (chainparams.NetworkIDString() == CBaseChainParams::DEVNET) {
+        // Add devnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own devnet
+        uacomments.push_back(strprintf("devnet=%s", GetDevNetName()));
     }
 
     if (mapMultiArgs.count("-uacomment")) {
@@ -1691,8 +1691,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
-                if (!chainparams.GetConsensus().hashPoVNETGenesisBlock.IsNull() && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashPoVNETGenesisBlock) == 0)
-                    return InitError(_("Incorrect or no povnet genesis block found. Wrong datadir for povnet specified?"));
+                if (!chainparams.GetConsensus().hashDevNetGenesisBlock.IsNull() && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashDevNetGenesisBlock) == 0)
+                    return InitError(_("Incorrect or no devnet genesis block found. Wrong datadir for devnet specified?"));
 
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex(chainparams)) {

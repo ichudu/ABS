@@ -1444,10 +1444,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         if (pfrom->fInbound)
             PushNodeVersion(pfrom, connman, GetAdjustedTime());
 
-        if (Params().NetworkIDString() == CBaseChainParams::POVNET) {
-            if (strSubVer.find(strprintf("povnet=%s", GetPoVNETName())) == std::string::npos) {
+        if (Params().NetworkIDString() == CBaseChainParams::DEVNET) {
+            if (strSubVer.find(strprintf("devnet=%s", GetDevNetName())) == std::string::npos) {
                 LOCK(cs_main);
-                LogPrintf("connected to wrong PoVNET. Reported version is %s, expected povnet name is %s\n", strSubVer, GetPoVNETName());
+                LogPrintf("connected to wrong DevNet. Reported version is %s, expected devnet name is %s\n", strSubVer, GetDevNetName());
                 if (!pfrom->fInbound)
                     Misbehaving(pfrom->GetId(), 100); // don't try to connect again
                 else

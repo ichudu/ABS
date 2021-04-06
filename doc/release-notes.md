@@ -38,7 +38,7 @@ Number of false-positives from anti virus software should be reduced
 --------------------------------------------------------------------
 We have removed all mining code from Windows and Mac binaries, which should avoid most of the false-positive alerts
 from anti virus software. Linux builds are not affected. The mining code found in `absolute-qt` and `absoluted` are only meant
-for regression/integration tests and povnets, so there is no harm in removing this code from non-linux builds.
+for regression/integration tests and devnets, so there is no harm in removing this code from non-linux builds.
 
 Fixed an issue with invalid merkle blocks causing SPV nodes to ban other nodes
 ------------------------------------------------------------------------------

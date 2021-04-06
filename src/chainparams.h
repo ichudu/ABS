@@ -62,7 +62,7 @@ public:
     int GetDefaultPort() const { return nDefaultPort; }
 
     const CBlock& GenesisBlock() const { return genesis; }
-    const CBlock& PoVNETGenesisBlock() const { return PoVNETGenesis; }
+    const CBlock& DevNetGenesisBlock() const { return devnetGenesis; }
     /** Make miner wait to have peers to avoid wasting work */
     bool MiningRequiresPeers() const { return fMiningRequiresPeers; }
     /** Default value for -checkmempool and -checkblockindex argument */
@@ -104,7 +104,7 @@ protected:
     int nExtCoinType;
     std::string strNetworkID;
     CBlock genesis;
-    CBlock PoVNETGenesis;
+    CBlock devnetGenesis;
     std::vector<SeedSpec6> vFixedSeeds;
     bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;

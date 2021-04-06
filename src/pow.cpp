@@ -25,24 +25,24 @@ unsigned int static DarkGravityWave(const CBlockIndex* pindexLast, const CBlockH
 
     if (params.fPowAllowMinDifficultyBlocks && (
         // testnet ...
-        (params.hashPoVNETGenesisBlock.IsNull() && pindexLast->nChainWork >= UintToArith256(uint256S("0x000000000000000000000000000000000000000000000000003e9ccfe0e03e01"))) ||
-        // or povnet
-        !params.hashPoVNETGenesisBlock.IsNull())) {
+        (params.hashDevNetGenesisBlock.IsNull() && pindexLast->nChainWork >= UintToArith256(uint256S("0x000000000000000000000000000000000000000000000000003e9ccfe0e03e01"))) ||
+        // or devnet
+        !params.hashDevNetGenesisBlock.IsNull())) {
         // NOTE: 000000000000000000000000000000000000000000000000003e9ccfe0e03e01 is the work of the "wrong" chain,
         // so this rule activates there immediately and new blocks with high diff from that chain are going
         // to be rejected by updated nodes. Note, that old nodes are going to reject blocks from updated nodes
         // after the "right" chain reaches this amount of work too. This is a temporary condition which should
         // be removed when we decide to hard-fork testnet again.
-        // TODO: remove "testnet+work OR povnet" part on next testnet hard-fork
-        // Special difficulty rule for testnet/povnet:
+        // TODO: remove "testnet+work OR devnet" part on next testnet hard-fork
+        // Special difficulty rule for testnet/devnet:
         // If the new block's timestamp is more than 2* 2.5 minutes
         // then allow mining of a min-difficulty block.
 
         // start using smoother adjustment on testnet when total work hits
         // 000000000000000000000000000000000000000000000000003ff00000000000
         if (pindexLast->nChainWork >= UintToArith256(uint256S("0x000000000000000000000000000000000000000000000000003ff00000000000"))
-            // and immediately on povnet
-            || !params.hashPoVNETGenesisBlock.IsNull()) {
+            // and immediately on devnet
+            || !params.hashDevNetGenesisBlock.IsNull()) {
             // recent block is more than 2 hours old
             if (pblock->GetBlockTime() > pindexLast->GetBlockTime() + 2 * 60 * 60) {
                 return bnPowLimit.GetCompact();
