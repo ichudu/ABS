@@ -6,6 +6,7 @@
 #include "activemasternode.h"
 #include "consensus/validation.h"
 #include "governance-classes.h"
+#include "init.h"
 #include "masternode-payments.h"
 #include "masternode-sync.h"
 #include "masternodeman.h"
@@ -167,7 +168,7 @@ bool IsBlockValueValid(const CBlock& block, int nBlockHeight, CAmount blockRewar
 
 bool IsBlockPayeeValid(const CTransaction& txNew, int nBlockHeight, CAmount blockReward)
 {
-    if((!masternodeSync.IsSynced() && !deterministicMNManager->IsDeterministicMNsSporkActive(nBlockHeight)) || fLiteMode) {
+    if(!masternodeSync.IsSynced() || fLiteMode) {
         //there is no budget data to use to check anything, let's just accept the longest chain
         if(fDebug) LogPrintf("%s -- WARNING: Not enough data, skipping block payee checks\n", __func__);
         return true;
@@ -218,6 +219,7 @@ bool IsBlockPayeeValid(const CTransaction& txNew, int nBlockHeight, CAmount bloc
 
     if (deterministicMNManager->IsDeterministicMNsSporkActive(nBlockHeight)) {
         // always enforce masternode payments when spork15 is active
+        LogPrintf("%s -- ERROR: Invalid masternode payment detected at height %d: %s", __func__, nBlockHeight, txNew.ToString());
         return false;
     } else {
         if(sporkManager.IsSporkActive(SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT)) {
@@ -249,8 +251,7 @@ void FillBlockPayments(CMutableTransaction& txNew, int nBlockHeight, CAmount blo
     }
 
     if (!mnpayments.GetMasternodeTxOuts(nBlockHeight, blockReward, voutMasternodePaymentsRet)) {
-        // no idea whom to pay (MN list empty?), lets hope for the best
-        return;
+        LogPrint("mnpayments", "%s -- no masternode to pay (MN list probably empty)\n", __func__);
     }
 
     txNew.vout.insert(txNew.vout.end(), voutMasternodePaymentsRet.begin(), voutMasternodePaymentsRet.end());
@@ -367,7 +368,10 @@ bool CMasternodePayments::GetMasternodeTxOuts(int nBlockHeight, CAmount blockRew
     voutMasternodePaymentsRet.clear();
 
     if(!GetBlockTxOuts(nBlockHeight, blockReward, voutMasternodePaymentsRet)) {
-        assert(!deterministicMNManager->IsDeterministicMNsSporkActive(nBlockHeight));
+        if (deterministicMNManager->IsDeterministicMNsSporkActive(nBlockHeight)) {
+            LogPrintf("CMasternodePayments::%s -- deterministic masternode lists enabled and no payee\n", __func__);
+            return false;
+        }
 
         // no masternode detected...
         int nCount = 0;
@@ -447,7 +451,10 @@ void CMasternodePayments::ProcessMessage(CNode* pfrom, const std::string& strCom
 
         uint256 nHash = vote.GetHash();
 
-        pfrom->setAskFor.erase(nHash);
+        {
+            LOCK(cs_main);
+            connman.RemoveAskFor(nHash);
+        }
 
         // TODO: clear setAskFor for MSG_MASTERNODE_PAYMENT_BLOCK too
 
@@ -590,6 +597,13 @@ bool CMasternodePayments::GetBlockTxOuts(int nBlockHeight, CAmount blockReward, 
         uint256 blockHash;
         {
             LOCK(cs_main);
+            if (nBlockHeight - 1 > chainActive.Height()) {
+                // there are some cases (e.g. IsScheduled) where legacy/compatibility code runs into this method with
+                // block heights above the chain tip. Return false in this case
+                // TODO remove this when removing the compatibility code and make sure this method is only called with
+                // correct block height
+                return false;
+            }
             blockHash = chainActive[nBlockHeight - 1]->GetBlockHash();
         }
         uint256 proTxHash;
@@ -598,12 +612,18 @@ bool CMasternodePayments::GetBlockTxOuts(int nBlockHeight, CAmount blockReward, 
             return false;
         }
 
-        if (dmnPayee->nOperatorReward == 0 || dmnPayee->pdmnState->scriptOperatorPayout == CScript()) {
-            voutMasternodePaymentsRet.emplace_back(masternodeReward, dmnPayee->pdmnState->scriptPayout);
-        } else {
-            CAmount operatorReward = (masternodeReward * dmnPayee->nOperatorReward) / 10000;
+        CAmount operatorReward = 0;
+        if (dmnPayee->nOperatorReward != 0 && dmnPayee->pdmnState->scriptOperatorPayout != CScript()) {
+            // This calculation might eventually turn out to result in 0 even if an operator reward percentage is given.
+            // This will however only happen in a few years when the block rewards drops very low.
+            operatorReward = (masternodeReward * dmnPayee->nOperatorReward) / 10000;
             masternodeReward -= operatorReward;
+        }
+
+        if (masternodeReward > 0) {
             voutMasternodePaymentsRet.emplace_back(masternodeReward, dmnPayee->pdmnState->scriptPayout);
+        }
+        if (operatorReward > 0) {
             voutMasternodePaymentsRet.emplace_back(operatorReward, dmnPayee->pdmnState->scriptOperatorPayout);
         }
         return true;
@@ -628,7 +648,7 @@ bool CMasternodePayments::IsScheduled(const masternode_info_t& mnInfo, int nNotB
     if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
         auto projectedPayees = deterministicMNManager->GetListAtChainTip().GetProjectedMNPayees(8);
         for (const auto &dmn : projectedPayees) {
-            if (dmn->proTxHash == mnInfo.outpoint.hash) {
+            if (dmn->collateralOutpoint == mnInfo.outpoint) {
                 return true;
             }
         }
@@ -1283,4 +1303,11 @@ void CMasternodePayments::UpdatedBlockTip(const CBlockIndex *pindex, CConnman& c
 
     CheckBlockVotes(nFutureBlock - 1);
     ProcessBlock(nFutureBlock, connman);
+}
+
+void CMasternodePayments::DoMaintenance()
+{
+    if (ShutdownRequested()) return;
+
+    CheckAndRemove();
 }

@@ -133,12 +133,15 @@ void gobject_prepare_help()
                 "2. revision      (numeric, required) object revision in the system\n"
                 "3. time          (numeric, required) time this object was created\n"
                 "4. data-hex      (string, required)  data in hex string form\n"
+                "5. use-IS        (boolean, optional, default=false) InstantSend lock the collateral, only requiring one chain confirmation\n"
+                "6. outputHash    (string, optional) the single output to submit the proposal fee from\n"
+                "7. outputIndex   (numeric, optional) The output index.\n"
                 );
 }
 
 UniValue gobject_prepare(const JSONRPCRequest& request)
 {
-    if (request.fHelp || request.params.size() != 5)
+    if (request.fHelp || (request.params.size() != 5 && request.params.size() != 6 && request.params.size() != 8)) 
         gobject_prepare_help();
 
     if (!EnsureWalletIsAvailable(request.fHelp))
@@ -160,6 +163,8 @@ UniValue gobject_prepare(const JSONRPCRequest& request)
     int nRevision = atoi(strRevision);
     int64_t nTime = atoi64(strTime);
     std::string strDataHex = request.params[4].get_str();
+    bool useIS = false;
+    if (request.params.size() > 5) useIS = request.params[5].getBool();
 
     // CREATE A NEW COLLATERAL TRANSACTION FOR THIS SPECIFIC OBJECT
 
@@ -197,9 +202,22 @@ UniValue gobject_prepare(const JSONRPCRequest& request)
 
     EnsureWalletIsUnlocked();
 
+    // If specified, spend this outpoint as the proposal fee
+    COutPoint outpoint;
+    outpoint.SetNull();
+    if (request.params.size() == 8) {
+        uint256 collateralHash = ParseHashV(request.params[6], "outputHash");
+        int32_t collateralIndex = ParseInt32V(request.params[7], "outputIndex");
+        if (collateralHash.IsNull() || collateralIndex < 0) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("invalid hash or index: %s-%d", collateralHash.ToString(), collateralIndex));
+        }
+        outpoint = COutPoint(collateralHash, (uint32_t)collateralIndex);
+    }
     CWalletTx wtx;
-    if (!pwalletMain->GetBudgetSystemCollateralTX(wtx, govobj.GetHash(), govobj.GetMinCollateralFee(), false)) {
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Error making collateral transaction for governance object. Please check your wallet balance and make sure your wallet is unlocked.");
+    if (!pwalletMain->GetBudgetSystemCollateralTX(wtx, govobj.GetHash(), govobj.GetMinCollateralFee(), useIS, outpoint)) {
+        std::string err = "Error making collateral transaction for governance object. Please check your wallet balance and make sure your wallet is unlocked.";
+        if (request.params.size() == 8) err += "Please verify your specified output is valid and is enough for the combined proposal fee and transaction fee.";
+        throw JSONRPCError(RPC_INTERNAL_ERROR, err);
     }
 
     // -- make our change address
@@ -358,9 +376,7 @@ UniValue gobject_vote_conf(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() != 4)
         gobject_vote_conf_help();
 
-    if(deterministicMNManager->IsDeterministicMNsSporkActive()) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Can't use vote-conf when deterministic masternodes are active");
-    }
+
 
     uint256 hash;
 
@@ -412,7 +428,18 @@ UniValue gobject_vote_conf(const JSONRPCRequest& request)
     }
 
     CGovernanceVote vote(mn.outpoint, hash, eVoteSignal, eVoteOutcome);
-    if (!vote.Sign(activeMasternodeInfo.legacyKeyOperator, activeMasternodeInfo.legacyKeyIDOperator)) {
+    bool signSuccess = false;
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+        if (govObjType == GOVERNANCE_OBJECT_PROPOSAL && eVoteSignal == VOTE_SIGNAL_FUNDING) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Can't use vote-conf for proposals when deterministic masternodes are active");
+        }
+        if (activeMasternodeInfo.blsKeyOperator) {
+            signSuccess = vote.Sign(*activeMasternodeInfo.blsKeyOperator);
+        }
+    } else {
+        signSuccess = vote.Sign(activeMasternodeInfo.legacyKeyOperator, activeMasternodeInfo.legacyKeyIDOperator);
+    }
+    if (!signSuccess) {
         nFailed++;
         statusObj.push_back(Pair("result", "failed"));
         statusObj.push_back(Pair("errorMessage", "Failure to sign."));
@@ -575,6 +602,10 @@ UniValue gobject_vote_many(const JSONRPCRequest& request)
     // We can remove this when we remove support for masternode.conf and only support wallet based masternode
     // management
     if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+        if (!pwalletMain) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "vote-many not supported when wallet is disabled.");
+        }
+        entries.clear();
         auto mnList = deterministicMNManager->GetListAtChainTip();
         mnList.ForEachMN(true, [&](const CDeterministicMNCPtr& dmn) {
             bool found = false;
@@ -587,7 +618,7 @@ UniValue gobject_vote_many(const JSONRPCRequest& request)
                     continue;
                 }
 
-                if (nTxHash == dmn->proTxHash && (uint32_t)nOutputIndex == dmn->nCollateralIndex) {
+                if (nTxHash == dmn->collateralOutpoint.hash && (uint32_t)nOutputIndex == dmn->collateralOutpoint.n) {
                     found = true;
                     break;
                 }
@@ -596,11 +627,15 @@ UniValue gobject_vote_many(const JSONRPCRequest& request)
                 CKey ownerKey;
                 if (pwalletMain->GetKey(dmn->pdmnState->keyIDVoting, ownerKey)) {
                     CBitcoinSecret secret(ownerKey);
-                    CMasternodeConfig::CMasternodeEntry mne(dmn->proTxHash.ToString(), dmn->pdmnState->addr.ToStringIPPort(false), secret.ToString(), dmn->proTxHash.ToString(), itostr(dmn->nCollateralIndex));
+                    CMasternodeConfig::CMasternodeEntry mne(dmn->proTxHash.ToString(), dmn->pdmnState->addr.ToStringIPPort(false), secret.ToString(), dmn->collateralOutpoint.hash.ToString(), itostr(dmn->collateralOutpoint.n));
                     entries.push_back(mne);
                 }
             }
         });
+    }
+#else
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "vote-many not supported when wallet is disabled.");
     }
 #endif
 
@@ -616,7 +651,7 @@ void gobject_vote_alias_help()
                 "1. governance-hash   (string, required) hash of the governance object\n"
                 "2. vote              (string, required) vote, possible values: [funding|valid|delete|endorsed]\n"
                 "3. vote-outcome      (string, required) vote outcome, possible values: [yes|no|abstain]\n"
-                "4. alias-name        (string, required) masternode alias"
+                "4. alias-name        (string, required) masternode alias or proTxHash after DIP3 activation"
                 );
 }
 
@@ -629,7 +664,7 @@ UniValue gobject_vote_alias(const JSONRPCRequest& request)
     std::string strVoteSignal = request.params[2].get_str();
     std::string strVoteOutcome = request.params[3].get_str();
 
-    std::string strAlias = request.params[4].get_str();
+
 
     vote_signal_enum_t eVoteSignal = CGovernanceVoting::ConvertVoteSignal(strVoteSignal);
     if (eVoteSignal == VOTE_SIGNAL_NONE) {
@@ -644,9 +679,35 @@ UniValue gobject_vote_alias(const JSONRPCRequest& request)
     }
 
     std::vector<CMasternodeConfig::CMasternodeEntry> entries;
-    for (const auto& mne : masternodeConfig.getEntries()) {
-        if (strAlias == mne.getAlias())
-            entries.push_back(mne);
+    if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+#ifdef ENABLE_WALLET
+        if (!pwalletMain) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "vote-alias not supported when wallet is disabled");
+        }
+
+        uint256 proTxHash = ParseHashV(request.params[4], "alias-name");
+        auto dmn = deterministicMNManager->GetListAtChainTip().GetValidMN(proTxHash);
+        if (!dmn) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid or unknown proTxHash");
+        }
+
+        CKey votingKey;
+        if (!pwalletMain->GetKey(dmn->pdmnState->keyIDVoting, votingKey)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Private key for voting address %s not known by wallet", CBitcoinAddress(dmn->pdmnState->keyIDVoting).ToString()));
+        }
+
+        CBitcoinSecret secret(votingKey);
+        CMasternodeConfig::CMasternodeEntry mne(dmn->proTxHash.ToString(), dmn->pdmnState->addr.ToStringIPPort(false), secret.ToString(), dmn->collateralOutpoint.hash.ToString(), itostr(dmn->collateralOutpoint.n));
+        entries.push_back(mne);
+#else
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "vote-alias not supported when wallet is disabled");
+#endif
+    } else {
+        std::string strAlias = request.params[4].get_str();
+        for (const auto& mne : masternodeConfig.getEntries()) {
+            if (strAlias == mne.getAlias())
+                entries.push_back(mne);
+        }
     }
 
     return VoteWithMasternodeList(entries, hash, eVoteSignal, eVoteOutcome);
@@ -946,7 +1007,7 @@ UniValue gobject_getcurrentvotes(const JSONRPCRequest& request)
     return bResult;
 }
 
-void gobject_help()
+[[ noreturn ]] void gobject_help()
 {
     throw std::runtime_error(
             "gobject \"command\"...\n"
@@ -976,15 +1037,9 @@ UniValue gobject(const JSONRPCRequest& request)
     if (request.params.size() >= 1)
         strCommand = request.params[0].get_str();
 
-    if ((request.fHelp && strCommand.empty())  ||
-        (
-#ifdef ENABLE_WALLET
-         strCommand != "prepare" &&
-#endif // ENABLE_WALLET
-         strCommand != "vote-many" && strCommand != "vote-conf" && strCommand != "vote-alias" && strCommand != "submit" && strCommand != "count" &&
-         strCommand != "deserialize" && strCommand != "get" && strCommand != "getvotes" && strCommand != "getcurrentvotes" && strCommand != "list" && strCommand != "diff" &&
-         strCommand != "check" ))
-            gobject_help();
+    if (request.fHelp && strCommand.empty()) {
+        gobject_help();
+    }
 
     if (strCommand == "count") {
         return gobject_count(request);
@@ -1027,9 +1082,11 @@ UniValue gobject(const JSONRPCRequest& request)
     } else if (strCommand == "getcurrentvotes") {
         // GETVOTES FOR SPECIFIC GOVERNANCE OBJECT
         return gobject_getcurrentvotes(request);
+    } else {
+        gobject_help();
     }
 
-    throw std::runtime_error("invalid command: " + strCommand);
+
 }
 
 UniValue voteraw(const JSONRPCRequest& request)
@@ -1090,9 +1147,9 @@ UniValue voteraw(const JSONRPCRequest& request)
     vote.SetTime(nTime);
     vote.SetSignature(vchSig);
 
-    bool onlyOwnerAllowed = govObjType == GOVERNANCE_OBJECT_PROPOSAL;
+    bool onlyVotingKeyAllowed = govObjType == GOVERNANCE_OBJECT_PROPOSAL && vote.GetSignal() == VOTE_SIGNAL_FUNDING;
 
-    if (!vote.IsValid(onlyOwnerAllowed)) {
+    if (!vote.IsValid(onlyVotingKeyAllowed)) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Failure to verify vote.");
     }
 

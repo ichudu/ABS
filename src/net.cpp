@@ -2616,6 +2616,14 @@ void CConnman::RelayTransaction(const CTransaction& tx)
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
     {
+        if (nInv == MSG_TXLOCK_REQUEST) {
+            // Additional filtering for lock requests.
+            // Make it here because lock request processing
+            // differs from simple tx processing in PushInventory
+            // and tx info will not be available there.
+            LOCK(pnode->cs_filter);
+            if(pnode->pfilter && !pnode->pfilter->IsRelevantAndUpdate(tx)) continue;
+        }
         pnode->PushInventory(inv);
     }
 }
@@ -2642,6 +2650,28 @@ void CConnman::RelayInvFiltered(CInv &inv, const CTransaction& relatedTx, const 
     }
 }
 
+void CConnman::RelayInvFiltered(CInv &inv, const uint256& relatedTxHash, const int minProtoVersion)
+{
+    LOCK(cs_vNodes);
+    for (const auto& pnode : vNodes) {
+        if(pnode->nVersion < minProtoVersion) continue;
+        {
+            LOCK(pnode->cs_filter);
+            if(pnode->pfilter && !pnode->pfilter->contains(relatedTxHash)) continue;
+        }
+        pnode->PushInventory(inv);
+    }
+}
+
+void CConnman::RemoveAskFor(const uint256& hash)
+{
+    mapAlreadyAskedFor.erase(hash);
+
+    LOCK(cs_vNodes);
+    for (const auto& pnode : vNodes) {
+        pnode->RemoveAskFor(hash);
+    }
+}
 void CConnman::RecordBytesRecv(uint64_t bytes)
 {
     LOCK(cs_totalBytesRecv);
@@ -2894,6 +2924,18 @@ void CNode::AskFor(const CInv& inv)
     else
         mapAlreadyAskedFor.insert(std::make_pair(inv.hash, nRequestTime));
     mapAskFor.insert(std::make_pair(nRequestTime, inv));
+}
+
+void CNode::RemoveAskFor(const uint256& hash)
+{
+    setAskFor.erase(hash);
+    for (auto it = mapAskFor.begin(); it != mapAskFor.end();) {
+        if (it->second.hash == hash) {
+            it = mapAskFor.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 bool CConnman::NodeFullyConnected(const CNode* pnode)

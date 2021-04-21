@@ -12,8 +12,9 @@
 #include "primitives/transaction.h"
 #include "validationinterface.h"
 
-#include "evo/providertx.h"
+
 #include "evo/deterministicmns.h"
+#include "evo/providertx.h"
 
 struct CActiveMasternodeInfo;
 class CActiveLegacyMasternodeManager;
@@ -38,6 +39,7 @@ struct CActiveMasternodeInfo {
     std::unique_ptr<CBLSSecretKey> blsKeyOperator;
 
     // Initialized while registering Masternode
+    uint256 proTxHash;
     COutPoint outpoint;
     CService service;
 };
@@ -50,6 +52,7 @@ public:
         MASTERNODE_WAITING_FOR_PROTX,
         MASTERNODE_POSE_BANNED,
         MASTERNODE_REMOVED,
+        MASTERNODE_OPERATOR_KEY_CHANGED,
         MASTERNODE_READY,
         MASTERNODE_ERROR,
     };
@@ -70,7 +73,7 @@ public:
     std::string GetStatus() const;
 
 private:
-    bool GetLocalAddress(CService &addrRet);
+    bool GetLocalAddress(CService& addrRet);
 };
 
 // Responsible for activating the Masternode and pinging the network (legacy MN list)
@@ -102,11 +105,12 @@ public:
     std::string strNotCapableReason;
 
 
-    CActiveLegacyMasternodeManager()
-        : eType(MASTERNODE_UNKNOWN),
-          fPingerEnabled(false),
-          nState(ACTIVE_MASTERNODE_INITIAL)
-    {}
+    CActiveLegacyMasternodeManager() :
+        eType(MASTERNODE_UNKNOWN),
+        fPingerEnabled(false),
+        nState(ACTIVE_MASTERNODE_INITIAL)
+    {
+    }
 
     /// Manage state of active Masternode
     void ManageState(CConnman& connman);
@@ -117,7 +121,7 @@ public:
 
     bool UpdateSentinelPing(int version);
 
-    void DoMaintenance(CConnman &connman) { ManageState(connman); }
+    void DoMaintenance(CConnman& connman);
 
 private:
     void ManageStateInitial(CConnman& connman);

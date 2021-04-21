@@ -33,6 +33,7 @@
 #include "evo/specialtx.h"
 #include "evo/providertx.h"
 #include "evo/cbtx.h"
+#include "llmq/quorums_commitment.h"
 
 #include <stdint.h>
 
@@ -135,37 +136,44 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     if (tx.nType == TRANSACTION_PROVIDER_REGISTER) {
         CProRegTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proRegTx", obj));
         }
     } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_SERVICE) {
         CProUpServTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proUpServTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proUpServTx", obj));
         }
     } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REGISTRAR) {
         CProUpRegTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proUpRegTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proUpRegTx", obj));
         }
     } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REVOKE) {
         CProUpRevTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proUpRevTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proUpRevTx", obj));
         }
     } else if (tx.nType == TRANSACTION_COINBASE) {
         CCbTx cbTx;
         if (GetTxPayload(tx, cbTx)) {
-            UniValue proTxObj;
-            cbTx.ToJson(proTxObj);
-            entry.push_back(Pair("cbTx", proTxObj));
+            UniValue obj;
+            cbTx.ToJson(obj);
+            entry.push_back(Pair("cbTx", obj));
+        }
+    } else if (tx.nType == TRANSACTION_QUORUM_COMMITMENT) {
+        llmq::CFinalCommitmentTxPayload qcTx;
+        if (GetTxPayload(tx, qcTx)) {
+            UniValue obj;
+            qcTx.ToJson(obj);
+            entry.push_back(Pair("qcTx", obj));
         }
     }
 

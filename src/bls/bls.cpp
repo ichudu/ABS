@@ -9,8 +9,7 @@
 #include "tinyformat.h"
 
 #ifndef BUILD_BITCOIN_INTERNAL
-#include "support/allocators/secure.h"
-#include <boost/pool/pool_alloc.hpp>
+#include "support/allocators/mt_pooled_secure.h"
 #endif
 
 #include <assert.h>
@@ -425,20 +424,20 @@ bool CBLSSignature::Recover(const std::vector<CBLSSignature>& sigs, const std::v
 }
 
 #ifndef BUILD_BITCOIN_INTERNAL
-struct secure_user_allocator {
-    typedef std::size_t size_type;
-    typedef std::ptrdiff_t difference_type;
 
-    static char* malloc(const size_type bytes)
-    {
-        return static_cast<char*>(LockedPoolManager::Instance().alloc(bytes));
-    }
 
-    static void free(char* const block)
-    {
-        LockedPoolManager::Instance().free(block);
-    }
-};
+static std::once_flag init_flag;
+static mt_pooled_secure_allocator<uint8_t>* secure_allocator_instance;
+static void create_secure_allocator()
+{
+    // make sure LockedPoolManager is initialized first (ensures destruction order)
+    LockedPoolManager::Instance();
+
+    // static variable in function scope ensures it's initialized when first accessed
+    // and destroyed before LockedPoolManager
+    static mt_pooled_secure_allocator<uint8_t> a(sizeof(bn_t) + sizeof(size_t));
+    secure_allocator_instance = &a;
+}
 
 // every thread has it's own pool allocator for secure data to speed things up
 // otherwise locking of mutexes slows down the system at places were you'd never expect it
@@ -446,19 +445,17 @@ struct secure_user_allocator {
 // LockedPool is destroyed. This means that all worker threads must finish before static destruction begins
 // we use sizeof(bn_t) as the pool request size as this is what Chia's BLS library will request in most cases
 // In case something larger is requested, we directly call into LockedPool and accept the slowness
-thread_local static boost::pool<secure_user_allocator> securePool(sizeof(bn_t) + sizeof(size_t));
+static mt_pooled_secure_allocator<uint8_t>& get_secure_allocator()
+{
+    std::call_once(init_flag, create_secure_allocator);
+    return *secure_allocator_instance;
+}
 
 static void* secure_allocate(size_t n)
 {
-    void* p;
-    if (n <= securePool.get_requested_size() - sizeof(size_t)) {
-        p = securePool.ordered_malloc();
-    } else {
-        p = secure_user_allocator::malloc(n + sizeof(size_t));
-    }
-    *(size_t*)p = n;
-    p = (uint8_t*)p + sizeof(size_t);
-    return p;
+    uint8_t* ptr = get_secure_allocator().allocate(n + sizeof(size_t));
+    *(size_t*)ptr = n;
+    return ptr + sizeof(size_t);
 }
 
 static void secure_free(void* p)
@@ -466,22 +463,15 @@ static void secure_free(void* p)
     if (!p) {
         return;
     }
-    p = (uint8_t*)p - sizeof(size_t);
-    size_t n = *(size_t*)p;
-    memory_cleanse(p, n + sizeof(size_t));
-    if (n <= securePool.get_requested_size() - sizeof(size_t)) {
-        securePool.ordered_free(p);
-    } else {
-        secure_user_allocator::free((char*)p);
-    }
+    uint8_t* ptr = (uint8_t*)p - sizeof(size_t);
+    size_t n = *(size_t*)ptr;
+    return get_secure_allocator().deallocate(ptr, n);
 }
 #endif
 
 bool BLSInit()
 {
-    if (!bls::BLS::Init()) {
-        return false;
-    }
+
 #ifndef BUILD_BITCOIN_INTERNAL
     bls::BLS::SetSecureAllocator(secure_allocate, secure_free);
 #endif

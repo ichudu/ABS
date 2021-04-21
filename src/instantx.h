@@ -9,6 +9,7 @@
 #include "net.h"
 #include "primitives/transaction.h"
 
+#include "evo/deterministicmns.h"
 class CTxLockVote;
 class COutPointLock;
 class CTxLockRequest;
@@ -28,8 +29,6 @@ extern CInstantSend instantsend;
 */
 
 static const int MIN_INSTANTSEND_PROTO_VERSION      = 70211;
-
-static const int MIN_INSTANTSEND_WITHOUT_FEE_PROTO_VERSION = 70211;
 
 /// For how long we are going to accept votes/locks
 /// after we saw the first one for a specific transaction
@@ -153,7 +152,7 @@ public:
 
     std::string ToString() const;
 
-    void DoMaintenance() { CheckAndRemove(); }
+    void DoMaintenance();
 
     /// checks if we can automatically lock "simple" transactions
     static bool CanAutoLock();
@@ -234,7 +233,10 @@ class CTxLockVote
 private:
     uint256 txHash;
     COutPoint outpoint;
+    // TODO remove this member when the legacy masternode code is removed after DIP3 deployment
     COutPoint outpointMasternode;
+    uint256 quorumModifierHash;
+    uint256 masternodeProTxHash;
     std::vector<unsigned char> vchMasternodeSignature;
     // local memory only
     int nConfirmedHeight; ///< When corresponding tx is 0-confirmed or conflicted, nConfirmedHeight is -1
@@ -245,15 +247,19 @@ public:
         txHash(),
         outpoint(),
         outpointMasternode(),
+        quorumModifierHash(),
+        masternodeProTxHash(),
         vchMasternodeSignature(),
         nConfirmedHeight(-1),
         nTimeCreated(GetTime())
         {}
 
-    CTxLockVote(const uint256& txHashIn, const COutPoint& outpointIn, const COutPoint& outpointMasternodeIn) :
+    CTxLockVote(const uint256& txHashIn, const COutPoint& outpointIn, const COutPoint& outpointMasternodeIn, const uint256& quorumModifierHashIn, const uint256& masternodeProTxHashIn) :
         txHash(txHashIn),
         outpoint(outpointIn),
         outpointMasternode(outpointMasternodeIn),
+        quorumModifierHash(quorumModifierHashIn),
+        masternodeProTxHash(masternodeProTxHashIn),
         vchMasternodeSignature(),
         nConfirmedHeight(-1),
         nTimeCreated(GetTime())
@@ -266,6 +272,12 @@ public:
         READWRITE(txHash);
         READWRITE(outpoint);
         READWRITE(outpointMasternode);
+        if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+            // Starting with spork15 activation, the proTxHash and quorumModifierHash is included. When we bump to >= 70214, we can remove
+            // the surrounding if. We might also remove outpointMasternode as well later
+            READWRITE(quorumModifierHash);
+            READWRITE(masternodeProTxHash);
+        }
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(vchMasternodeSignature);
         }

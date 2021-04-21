@@ -1,11 +1,15 @@
-# Absolute 0.12.3.1
+# Absolute 0.13.0.1
 
-Absolute will service the AbsoluteX platform designed to help advertising, promotions and events, with smart contracts that will have a global reach of network enablers. Our Proof of View network will allow agents, organisers and promoters the ability to reach a global audience and utilise their participation to achieve their desired media goals.
+`master:` [![Build Status](https://travis-ci.org/absolute-community/absolute=master)](https://travis-ci.org/absolute-community/absolute)
 
-The network is driven by ultra-low transaction fees, reliable and fast transactions (10x faster than Bitcoin) which are supported by a large core network of Masternodes. 
+https://www.absify.me
 
-Absolute Coin gives you the access to the wide range of options created by two-tier blockchain system (Standard and Proof of View nodes). InstaSend payments are near-instant and greatly practical for the network users. PrivateSend is designed and implemented to ensure that sources of payments cannot be tracked and identified. Additionally, MasterNode holders will soon be assigned voting rights to decide about the future of the network.
+What is Absolute all about?
+Absolute is a community of designers and developers that value great designs and how they can be used to improve your life and enjoyment of producing something that is special for you.
 
+Our goal is to allow you to produce excellent quality products that are designed by you using our online configurator. Certain designs have the choice of being recorded in the Absolute blockchain, allow independent verification that the design you made is unique to you.
+
+----------------
 
 ## Absolute Technical Details
 
@@ -19,15 +23,12 @@ Absolute Coin gives you the access to the wide range of options created by two-t
 | Maximum supply | 52.5 M - 20.35 M Block Rewards and 32.15 M PoV |
 | Difficulty retargeting algo | Dark Gravity Wave v3 | 
 
-| Area | Proof Of View Setting |
-| ------ | ------ |
-| Platform | On Demand |
-| Block Reward | Max 5% Fee of Block Volume |
-| PoV Node / Escrow Node Collateral | TBA ABS |
+
+
 
 For building please see INSTALL / proper files in the doc subfolder.
 
-Masternode install scripts are supported on Ubuntu 16.04 and 18.04
+Masternode install scripts are supported on Ubuntu 18.04 and 20.04
 
 Development Process
 -------------------

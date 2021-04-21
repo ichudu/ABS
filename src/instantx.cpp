@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "activemasternode.h"
+#include "init.h"
 #include "instantx.h"
 #include "key.h"
 #include "validation.h"
@@ -74,7 +75,10 @@ void CInstantSend::ProcessMessage(CNode* pfrom, const std::string& strCommand, C
 
         uint256 nVoteHash = vote.GetHash();
 
-        pfrom->setAskFor.erase(nVoteHash);
+        {
+            LOCK(cs_main);
+            connman.RemoveAskFor(nVoteHash);
+        }
 
         // Ignore any InstantSend messages until masternode list is synced
         if (!masternodeSync.IsMasternodeListSynced()) return;
@@ -241,10 +245,15 @@ void CInstantSend::Vote(CTxLockCandidate& txLockCandidate, CConnman& connman)
         int nLockInputHeight = nPrevoutHeight + Params().GetConsensus().nInstantSendConfirmationsRequired - 2;
 
         int nRank;
+        uint256 quorumModifierHash;
         int nMinRequiredProtocol = std::max(MIN_INSTANTSEND_PROTO_VERSION, mnpayments.GetMinMasternodePaymentsProto());
-        if (!mnodeman.GetMasternodeRank(activeMasternodeInfo.outpoint, nRank, nLockInputHeight, nMinRequiredProtocol)) {
+        if (!mnodeman.GetMasternodeRank(activeMasternodeInfo.outpoint, nRank, quorumModifierHash, nLockInputHeight, nMinRequiredProtocol)) {
             LogPrint("instantsend", "CInstantSend::Vote -- Can't calculate rank for masternode %s\n", activeMasternodeInfo.outpoint.ToStringShort());
             continue;
+        }
+        if (!deterministicMNManager->IsDeterministicMNsSporkActive()) {
+            // not used until spork15 activation
+            quorumModifierHash = uint256();
         }
 
         int nSignaturesTotal = COutPointLock::SIGNATURES_TOTAL;
@@ -278,7 +287,8 @@ void CInstantSend::Vote(CTxLockCandidate& txLockCandidate, CConnman& connman)
         }
 
         // we haven't voted for this outpoint yet, let's try to do this now
-        CTxLockVote vote(txHash, outpointLockPair.first, activeMasternodeInfo.outpoint);
+        // Please note that activeMasternodeInfo.proTxHash is only valid after spork15 activation
+        CTxLockVote vote(txHash, outpointLockPair.first, activeMasternodeInfo.outpoint, quorumModifierHash, activeMasternodeInfo.proTxHash);
 
         if (!vote.Sign()) {
             LogPrintf("CInstantSend::Vote -- Failed to sign consensus vote\n");
@@ -918,6 +928,12 @@ std::string CInstantSend::ToString() const
     return strprintf("Lock Candidates: %llu, Votes %llu", mapTxLockCandidates.size(), mapTxLockVotes.size());
 }
 
+void CInstantSend::DoMaintenance()
+{
+    if (ShutdownRequested()) return;
+
+    CheckAndRemove();
+}
 bool CInstantSend::CanAutoLock()
 {
     if (!isAutoLockBip9Active) {
@@ -1019,6 +1035,18 @@ bool CTxLockVote::IsValid(CNode* pnode, CConnman& connman) const
         return false;
     }
 
+    // Verify that masternodeProTxHash belongs to the same MN referred by the collateral
+    // Only v13 nodes will send us locks with this field set, and only after spork15 activation
+    if (!masternodeProTxHash.IsNull()) {
+        masternode_info_t mnInfo;
+        if (!mnodeman.GetMasternodeInfo(masternodeProTxHash, mnInfo) || mnInfo.outpoint != outpointMasternode) {
+            LogPrint("instantsend", "CTxLockVote::IsValid -- invalid masternodeProTxHash %s\n", masternodeProTxHash.ToString());
+            return false;
+        }
+    } else if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+        LogPrint("instantsend", "CTxLockVote::IsValid -- missing masternodeProTxHash while DIP3 is active\n");
+        return false;
+    }
     Coin coin;
     if (!GetUTXOCoin(outpoint, coin)) {
         LogPrint("instantsend", "CTxLockVote::IsValid -- Failed to find UTXO %s\n", outpoint.ToStringShort());
@@ -1028,10 +1056,20 @@ bool CTxLockVote::IsValid(CNode* pnode, CConnman& connman) const
     int nLockInputHeight = coin.nHeight + Params().GetConsensus().nInstantSendConfirmationsRequired - 2;
 
     int nRank;
+    uint256 expectedQuorumModifierHash;
     int nMinRequiredProtocol = std::max(MIN_INSTANTSEND_PROTO_VERSION, mnpayments.GetMinMasternodePaymentsProto());
-    if (!mnodeman.GetMasternodeRank(outpointMasternode, nRank, nLockInputHeight, nMinRequiredProtocol)) {
+    if (!mnodeman.GetMasternodeRank(outpointMasternode, nRank, expectedQuorumModifierHash, nLockInputHeight, nMinRequiredProtocol)) {
         //can be caused by past versions trying to vote with an invalid protocol
         LogPrint("instantsend", "CTxLockVote::IsValid -- Can't calculate rank for masternode %s\n", outpointMasternode.ToStringShort());
+        return false;
+    }
+    if (!quorumModifierHash.IsNull()) {
+        if (quorumModifierHash != expectedQuorumModifierHash) {
+            LogPrint("instantsend", "CTxLockVote::IsValid -- invalid quorumModifierHash %s, expected %s\n", quorumModifierHash.ToString(), expectedQuorumModifierHash.ToString());
+            return false;
+        }
+    } else if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+        LogPrint("instantsend", "CTxLockVote::IsValid -- missing quorumModifierHash while DIP3 is active\n");
         return false;
     }
     LogPrint("instantsend", "CTxLockVote::IsValid -- Masternode %s, rank=%d\n", outpointMasternode.ToStringShort(), nRank);
@@ -1112,6 +1150,9 @@ bool CTxLockVote::Sign()
         uint256 hash = GetSignatureHash();
 
         CBLSSignature sig = activeMasternodeInfo.blsKeyOperator->Sign(hash);
+        if (!sig.IsValid()) {
+            return false;
+        }
         sig.GetBuf(vchMasternodeSignature);
     } else if (sporkManager.IsSporkActive(SPORK_6_NEW_SIGS)) {
         uint256 hash = GetSignatureHash();
@@ -1146,10 +1187,10 @@ void CTxLockVote::Relay(CConnman& connman) const
 {
     CInv inv(MSG_TXLOCK_VOTE, GetHash());
     CTxLockRequest request;
-    if (instantsend.GetTxLockRequest(txHash, request)) {
+    if (instantsend.GetTxLockRequest(txHash, request) && request) {
         connman.RelayInvFiltered(inv, *request.tx);
     } else {
-        connman.RelayInv(inv);
+        connman.RelayInvFiltered(inv, txHash);
     }
 }
 

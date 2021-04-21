@@ -17,7 +17,7 @@
 
 #include <string>
 #include <univalue.h>
-#include <string>
+
 
 CGovernanceObject::CGovernanceObject() :
     cs(),
@@ -160,6 +160,21 @@ bool CGovernanceObject::ProcessVote(CNode* pfrom,
         LogPrint("gobject", "%s\n", ostr.str());
         exception = CGovernanceException(ostr.str(), GOVERNANCE_EXCEPTION_NONE);
         return false;
+    } else if (vote.GetTimestamp() == voteInstanceRef.nCreationTime) {
+        // Someone is doing smth fishy, there can be no two votes from the same masternode
+        // with the same timestamp for the same object and signal and yet different hash/outcome.
+        std::ostringstream ostr;
+        ostr << "CGovernanceObject::ProcessVote -- Invalid vote, same timestamp for the different outcome";
+        if (vote.GetOutcome() < voteInstanceRef.eOutcome) {
+            // This is an arbitrary comparison, we have to agree on some way
+            // to pick the "winning" vote.
+            ostr << ", rejected";
+            LogPrint("gobject", "%s\n", ostr.str());
+            exception = CGovernanceException(ostr.str(), GOVERNANCE_EXCEPTION_NONE);
+            return false;
+        }
+        ostr << ", accepted";
+        LogPrint("gobject", "%s\n", ostr.str());
     }
 
     int64_t nNow = GetAdjustedTime();
@@ -174,15 +189,16 @@ bool CGovernanceObject::ProcessVote(CNode* pfrom,
                  << ", time delta = " << nTimeDelta;
             LogPrint("gobject", "%s\n", ostr.str());
             exception = CGovernanceException(ostr.str(), GOVERNANCE_EXCEPTION_TEMPORARY_ERROR);
-            nVoteTimeUpdate = nNow;
+
             return false;
         }
+        nVoteTimeUpdate = nNow;
     }
 
-    bool onlyOwnerAllowed = nObjectType == GOVERNANCE_OBJECT_PROPOSAL;
+    bool onlyVotingKeyAllowed = nObjectType == GOVERNANCE_OBJECT_PROPOSAL && vote.GetSignal() == VOTE_SIGNAL_FUNDING;
 
     // Finally check that the vote is actually valid (done last because of cost of signature verification)
-    if (!vote.IsValid(onlyOwnerAllowed)) {
+    if (!vote.IsValid(onlyVotingKeyAllowed)) {
         std::ostringstream ostr;
         ostr << "CGovernanceObject::ProcessVote -- Invalid vote"
              << ", MN outpoint = " << vote.GetMasternodeOutpoint().ToStringShort()
@@ -223,6 +239,51 @@ void CGovernanceObject::ClearMasternodeVotes()
             ++it;
         }
     }
+}
+
+std::set<uint256> CGovernanceObject::RemoveInvalidProposalVotes(const COutPoint& mnOutpoint)
+{
+    LOCK(cs);
+
+    if (nObjectType != GOVERNANCE_OBJECT_PROPOSAL) {
+        return {};
+    }
+
+    auto it = mapCurrentMNVotes.find(mnOutpoint);
+    if (it == mapCurrentMNVotes.end()) {
+        // don't even try as we don't have any votes from this MN
+        return {};
+    }
+
+    auto removedVotes = fileVotes.RemoveInvalidProposalVotes(mnOutpoint);
+    if (removedVotes.empty()) {
+        return {};
+    }
+
+    auto nParentHash = GetHash();
+    for (auto jt = it->second.mapInstances.begin(); jt != it->second.mapInstances.end(); ) {
+        CGovernanceVote tmpVote(mnOutpoint, nParentHash, (vote_signal_enum_t)jt->first, jt->second.eOutcome);
+        tmpVote.SetTime(jt->second.nCreationTime);
+        if (removedVotes.count(tmpVote.GetHash())) {
+            jt = it->second.mapInstances.erase(jt);
+        } else {
+            ++jt;
+        }
+    }
+    if (it->second.mapInstances.empty()) {
+        mapCurrentMNVotes.erase(it);
+    }
+
+    if (!removedVotes.empty()) {
+        std::string removedStr;
+        for (auto& h : removedVotes) {
+            removedStr += strprintf("  %s\n", h.ToString());
+        }
+        LogPrintf("CGovernanceObject::%s -- Removed %d invalid votes for %s from MN %s:\n%s\n", __func__, removedVotes.size(), nParentHash.ToString(), mnOutpoint.ToString(), removedStr);
+        fDirtyCache = true;
+    }
+
+    return removedVotes;
 }
 
 std::string CGovernanceObject::GetSignatureMessage() const
@@ -335,6 +396,9 @@ bool CGovernanceObject::CheckSignature(const CKeyID& keyID) const
 bool CGovernanceObject::Sign(const CBLSSecretKey& key)
 {
     CBLSSignature sig = key.Sign(GetSignatureHash());
+    if (!key.IsValid()) {
+        return false;
+    }
     sig.GetBuf(vchSig);
     return true;
 }
@@ -512,10 +576,9 @@ bool CGovernanceObject::IsValidLocally(std::string& strError, bool& fMissingMast
             CMasternode::CollateralStatus err = CMasternode::CheckCollateral(masternodeOutpoint, CKeyID());
             if (err == CMasternode::COLLATERAL_UTXO_NOT_FOUND) {
                 strError = "Failed to find Masternode UTXO, missing masternode=" + strOutpoint + "\n";
-            } else if (err == CMasternode::COLLATERAL_UTXO_NOT_PROTX) {
-                strError = "Masternode UTXO is not a ProTx, missing masternode=" + strOutpoint + "\n";
+
             } else if (err == CMasternode::COLLATERAL_INVALID_AMOUNT) {
-                strError = "Masternode UTXO should have 1000 DASH, missing masternode=" + strOutpoint + "\n";
+                strError = "Masternode UTXO should have 2500 ABS, missing masternode=" + strOutpoint + "\n";
             } else if (err == CMasternode::COLLATERAL_INVALID_PUBKEY) {
                 fMissingMasternode = true;
                 strError = "Masternode not found: " + strOutpoint;
@@ -793,4 +856,42 @@ void CGovernanceObject::CheckOrphanVotes(CConnman& connman)
             cmmapOrphanVotes.Erase(key, pairVote);
         }
     }
+}
+
+std::vector<uint256> CGovernanceObject::RemoveOldVotes(unsigned int nMinTime)
+{
+    LOCK(cs);
+
+    // Drop pre-DIP3 votes from vote db
+    auto removed = fileVotes.RemoveOldVotes(nMinTime);
+
+    if (!removed.empty()) {
+        std::string removedStr;
+        for (auto& h : removed) {
+            removedStr += strprintf("  %s\n", h.ToString());
+        }
+        LogPrintf("CGovernanceObject::RemoveOldVotes -- Removed %d old (pre-DIP3) votes for %s:\n%s\n", removed.size(), GetHash().ToString(), removedStr);
+        fDirtyCache = true;
+    }
+
+    // Same for current votes per MN for this specific object
+    auto itMnPair = mapCurrentMNVotes.begin();
+    while (itMnPair != mapCurrentMNVotes.end()) {
+        auto& miRef = itMnPair->second.mapInstances;
+        auto itVotePair = miRef.begin();
+        while (itVotePair != miRef.end()) {
+            if (itVotePair->second.nCreationTime < nMinTime) {
+                miRef.erase(itVotePair++);
+            } else {
+                ++itVotePair;
+            }
+        }
+        if (miRef.empty()) {
+            mapCurrentMNVotes.erase(itMnPair++);
+        } else {
+            ++itMnPair;
+        }
+    }
+
+    return removed;
 }

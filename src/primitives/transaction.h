@@ -19,6 +19,7 @@ enum {
     TRANSACTION_PROVIDER_UPDATE_REGISTRAR = 3,
     TRANSACTION_PROVIDER_UPDATE_REVOKE = 4,
     TRANSACTION_COINBASE = 5,
+    TRANSACTION_QUORUM_COMMITMENT = 6,
 };
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -260,7 +261,7 @@ public:
         s << vin;
         s << vout;
         s << nLockTime;
-        if (this->nVersion >= 3 && this->nType != TRANSACTION_NORMAL)
+        if (this->nVersion == 3 && this->nType != TRANSACTION_NORMAL)
             s << vExtraPayload;
     }
 
@@ -339,7 +340,7 @@ struct CMutableTransaction
         READWRITE(vin);
         READWRITE(vout);
         READWRITE(nLockTime);
-        if (this->nVersion >= 3 && this->nType != TRANSACTION_NORMAL) {
+        if (this->nVersion == 3 && this->nType != TRANSACTION_NORMAL) {
             READWRITE(vExtraPayload);
         }
     }

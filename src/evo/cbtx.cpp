@@ -3,30 +3,36 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "cbtx.h"
-#include "specialtx.h"
+
 #include "deterministicmns.h"
 #include "simplifiedmns.h"
+#include "specialtx.h"
 
-#include "validation.h"
+#include "chainparams.h"
 #include "univalue.h"
+#include "validation.h"
 
 bool CheckCbTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state)
 {
-    AssertLockHeld(cs_main);
+    if (tx.nType != TRANSACTION_COINBASE) {
+        return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-type");
+    }
 
-    if (!tx.IsCoinBase())
+    if (!tx.IsCoinBase()) {
         return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-invalid");
+    }
 
     CCbTx cbTx;
-    if (!GetTxPayload(tx, cbTx))
-        return state.DoS(100, false, REJECT_INVALID, "bad-tx-payload");
+    if (!GetTxPayload(tx, cbTx)) {
+        return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-payload");
+    }
 
-    if (cbTx.nVersion > CCbTx::CURRENT_VERSION)
+    if (cbTx.nVersion == 0 || cbTx.nVersion > CCbTx::CURRENT_VERSION) {
         return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-version");
+    }
 
-    if (pindexPrev) {
-        if (pindexPrev->nHeight + 1 != cbTx.nHeight)
-            return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-height");
+    if (pindexPrev && pindexPrev->nHeight + 1 != cbTx.nHeight) {
+        return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-height");
     }
 
     return true;
@@ -35,14 +41,14 @@ bool CheckCbTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidatio
 // This can only be done after the block has been fully processed, as otherwise we won't have the finished MN list
 bool CheckCbTxMerkleRootMNList(const CBlock& block, const CBlockIndex* pindex, CValidationState& state)
 {
-    AssertLockHeld(cs_main);
-
-    if (block.vtx[0]->nType != TRANSACTION_COINBASE)
+    if (block.vtx[0]->nType != TRANSACTION_COINBASE) {
         return true;
+    }
 
     CCbTx cbTx;
-    if (!GetTxPayload(*block.vtx[0], cbTx))
-        return state.DoS(100, false, REJECT_INVALID, "bad-tx-payload");
+    if (!GetTxPayload(*block.vtx[0], cbTx)) {
+        return state.DoS(100, false, REJECT_INVALID, "bad-cbtx-payload");
+    }
 
     if (pindex) {
         uint256 calculatedMerkleRoot;
@@ -59,11 +65,11 @@ bool CheckCbTxMerkleRootMNList(const CBlock& block, const CBlockIndex* pindex, C
 
 bool CalcCbTxMerkleRootMNList(const CBlock& block, const CBlockIndex* pindexPrev, uint256& merkleRootRet, CValidationState& state)
 {
-    AssertLockHeld(cs_main);
+
     LOCK(deterministicMNManager->cs);
 
     CDeterministicMNList tmpMNList;
-    if (!deterministicMNManager->BuildNewListFromBlock(block, pindexPrev, state, tmpMNList)) {
+    if (!deterministicMNManager->BuildNewListFromBlock(block, pindexPrev, state, tmpMNList, false)) {
         return false;
     }
 

@@ -99,6 +99,7 @@ native_packages += $($(host_arch)_$(host_os)_native_packages) $($(host_os)_nativ
 ifneq ($(qt_packages_),)
 native_packages += $(qt_native_packages)
 endif
+
 all_packages = $(packages) $(native_packages)
 
 meta_depends = Makefile funcs.mk builders/default.mk hosts/default.mk hosts/$(host_os).mk builders/$(build_os).mk

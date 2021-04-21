@@ -9,7 +9,7 @@ SUBDIRS += doc/man
 endif
 .PHONY: deploy FORCE
 
-override GZIP_ENV = "-9n"
+GZIP_ENV="-9n"
 export PYTHONPATH
 
 if BUILD_BITCOIN_LIBS

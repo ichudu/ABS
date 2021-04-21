@@ -350,7 +350,12 @@ private:
     /// Called when MN's which have voted on this object have been removed
     void ClearMasternodeVotes();
 
+    // Revalidate all votes from this MN and delete them if validation fails
+    // This is the case for DIP3 MNs that change voting keys. Returns deleted vote hashes
+    std::set<uint256> RemoveInvalidProposalVotes(const COutPoint& mnOutpoint);
     void CheckOrphanVotes(CConnman& connman);
+    // TODO can be removed after DIP3 is fully deployed
+    std::vector<uint256> RemoveOldVotes(unsigned int nMinTime);
 };
 
 

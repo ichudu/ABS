@@ -149,7 +149,8 @@ void masternode_list_help()
             "  lastpaidblock  - Print the last block height a node was paid on the network\n"
             "  lastpaidtime   - Print the last time a node was paid on the network\n"
             "  lastseen       - Print timestamp of when a masternode was last seen on the network\n"
-            "  payee          - Print Absolute address associated with a masternode (can be additionally filtered,\n"
+            "  owneraddress   - Print the masternode owner Dash address\n"
+            "  payee          - Print the masternode payout Dash address (can be additionally filtered,\n"
             "                   partial match)\n"
             "  protocol       - Print protocol of a masternode (can be additionally filtered, exact match)\n"
             "  keyid          - Print the masternode (not collateral) key id\n"
@@ -157,6 +158,7 @@ void masternode_list_help()
             "  sentinel       - Print sentinel version of a masternode (can be additionally filtered, exact match)\n"
             "  status         - Print masternode status: PRE_ENABLED / ENABLED / EXPIRED / SENTINEL_PING_EXPIRED / NEW_START_REQUIRED /\n"
             "                   UPDATE_REQUIRED / POSE_BAN / OUTPOINT_SPENT (can be additionally filtered, partial match)\n"
+            "  votingaddress  - Print the masternode voting Dash address\n"
         );
 }
 
@@ -226,13 +228,13 @@ UniValue masternode_count(const JSONRPCRequest& request)
         masternode_count_help();
 
     int nCount;
-    int total;
+    int total = mnodeman.CountMasternodes(0);
     if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
-        nCount = total = mnodeman.CountEnabled();
+        nCount = mnodeman.CountEnabled();
     } else {
         masternode_info_t mnInfo;
         mnodeman.GetNextMasternodeInQueueForPayment(true, nCount, mnInfo);
-        total = mnodeman.size();
+
     }
 
     int ps = mnodeman.CountEnabled(MIN_PRIVATESEND_PEER_PROTO_VERSION);
@@ -284,13 +286,22 @@ UniValue GetNextMasternodeForPayment(int heightShift)
     nHeight = pindex->nHeight + heightShift;
     mnodeman.UpdateLastPaid(pindex);
 
+    CScript payeeScript;
     if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
         auto payee = deterministicMNManager->GetListAtChainTip().GetMNPayee();
         if (!payee || !mnodeman.GetMasternodeInfo(payee->proTxHash, mnInfo))
             return "unknown";
+        payeeScript = payee->pdmnState->scriptPayout;
     } else {
         if (!mnodeman.GetNextMasternodeInQueueForPayment(nHeight, true, nCount, mnInfo))
             return "unknown";
+        payeeScript = GetScriptForDestination(mnInfo.keyIDCollateralAddress);
+    }
+
+    CTxDestination payeeDest;
+    CBitcoinAddress payeeAddr;
+    if (ExtractDestination(payeeScript, payeeDest)) {
+        payeeAddr = CBitcoinAddress(payeeDest);
     }
 
     UniValue obj(UniValue::VOBJ);
@@ -299,7 +310,7 @@ UniValue GetNextMasternodeForPayment(int heightShift)
     obj.push_back(Pair("IP:port",       mnInfo.addr.ToString()));
     obj.push_back(Pair("protocol",      mnInfo.nProtocolVersion));
     obj.push_back(Pair("outpoint",      mnInfo.outpoint.ToStringShort()));
-    obj.push_back(Pair("payee",         CBitcoinAddress(mnInfo.keyIDCollateralAddress).ToString()));
+    obj.push_back(Pair("payee",         payeeAddr.IsValid() ? payeeAddr.ToString() : "UNKNOWN"));
     obj.push_back(Pair("lastseen",      mnInfo.nTimeLastPing));
     obj.push_back(Pair("activeseconds", mnInfo.nTimeLastPing - mnInfo.sigTime));
     return obj;
@@ -560,7 +571,7 @@ UniValue masternode_outputs(const JSONRPCRequest& request)
 
     // Find possible candidates
     std::vector<COutput> vPossibleCoins;
-    pwalletMain->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_MN_COLLATERAL);
+    pwalletMain->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_1000);
 
     UniValue obj(UniValue::VOBJ);
     for (const auto& out : vPossibleCoins) {
@@ -596,89 +607,7 @@ UniValue masternode_genkey(const JSONRPCRequest& request)
     secret.MakeNewKey(fCompressed);
 
     return CBitcoinSecret(secret).ToString();
-}
 
-void masternode_info_help()
-{
-    throw std::runtime_error(
-            "masternode info \"proTxHash\"\n"
-            "Print masternode information of specified masternode\n"
-            "\nArguments:\n"
-            "1. proTxHash        (string, required) proTxHash of masternode\n"
-    );
-}
-
-UniValue masternode_info(const JSONRPCRequest& request)
-{
-    if (request.fHelp || request.params.size() != 2)
-        masternode_info_help();
-
-    std::string strProTxHash = request.params[1].get_str();
-    if (!IsHex(strProTxHash) || strProTxHash.size() != 64)
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid \"proTxHash\"");
-
-    uint256 proTxHash;
-    proTxHash.SetHex(strProTxHash);
-
-    CTransactionRef tx;
-    uint256 hashBlock;
-
-    auto dmn = deterministicMNManager->GetListAtChainTip().GetMN(proTxHash);
-    if (!dmn) {
-        tx = mempool.get(proTxHash);
-        if (tx) {
-            if (tx->nVersion < 3 || tx->nType != TRANSACTION_PROVIDER_REGISTER)
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "TX is not a ProTx");
-            CProRegTx tmpProTx;
-            if (!GetTxPayload(*tx, tmpProTx))
-                throw JSONRPCError(RPC_INVALID_PARAMETER, "TX is not a valid ProTx");
-            dmn = std::make_shared<CDeterministicMN>(tx->GetHash(), tmpProTx);
-        } else {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "ProTx not found");
-        }
-    } else {
-        if (!GetTransaction(proTxHash, tx, Params().GetConsensus(), hashBlock, true))
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Parent transaction of ProTx not found");
-
-        if (!mapBlockIndex.count(hashBlock))
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Parent transaction of ProTx not found");
-    }
-
-    UniValue obj(UniValue::VOBJ);
-
-    UniValue stateObj;
-    dmn->pdmnState->ToJson(stateObj);
-    obj.push_back(Pair("state", stateObj));
-
-    if (!hashBlock.IsNull()) {
-        UniValue blockObj(UniValue::VOBJ);
-        blockObj.push_back(Pair("blockhash", hashBlock.GetHex()));
-
-        LOCK(cs_main);
-        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
-        if (mi != mapBlockIndex.end() && (*mi).second) {
-            CBlockIndex *pindex = (*mi).second;
-            if (chainActive.Contains(pindex)) {
-                blockObj.push_back(Pair("height", pindex->nHeight));
-                blockObj.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
-                blockObj.push_back(Pair("time", pindex->GetBlockTime()));
-                blockObj.push_back(Pair("blocktime", pindex->GetBlockTime()));
-            } else {
-                blockObj.push_back(Pair("height", -1));
-                blockObj.push_back(Pair("confirmations", 0));
-            }
-        }
-        obj.push_back(Pair("block", blockObj));
-
-        if (GetUTXOHeight(COutPoint(proTxHash, dmn->nCollateralIndex)) < 0) {
-            obj.push_back(Pair("isSpent", true));
-        }
-
-    } else {
-        obj.push_back(Pair("fromMempool", true));
-    }
-
-    return obj;
 }
 
 void masternode_list_conf_help()
@@ -742,7 +671,8 @@ UniValue masternode_status(const JSONRPCRequest& request)
         auto dmn = activeMasternodeManager->GetDMN();
         if (dmn) {
             mnObj.push_back(Pair("proTxHash", dmn->proTxHash.ToString()));
-            mnObj.push_back(Pair("collateralIndex", (int)dmn->nCollateralIndex));
+            mnObj.push_back(Pair("collateralHash", dmn->collateralOutpoint.hash.ToString()));
+            mnObj.push_back(Pair("collateralIndex", (int)dmn->collateralOutpoint.n));
             UniValue stateObj;
             dmn->pdmnState->ToJson(stateObj);
             mnObj.push_back(Pair("dmnState", stateObj));
@@ -840,7 +770,7 @@ UniValue masternode_check(const JSONRPCRequest& request)
     return obj;
 }
 
-void masternode_help()
+[[ noreturn ]] void masternode_help()
 {
     throw std::runtime_error(
         "masternode \"command\"...\n"
@@ -903,8 +833,7 @@ UniValue masternode(const JSONRPCRequest& request)
 #endif // ENABLE_WALLET
     } else if (strCommand == "genkey") {
         return masternode_genkey(request);
-    } else if (strCommand == "info") {
-        return masternode_info(request);
+
     } else if (strCommand == "list-conf") {
         return masternode_list_conf(request);
 #ifdef ENABLE_WALLET
@@ -919,7 +848,7 @@ UniValue masternode(const JSONRPCRequest& request)
         return masternode_check(request);
     } else {
         masternode_help();
-        return UniValue::VNULL; // avoid compiler warnings
+
     }
 }
 
@@ -933,6 +862,7 @@ UniValue masternodelist(const JSONRPCRequest& request)
 
     if (request.fHelp || (
                 strMode != "activeseconds" && strMode != "addr" && strMode != "daemon" && strMode != "full" && strMode != "info" && strMode != "json" &&
+                strMode != "owneraddress" && strMode != "votingaddress" && strMode != "keyid" &&
                 strMode != "lastseen" && strMode != "lastpaidtime" && strMode != "lastpaidblock" &&
                 strMode != "protocol" && strMode != "payee" && strMode != "pubkey" &&
                 strMode != "rank" && strMode != "sentinel" && strMode != "status"))
@@ -963,6 +893,30 @@ UniValue masternodelist(const JSONRPCRequest& request)
         for (const auto& mnpair : mapMasternodes) {
             CMasternode mn = mnpair.second;
             std::string strOutpoint = mnpair.first.ToStringShort();
+            CScript payeeScript;
+            std::string collateralAddressStr = "UNKNOWN";
+            if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+                auto dmn = deterministicMNManager->GetListAtChainTip().GetMNByCollateral(mn.outpoint);
+                if (dmn) {
+                    payeeScript = dmn->pdmnState->scriptPayout;
+                    Coin coin;
+                    if (GetUTXOCoin(dmn->collateralOutpoint, coin)) {
+                        CTxDestination collateralDest;
+                        if (ExtractDestination(coin.out.scriptPubKey, collateralDest)) {
+                            collateralAddressStr = CBitcoinAddress(collateralDest).ToString();
+                        }
+                    }
+                }
+            } else {
+                payeeScript = GetScriptForDestination(mn.keyIDCollateralAddress);
+                collateralAddressStr = CBitcoinAddress(mn.keyIDCollateralAddress).ToString();
+            }
+
+            CTxDestination payeeDest;
+            std::string payeeStr = "UNKNOWN";
+            if (ExtractDestination(payeeScript, payeeDest)) {
+                payeeStr = CBitcoinAddress(payeeDest).ToString();
+            }
             if (strMode == "activeseconds") {
                 if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, (int64_t)(mn.lastPing.sigTime - mn.sigTime)));
@@ -986,7 +940,7 @@ UniValue masternodelist(const JSONRPCRequest& request)
                 streamFull << std::setw(18) <<
                                mn.GetStatus() << " " <<
                                mn.nProtocolVersion << " " <<
-                               CBitcoinAddress(mn.keyIDCollateralAddress).ToString() << " " <<
+                               payeeStr << " " <<
                                (int64_t)mn.lastPing.sigTime << " " << std::setw(8) <<
                                (int64_t)(mn.lastPing.sigTime - mn.sigTime) << " " << std::setw(10) <<
                                mn.GetLastPaidTime() << " "  << std::setw(6) <<
@@ -1001,7 +955,7 @@ UniValue masternodelist(const JSONRPCRequest& request)
                 streamInfo << std::setw(18) <<
                                mn.GetStatus() << " " <<
                                mn.nProtocolVersion << " " <<
-                               CBitcoinAddress(mn.keyIDCollateralAddress).ToString() << " " <<
+                               payeeStr << " " <<
                                (int64_t)mn.lastPing.sigTime << " " << std::setw(8) <<
                                (int64_t)(mn.lastPing.sigTime - mn.sigTime) << " " <<
                                mn.lastPing.GetSentinelString() << " "  <<
@@ -1014,7 +968,7 @@ UniValue masternodelist(const JSONRPCRequest& request)
             } else if (strMode == "json") {
                 std::ostringstream streamInfo;
                 streamInfo <<  mn.addr.ToString() << " " <<
-                               CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString() << " " <<
+                               payeeStr << " " <<
                                mn.GetStatus() << " " <<
                                mn.nProtocolVersion << " " <<
                                mn.lastPing.nDaemonVersion << " " <<
@@ -1023,13 +977,14 @@ UniValue masternodelist(const JSONRPCRequest& request)
                                (int64_t)mn.lastPing.sigTime << " " <<
                                (int64_t)(mn.lastPing.sigTime - mn.sigTime) << " " <<
                                mn.GetLastPaidTime() << " " <<
-                               mn.GetLastPaidBlock();
+                               mn.GetLastPaidBlock() << " " <<
+                               collateralAddressStr;
                 std::string strInfo = streamInfo.str();
                 if (strFilter !="" && strInfo.find(strFilter) == std::string::npos &&
                     strOutpoint.find(strFilter) == std::string::npos) continue;
                 UniValue objMN(UniValue::VOBJ);
                 objMN.push_back(Pair("address", mn.addr.ToString()));
-                objMN.push_back(Pair("payee", CBitcoinAddress(mn.pubKeyCollateralAddress.GetID()).ToString()));
+                objMN.push_back(Pair("payee", payeeStr));
                 objMN.push_back(Pair("status", mn.GetStatus()));
                 objMN.push_back(Pair("protocol", mn.nProtocolVersion));
                 objMN.push_back(Pair("daemonversion", mn.lastPing.GetDaemonString()));
@@ -1039,7 +994,13 @@ UniValue masternodelist(const JSONRPCRequest& request)
                 objMN.push_back(Pair("activeseconds", (int64_t)(mn.lastPing.sigTime - mn.sigTime)));
                 objMN.push_back(Pair("lastpaidtime", mn.GetLastPaidTime()));
                 objMN.push_back(Pair("lastpaidblock", mn.GetLastPaidBlock()));
+                objMN.push_back(Pair("owneraddress", CBitcoinAddress(mn.keyIDOwner).ToString()));
+                objMN.push_back(Pair("votingaddress", CBitcoinAddress(mn.keyIDVoting).ToString()));
+                objMN.push_back(Pair("collateraladdress", collateralAddressStr));
                 obj.push_back(Pair(strOutpoint, objMN));
+            } else if (strMode == "keyid") {
+                if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
+                obj.push_back(Pair(strOutpoint, HexStr(mn.legacyKeyIDOperator)));
             } else if (strMode == "lastpaidblock") {
                 if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, mn.GetLastPaidBlock()));
@@ -1049,30 +1010,26 @@ UniValue masternodelist(const JSONRPCRequest& request)
             } else if (strMode == "lastseen") {
                 if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, (int64_t)mn.lastPing.sigTime));
+            } else if (strMode == "owneraddress") {
+                if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
+                obj.push_back(Pair(strOutpoint, CBitcoinAddress(mn.keyIDOwner).ToString()));
             } else if (strMode == "payee") {
-                CBitcoinAddress address(mn.keyIDCollateralAddress);
-                std::string strPayee = address.ToString();
-                if (strFilter !="" && strPayee.find(strFilter) == std::string::npos &&
+                if (strFilter !="" && payeeStr.find(strFilter) == std::string::npos &&
                     strOutpoint.find(strFilter) == std::string::npos) continue;
-                obj.push_back(Pair(strOutpoint, strPayee));
+                obj.push_back(Pair(strOutpoint, payeeStr));
             } else if (strMode == "protocol") {
                 if (strFilter !="" && strFilter != strprintf("%d", mn.nProtocolVersion) &&
                     strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, mn.nProtocolVersion));
-            } else if (strMode == "keyIDOwner") {
-                if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
-                obj.push_back(Pair(strOutpoint, HexStr(mn.keyIDOwner)));
-            } else if (strMode == "keyIDOperator") {
-                if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
-                obj.push_back(Pair(strOutpoint, HexStr(mn.legacyKeyIDOperator)));
-            } else if (strMode == "keyIDVoting") {
-                if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
-                obj.push_back(Pair(strOutpoint, HexStr(mn.keyIDVoting)));
+
             } else if (strMode == "status") {
                 std::string strStatus = mn.GetStatus();
                 if (strFilter !="" && strStatus.find(strFilter) == std::string::npos &&
                     strOutpoint.find(strFilter) == std::string::npos) continue;
                 obj.push_back(Pair(strOutpoint, strStatus));
+            } else if (strMode == "votingaddress") {
+                if (strFilter !="" && strOutpoint.find(strFilter) == std::string::npos) continue;
+                obj.push_back(Pair(strOutpoint, CBitcoinAddress(mn.keyIDVoting).ToString()));
             }
         }
     }

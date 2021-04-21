@@ -53,7 +53,7 @@ static const int MAX_URI_LENGTH = 255;
 #define SPINNER_FRAMES 36
 
 #define QAPP_ORG_NAME "Absolute"
-#define QAPP_ORG_DOMAIN "absolutecoin.net"
+#define QAPP_ORG_DOMAIN "absify.me"
 #define QAPP_APP_NAME_DEFAULT "Absolute-Qt"
 #define QAPP_APP_NAME_TESTNET "Absolute-Qt-testnet"
 #define QAPP_APP_NAME_DEVNET "Absolute-Qt-%s"

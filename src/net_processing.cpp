@@ -44,6 +44,9 @@
 
 #include "evo/deterministicmns.h"
 #include "evo/simplifiedmns.h"
+#include "llmq/quorums_commitment.h"
+#include "llmq/quorums_dummydkg.h"
+#include "llmq/quorums_blockprocessor.h"
 
 #include <boost/thread.hpp>
 
@@ -960,6 +963,12 @@ bool static AlreadyHave(const CInv& inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 
     case MSG_MASTERNODE_VERIFY:
         return mnodeman.mapSeenMasternodeVerification.count(inv.hash);
+    case MSG_QUORUM_FINAL_COMMITMENT:
+        return llmq::quorumBlockProcessor->HasMinableCommitment(inv.hash);
+    case MSG_QUORUM_DUMMY_COMMITMENT:
+        return llmq::quorumDummyDKG->HasDummyCommitment(inv.hash);
+    case MSG_QUORUM_DUMMY_CONTRIBUTION:
+        return llmq::quorumDummyDKG->HasDummyContribution(inv.hash);
     }
 
     // Don't know what it is, just say we already got one
@@ -1223,7 +1232,7 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                 }
 
                 if (!push && inv.type == MSG_DSTX) {
-                    CDarksendBroadcastTx dstx = CPrivateSend::GetDSTX(inv.hash);
+                    CPrivateSendBroadcastTx dstx = CPrivateSend::GetDSTX(inv.hash);
                     if(dstx) {
                         connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::DSTX, dstx));
                         push = true;
@@ -1270,6 +1279,36 @@ void static ProcessGetData(CNode* pfrom, const Consensus::Params& consensusParam
                 if (!push && inv.type == MSG_MASTERNODE_VERIFY) {
                     if(mnodeman.mapSeenMasternodeVerification.count(inv.hash)) {
                         connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::MNVERIFY, mnodeman.mapSeenMasternodeVerification[inv.hash]));
+                        push = true;
+                    }
+                }
+
+                if (!push && (inv.type == MSG_QUORUM_FINAL_COMMITMENT)) {
+                    llmq::CFinalCommitment o;
+                    if (llmq::quorumBlockProcessor->GetMinableCommitmentByHash(inv.hash, o)) {
+                        connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::QFCOMMITMENT, o));
+                        push = true;
+                    }
+                }
+
+                if (!push && (inv.type == MSG_QUORUM_DUMMY_CONTRIBUTION)) {
+                    llmq::CDummyContribution o;
+                    if (llmq::quorumDummyDKG->GetDummyContribution(inv.hash, o)) {
+                        connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::QCONTRIB, o));
+                        push = true;
+                    }
+                }
+
+                if (!push && (inv.type == MSG_QUORUM_DUMMY_COMMITMENT)) {
+                    if (!consensusParams.fLLMQAllowDummyCommitments) {
+                        Misbehaving(pfrom->id, 100);
+                        pfrom->fDisconnect = true;
+                        return;
+                    }
+
+                    llmq::CDummyCommitment o;
+                    if (llmq::quorumDummyDKG->GetDummyCommitment(inv.hash, o)) {
+                        connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::QDCOMMITMENT, o));
                         push = true;
                     }
                 }
@@ -1326,6 +1365,18 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         return true;
     }
 
+    // BEGIN TEMPORARY CODE
+    bool fDIP0003Active;
+    {
+        LOCK(cs_main);
+        fDIP0003Active = VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
+    }
+    // TODO delete this in next release after v13
+    int nMinPeerProtoVersion = MIN_PEER_PROTO_VERSION;
+    if (fDIP0003Active) {
+        nMinPeerProtoVersion = MIN_PEER_PROTO_VERSION_DIP3;
+    }
+    // END TEMPORARY CODE
     if (!(pfrom->GetLocalServices() & NODE_BLOOM) &&
               (strCommand == NetMsgType::FILTERLOAD ||
                strCommand == NetMsgType::FILTERADD))
@@ -1342,25 +1393,34 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
     if (strCommand == NetMsgType::REJECT)
     {
-        if (fDebug) {
-            try {
-                std::string strMsg; unsigned char ccode; std::string strReason;
-                vRecv >> LIMITED_STRING(strMsg, CMessageHeader::COMMAND_SIZE) >> ccode >> LIMITED_STRING(strReason, MAX_REJECT_MESSAGE_LENGTH);
-
-                std::ostringstream ss;
-                ss << strMsg << " code " << itostr(ccode) << ": " << strReason;
-
-                if (strMsg == NetMsgType::BLOCK || strMsg == NetMsgType::TX)
-                {
-                    uint256 hash;
-                    vRecv >> hash;
-                    ss << ": hash " << hash.ToString();
-                }
-                LogPrint("net", "Reject %s\n", SanitizeString(ss.str()));
-            } catch (const std::ios_base::failure&) {
-                // Avoid feedback loops by preventing reject messages from triggering a new reject message.
-                LogPrint("net", "Unparseable reject message received\n");
+        std::string strMsg; unsigned char ccode; std::string strReason;
+        uint256 hash;
+        try {
+            vRecv >> LIMITED_STRING(strMsg, CMessageHeader::COMMAND_SIZE) >> ccode >> LIMITED_STRING(strReason, MAX_REJECT_MESSAGE_LENGTH);
+            if (strMsg == NetMsgType::BLOCK || strMsg == NetMsgType::TX) {
+                vRecv >> hash;
             }
+        } catch (const std::ios_base::failure&) {
+            // Avoid feedback loops by preventing reject messages from triggering a new reject message.
+            LogPrint("net", "Unparseable reject message received\n");
+        }
+
+        if (strMsg == NetMsgType::BLOCK) {
+            // The node requested a block from us and then rejected it, which indicates that it's most likely running
+            // on rules which are incompatible to ours. Better to ban him after some time as it might otherwise keep
+            // asking for the same block (if -addnode/-connect was used on the other side).
+            LOCK(cs_main);
+            Misbehaving(pfrom->id, 1);
+        }
+
+        if (fDebug) {
+            std::ostringstream ss;
+            ss << strMsg << " code " << itostr(ccode) << ": " << strReason;
+
+            if (strMsg == NetMsgType::BLOCK || strMsg == NetMsgType::TX) {
+                ss << ": hash " << hash.ToString();
+            }
+            LogPrint("net", "Reject %s\n", SanitizeString(ss.str()));
         }
     }
 
@@ -1404,12 +1464,12 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             return false;
         }
 
-        if (nVersion < MIN_PEER_PROTO_VERSION)
+        if (nVersion < nMinPeerProtoVersion)
         {
             // disconnect from peers older than this proto version
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             connman.PushMessage(pfrom, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
-                               strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION)));
+                               strprintf("Version must be %d or greater", nMinPeerProtoVersion)));
             pfrom->fDisconnect = true;
             return false;
         }
@@ -1447,7 +1507,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         if (Params().NetworkIDString() == CBaseChainParams::DEVNET) {
             if (strSubVer.find(strprintf("devnet=%s", GetDevNetName())) == std::string::npos) {
                 LOCK(cs_main);
-                LogPrintf("connected to wrong DevNet. Reported version is %s, expected devnet name is %s\n", strSubVer, GetDevNetName());
+                LogPrintf("connected to wrong devnet. Reported version is %s, expected devnet name is %s\n", strSubVer, GetDevNetName());
                 if (!pfrom->fInbound)
                     Misbehaving(pfrom->GetId(), 100); // don't try to connect again
                 else
@@ -1549,6 +1609,16 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
     // At this point, the outgoing message serialization version can't change.
     const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
+    // BEGIN TEMPORARY CODE
+    if (pfrom->nVersion < nMinPeerProtoVersion) {
+        // disconnect from peers with version < 70213 after DIP3 has activated through the BIP9 deployment
+        LogPrintf("peer=%d using obsolete version %i after DIP3 activation; disconnecting\n", pfrom->id, pfrom->GetSendVersion());
+        connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
+                strprintf("Version must be %d or greater", nMinPeerProtoVersion)));
+        pfrom->fDisconnect = true;
+        return false;
+    }
+    // END TEMPORARY CODE
 
     if (strCommand == NetMsgType::VERACK)
     {
@@ -1724,11 +1794,30 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             }
             else
             {
+                static std::set<int> legacyMNObjs = {
+                        MSG_MASTERNODE_PAYMENT_VOTE,
+                        MSG_MASTERNODE_PAYMENT_BLOCK,
+                        MSG_MASTERNODE_ANNOUNCE,
+                        MSG_MASTERNODE_PING,
+                        MSG_MASTERNODE_VERIFY,
+                };
+                static std::set<int> allowWhileInIBDObjs = {
+                        MSG_SPORK
+                };
+                if (legacyMNObjs.count(inv.type) && deterministicMNManager->IsDeterministicMNsSporkActive()) {
+                    LogPrint("net", "ignoring (%s) inv of legacy type %d peer=%d\n", inv.hash.ToString(), inv.type, pfrom->id);
+                    continue;
+                }
                 pfrom->AddInventoryKnown(inv);
-                if (fBlocksOnly)
-                    LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(), pfrom->id);
-                else if (!fAlreadyHave && !fImporting && !fReindex && !IsInitialBlockDownload())
-                    pfrom->AskFor(inv);
+                if (fBlocksOnly) {
+                    LogPrint("net", "transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(),
+                             pfrom->id);
+                } else if (!fAlreadyHave) {
+                    bool allowWhileInIBD = allowWhileInIBDObjs.count(inv.type);
+                    if (allowWhileInIBD || (!fImporting && !fReindex && !IsInitialBlockDownload())) {
+                        pfrom->AskFor(inv);
+                    }
+                }
             }
 
             // Track requests for our stuff
@@ -1941,7 +2030,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         std::vector<uint256> vEraseQueue;
         CTransactionRef ptx;
         CTxLockRequest txLockRequest;
-        CDarksendBroadcastTx dstx;
+        CPrivateSendBroadcastTx dstx;
         int nInvType = MSG_TX;
         bool fCanAutoLock = false;
 
@@ -1963,7 +2052,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         CInv inv(nInvType, tx.GetHash());
         pfrom->AddInventoryKnown(inv);
-        pfrom->setAskFor.erase(inv.hash);
+        {
+            LOCK(cs_main);
+            connman.RemoveAskFor(inv.hash);
+        }
 
         // Process custom logic, no matter if tx will be accepted to mempool later or not
         if (strCommand == NetMsgType::TXLOCKREQUEST || fCanAutoLock) {
@@ -1991,7 +2083,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 return false;
             }
 
-            if(!mn.fAllowMixingTx) {
+            if(!mn.IsValidForMixingTxes()) {
                 LogPrint("privatesend", "DSTX -- Masternode %s is sending too many transactions %s\n", dstx.masternodeOutpoint.ToStringShort(), hashTx.ToString());
                 return true;
                 // TODO: Not an error? Could it be that someone is relaying old DSTXes
@@ -2013,7 +2105,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         bool fMissingInputs = false;
         CValidationState state;
 
-        mapAlreadyAskedFor.erase(inv.hash);
+
 
         if (!AlreadyHave(inv) && AcceptToMemoryPool(mempool, state, ptx, true, &fMissingInputs)) {
             // Process custom txes, this changes AlreadyHave to "true"
@@ -2885,6 +2977,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             sporkManager.ProcessSpork(pfrom, strCommand, vRecv, connman);
             masternodeSync.ProcessMessage(pfrom, strCommand, vRecv);
             governance.ProcessMessage(pfrom, strCommand, vRecv, connman);
+            llmq::quorumBlockProcessor->ProcessMessage(pfrom, strCommand, vRecv, connman);
+            llmq::quorumDummyDKG->ProcessMessage(pfrom, strCommand, vRecv, connman);
         }
         else
         {
@@ -3229,12 +3323,21 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         break;
                     }
                     pBestIndex = pindex;
+                    bool isPrevDevnetGenesisBlock = false;
+                    if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
+                        pindex->pprev != nullptr &&
+                        pindex->pprev->GetBlockHash() == consensusParams.hashDevnetGenesisBlock) {
+                        // even though the devnet genesis block was never transferred through the wire and thus not
+                        // appear anywhere in the node state where we track what other nodes have or not have, we can
+                        // assume that the other node already knows the devnet genesis block
+                        isPrevDevnetGenesisBlock = true;
+                    }
                     if (fFoundStartingHeader) {
                         // add this to the headers message
                         vHeaders.push_back(pindex->GetBlockHeader());
                     } else if (PeerHasHeader(&state, pindex)) {
                         continue; // keep looking for the first new block
-                    } else if (pindex->pprev == NULL || PeerHasHeader(&state, pindex->pprev)) {
+                    } else if (pindex->pprev == NULL || PeerHasHeader(&state, pindex->pprev) || isPrevDevnetGenesisBlock) {
                         // Peer doesn't have this header but they do have the prior one.
                         // Start sending headers.
                         fFoundStartingHeader = true;
@@ -3334,11 +3437,14 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             pto->vInventoryBlockToSend.clear();
 
             // Check whether periodic sends should happen
-            bool fSendTrickle = pto->fWhitelisted;
+            // Note: If this node is running in a Masternode mode, it makes no sense to delay outgoing txes
+            // because we never produce any txes ourselves i.e. no privacy is lost in this case.
+            bool fSendTrickle = pto->fWhitelisted || fMasternodeMode;
             if (pto->nNextInvSend < nNow) {
                 fSendTrickle = true;
                 // Use half the delay for outbound peers, as there is less privacy concern for them.
-                pto->nNextInvSend = PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> !pto->fInbound);
+                // and quarter the delay for Masternode outbound peers, as there is even less privacy concern in this case.
+                pto->nNextInvSend = PoissonNextSend(nNow, INVENTORY_BROADCAST_INTERVAL >> !pto->fInbound >> pto->fMasternode);
             }
 
             // Time to send but the peer has requested we not relay transactions.

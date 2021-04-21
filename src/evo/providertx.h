@@ -5,9 +5,10 @@
 #ifndef Absolute_PROVIDERTX_H
 #define Absolute_PROVIDERTX_H
 
-#include "primitives/transaction.h"
-#include "consensus/validation.h"
+
 #include "bls/bls.h"
+#include "consensus/validation.h"
+#include "primitives/transaction.h"
 
 #include "netaddress.h"
 #include "pubkey.h"
@@ -21,9 +22,10 @@ public:
     static const uint16_t CURRENT_VERSION = 1;
 
 public:
-    uint16_t nVersion{CURRENT_VERSION}; // message version
-    int32_t nProtocolVersion{0};
-    uint32_t nCollateralIndex{(uint32_t) - 1};
+    uint16_t nVersion{CURRENT_VERSION};                    // message version
+    uint16_t nType{0};                                     // only 0 supported for now
+    uint16_t nMode{0};                                     // only 0 supported for now
+    COutPoint collateralOutpoint{uint256(), (uint32_t)-1}; // if hash is null, we refer to a ProRegTx output
     CService addr;
     CKeyID keyIDOwner;
     CBLSPublicKey pubKeyOperator;
@@ -40,20 +42,25 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         READWRITE(nVersion);
-        READWRITE(nProtocolVersion);
-        READWRITE(nCollateralIndex);
+        READWRITE(nType);
+        READWRITE(nMode);
+        READWRITE(collateralOutpoint);
         READWRITE(addr);
         READWRITE(keyIDOwner);
         READWRITE(pubKeyOperator);
         READWRITE(keyIDVoting);
-        READWRITE(*(CScriptBase*)(&scriptPayout));
+
         READWRITE(nOperatorReward);
+        READWRITE(*(CScriptBase*)(&scriptPayout));
         READWRITE(inputsHash);
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(vchSig);
         }
     }
 
+    // When signing with the collateral key, we don't sign the hash but a generated message instead
+    // This is needed for HW wallet support which can only sign text messages as of now
+    std::string MakeSignString() const;
     std::string ToString() const;
     void ToJson(UniValue& obj) const;
 };
@@ -66,7 +73,7 @@ public:
 public:
     uint16_t nVersion{CURRENT_VERSION}; // message version
     uint256 proTxHash;
-    int32_t nProtocolVersion{0};
+
     CService addr;
     CScript scriptOperatorPayout;
     uint256 inputsHash; // replay protection
@@ -80,7 +87,7 @@ public:
     {
         READWRITE(nVersion);
         READWRITE(proTxHash);
-        READWRITE(nProtocolVersion);
+
         READWRITE(addr);
         READWRITE(*(CScriptBase*)(&scriptOperatorPayout));
         READWRITE(inputsHash);
@@ -102,6 +109,7 @@ public:
 public:
     uint16_t nVersion{CURRENT_VERSION}; // message version
     uint256 proTxHash;
+    uint16_t nMode{0}; // only 0 supported for now
     CBLSPublicKey pubKeyOperator;
     CKeyID keyIDVoting;
     CScript scriptPayout;
@@ -116,6 +124,7 @@ public:
     {
         READWRITE(nVersion);
         READWRITE(proTxHash);
+        READWRITE(nMode);
         READWRITE(pubKeyOperator);
         READWRITE(keyIDVoting);
         READWRITE(*(CScriptBase*)(&scriptPayout));
@@ -177,7 +186,6 @@ bool CheckProUpServTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVa
 bool CheckProUpRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state);
 bool CheckProUpRevTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValidationState& state);
 
-bool IsProTxCollateral(const CTransaction& tx, uint32_t n);
-uint32_t GetProTxCollateralIndex(const CTransaction& tx);
+
 
 #endif//ABSOLUTE_PROVIDERTX_H

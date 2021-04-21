@@ -30,6 +30,7 @@ std::map<int, int64_t> mapSporkDefaults = {
     {SPORK_14_REQUIRE_SENTINEL_FLAG,         1532476800},   // Wednesday, July 25, 2018 12:00:00 AM
     {SPORK_15_DETERMINISTIC_MNS_ENABLED,     4070908800ULL}, // OFF
     {SPORK_16_INSTANTSEND_AUTOLOCKS,         4070908800ULL}, // OFF
+    {SPORK_17_QUORUM_DKG_ENABLED,            4070908800ULL}, // OFF
 };
 
 bool CSporkManager::SporkValueIsActive(int nSporkID, int64_t &nActiveValueRet) const
@@ -124,11 +125,17 @@ void CSporkManager::ProcessSpork(CNode* pfrom, const std::string& strCommand, CD
         std::string strLogMsg;
         {
             LOCK(cs_main);
-            pfrom->setAskFor.erase(hash);
+            connman.RemoveAskFor(hash);
             if(!chainActive.Tip()) return;
             strLogMsg = strprintf("SPORK -- hash: %s id: %d value: %10d bestHeight: %d peer=%d", hash.ToString(), spork.nSporkID, spork.nValue, chainActive.Height(), pfrom->id);
         }
 
+        if (spork.nTimeSigned > GetAdjustedTime() + 2 * 60 * 60) {
+            LOCK(cs_main);
+            LogPrintf("CSporkManager::ProcessSpork -- ERROR: too far into the future\n");
+            Misbehaving(pfrom->GetId(), 100);
+            return;
+        }
         CKeyID keyIDSigner;
         bool fSpork6IsActive = IsSporkActive(SPORK_6_NEW_SIGS);
         if (!spork.GetSignerKeyID(keyIDSigner, fSpork6IsActive)
@@ -286,6 +293,7 @@ int CSporkManager::GetSporkIDByName(const std::string& strName)
     if (strName == "SPORK_14_REQUIRE_SENTINEL_FLAG")            return SPORK_14_REQUIRE_SENTINEL_FLAG;
     if (strName == "SPORK_15_DETERMINISTIC_MNS_ENABLED")        return SPORK_15_DETERMINISTIC_MNS_ENABLED;
     if (strName == "SPORK_16_INSTANTSEND_AUTOLOCKS")            return SPORK_16_INSTANTSEND_AUTOLOCKS;
+    if (strName == "SPORK_17_QUORUM_DKG_ENABLED")               return SPORK_17_QUORUM_DKG_ENABLED;
 
     LogPrint("spork", "CSporkManager::GetSporkIDByName -- Unknown Spork name '%s'\n", strName);
     return -1;
@@ -305,6 +313,7 @@ std::string CSporkManager::GetSporkNameByID(int nSporkID)
         case SPORK_14_REQUIRE_SENTINEL_FLAG:            return "SPORK_14_REQUIRE_SENTINEL_FLAG";
         case SPORK_15_DETERMINISTIC_MNS_ENABLED:        return "SPORK_15_DETERMINISTIC_MNS_ENABLED";
         case SPORK_16_INSTANTSEND_AUTOLOCKS:            return "SPORK_16_INSTANTSEND_AUTOLOCKS";
+        case SPORK_17_QUORUM_DKG_ENABLED:               return "SPORK_17_QUORUM_DKG_ENABLED";
         default:
             LogPrint("spork", "CSporkManager::GetSporkNameByID -- Unknown Spork ID %d\n", nSporkID);
             return "Unknown";

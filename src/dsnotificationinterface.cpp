@@ -17,6 +17,7 @@
 
 #include "evo/deterministicmns.h"
 
+#include "llmq/quorums_dummydkg.h"
 void CDSNotificationInterface::InitializeCurrentBlockTip()
 {
     LOCK(cs_main);
@@ -39,15 +40,16 @@ void CDSNotificationInterface::UpdatedBlockTip(const CBlockIndex *pindexNew, con
         return;
 
     deterministicMNManager->UpdatedBlockTip(pindexNew);
+    llmq::quorumDummyDKG->UpdatedBlockTip(pindexNew, fInitialDownload);
 
     masternodeSync.UpdatedBlockTip(pindexNew, fInitialDownload, connman);
 
     // Update global DIP0001 activation status
     fDIP0001ActiveAtTip = pindexNew->nHeight >= Params().GetConsensus().DIP0001Height;
-    fDIP0003ActiveAtTip = (VersionBitsState(pindexNew->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE);
+
     // update instantsend autolock activation flag
     instantsend.isAutoLockBip9Active =
-            (VersionBitsTipState(Params().GetConsensus(), Consensus::DEPLOYMENT_ISAUTOLOCKS) == THRESHOLD_ACTIVE);
+            (VersionBitsState(pindexNew, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE);
 
     if (fInitialDownload)
         return;

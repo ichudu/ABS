@@ -5,8 +5,9 @@
 #ifndef ABSOLUTE_CBTX_H
 #define ABSOLUTE_CBTX_H
 
-#include "primitives/transaction.h"
+
 #include "consensus/validation.h"
+#include "primitives/transaction.h"
 
 class CBlock;
 class CBlockIndex;

@@ -90,6 +90,7 @@ public:
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
     const std::vector<std::string>& SporkAddresses() const { return vSporkAddresses; }
     int MinSporkKeys() const { return nMinSporkKeys; }
+    bool BIP9CheckMasternodesUpgraded() const { return fBIP9CheckMasternodesUpgraded; }
 protected:
     CChainParams() {}
 
@@ -119,6 +120,7 @@ protected:
     int nFulfilledRequestExpireTime;
     std::vector<std::string> vSporkAddresses;
     int nMinSporkKeys;
+    bool fBIP9CheckMasternodesUpgraded;
 };
 
 /**
@@ -142,5 +144,14 @@ void SelectParams(const std::string& chain);
  * Allows modifying the BIP9 regtest parameters.
  */
 void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+/**
+ * Allows modifying the budget regtest parameters.
+ */
+void UpdateRegtestBudgetParameters(int nMasternodePaymentsStartBlock, int nBudgetPaymentsStartBlock, int nSuperblockStartBlock);
+
+/**
+ * Allows modifying the subsidy and difficulty devnet parameters.
+ */
+void UpdateDevnetSubsidyAndDiffParams(int nMinimumDifficultyBlocks, int nHighSubsidyBlocks, int nHighSubsidyFactor);
 
 #endif // BITCOIN_CHAINPARAMS_H
