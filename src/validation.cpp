@@ -8,6 +8,8 @@
 #include "validation.h"
 
 
+#include "addrman.h"
+#include "base58.h"
 #include "alert.h"
 #include "arith_uint256.h"
 #include "blockencodings.h"

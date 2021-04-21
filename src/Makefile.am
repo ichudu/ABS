@@ -330,7 +330,6 @@ crypto_libabsolute_crypto_a_SOURCES = \
   crypto/hmac_sha512.cpp \
   crypto/hmac_sha512.h \
   crypto/ripemd160.cpp \
-  crypto/aes_helper.c \
   crypto/ripemd160.h \
   crypto/sha1.cpp \
   crypto/sha1.h \
@@ -540,7 +539,7 @@ absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 # absoluteconsensus library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/absoluteconsensus.h
-libdashconsensus_la_SOURCES = $(crypto_libdash_crypto_a_SOURCES) $(libdash_consensus_a_SOURCES)
+libabsoluteconsensus_la_SOURCES = $(crypto_libabsolute_crypto_a_SOURCES) $(libabsolute_consensus_a_SOURCES)
 
 if GLIBC_BACK_COMPAT
   libabsoluteconsensus_la_SOURCES += compat/glibc_compat.cpp

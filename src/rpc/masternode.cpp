@@ -158,7 +158,7 @@ void masternode_list_help()
             "  sentinel       - Print sentinel version of a masternode (can be additionally filtered, exact match)\n"
             "  status         - Print masternode status: PRE_ENABLED / ENABLED / EXPIRED / SENTINEL_PING_EXPIRED / NEW_START_REQUIRED /\n"
             "                   UPDATE_REQUIRED / POSE_BAN / OUTPOINT_SPENT (can be additionally filtered, partial match)\n"
-            "  votingaddress  - Print the masternode voting Dash address\n"
+            "  votingaddress  - Print the masternode voting Absolute address\n"
         );
 }
 
@@ -571,7 +571,7 @@ UniValue masternode_outputs(const JSONRPCRequest& request)
 
     // Find possible candidates
     std::vector<COutput> vPossibleCoins;
-    pwalletMain->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_1000);
+    pwalletMain->AvailableCoins(vPossibleCoins, true, NULL, false, ONLY_MN_COLLATERAL);
 
     UniValue obj(UniValue::VOBJ);
     for (const auto& out : vPossibleCoins) {
