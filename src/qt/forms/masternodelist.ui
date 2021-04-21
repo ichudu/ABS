@@ -325,7 +325,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="legacyListNote">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Note: This list represents the legacy and non-deterministic masternode list. It is only active as long as DIP3 has not been fully activated. After SPORK15 activation, this list will be empty.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Note: This list represents the legacy and non-deterministic masternode list. It is only active as long as Deterministic nodes have not been fully activated. After SPORK15 activation, this list will be empty.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="textFormat">
             <enum>Qt::AutoText</enum>
@@ -339,7 +339,7 @@
        </widget>
        <widget class="QWidget" name="tabDIP3Masternodes">
         <attribute name="title">
-         <string>DIP3 Masternodes</string>
+         <string>Deterministic Masternodes</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_3">
          <item row="1" column="0">
