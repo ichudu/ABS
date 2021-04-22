@@ -36,7 +36,7 @@ bool CPrivateSendEntry::AddScriptSig(const CTxIn& txin)
 
 uint256 CPrivateSendQueue::GetSignatureHash() const
 {
-    // Remove after migration to 70211
+    // Remove after migration to 70212
     {
         masternode_info_t mnInfo;
         mnodeman.GetMasternodeInfo(masternodeOutpoint, mnInfo);
