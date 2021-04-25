@@ -1,7 +1,5 @@
 # Absolute 0.13.0.1
 
-`master:` [![Build Status](https://travis-ci.org/absolute-community/absolute=master)](https://travis-ci.org/absolute-community/absolute)
-
 https://www.absify.me
 
 What is Absolute all about?
