@@ -22,14 +22,14 @@ std::map<int, int64_t> mapSporkDefaults = {
     {SPORK_2_INSTANTSEND_ENABLED,            0},             // ON
     {SPORK_3_INSTANTSEND_BLOCK_FILTERING,    0},             // ON
     {SPORK_5_INSTANTSEND_MAX_VALUE,          1000},          // 1000 ABS
-    {SPORK_6_NEW_SIGS,                       4070908800ULL}, // OFF
+    {SPORK_6_NEW_SIGS,                       1620244800},    // Wednesday, 5 May 2021 20:00:00 GMT
     {SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT, 1518732000},    // Payments start on 2/15/2018 22:00 CET
     {SPORK_9_SUPERBLOCKS_ENABLED,            1527811200},    // Friday 1 June 2018 00:00:00
-    {SPORK_10_MASTERNODE_PAY_UPDATED_NODES,  1619550000},    // Tuesday, 27 April 2021 20:00:00 GMT+01:00
+    {SPORK_10_MASTERNODE_PAY_UPDATED_NODES,  1620043200},    // Monday, 3 May 2021 12:00:00 GMT
     {SPORK_12_RECONSIDER_BLOCKS,             0},             // 0 BLOCKS
     {SPORK_14_REQUIRE_SENTINEL_FLAG,         1532476800},    // Wednesday, July 25, 2018 12:00:00 AM
-    {SPORK_15_DETERMINISTIC_MNS_ENABLED,     1619550000},    // Tuesday, 27 April 2021 20:00:00 GMT+01:00
-    {SPORK_16_INSTANTSEND_AUTOLOCKS,         1619636400},    // Wednesday, 28 April 2021 20:00:00 GMT+01:00
+    {SPORK_15_DETERMINISTIC_MNS_ENABLED,     3000},          // Block 3000
+    {SPORK_16_INSTANTSEND_AUTOLOCKS,         1620216000},    // Wednesday, 5 May 2021 12:00:00 GMT
     {SPORK_17_QUORUM_DKG_ENABLED,            4070908800ULL}, // OFF
 };
 
