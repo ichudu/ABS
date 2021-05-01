@@ -28,7 +28,7 @@ std::map<int, int64_t> mapSporkDefaults = {
     {SPORK_10_MASTERNODE_PAY_UPDATED_NODES,  1620043200},    // Monday, 3 May 2021 12:00:00 GMT
     {SPORK_12_RECONSIDER_BLOCKS,             0},             // 0 BLOCKS
     {SPORK_14_REQUIRE_SENTINEL_FLAG,         1532476800},    // Wednesday, July 25, 2018 12:00:00 AM
-    {SPORK_15_DETERMINISTIC_MNS_ENABLED,     3000},          // Block 3000
+    {SPORK_15_DETERMINISTIC_MNS_ENABLED,     3200},          // Block 3000
     {SPORK_16_INSTANTSEND_AUTOLOCKS,         1620216000},    // Wednesday, 5 May 2021 12:00:00 GMT
     {SPORK_17_QUORUM_DKG_ENABLED,            4070908800ULL}, // OFF
 };
