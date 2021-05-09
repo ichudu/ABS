@@ -131,7 +131,7 @@ $ pkg_add g++ # (select newest 6.x version)
 
 This compiler will not overwrite the system compiler, it will be installed as `egcc` and `eg++` in `/usr/local/bin`.
 
-Add `CC=egcc CXX=eg++ CPP=ecpp` to the dependencies build and the Dash Core build:
+Add `CC=egcc CXX=eg++ CPP=ecpp` to the dependencies build and the Absolute Core build:
 ```bash
 $ cd depends
 $ make CC=egcc CXX=eg++ CPP=ecpp # do not use -jX, this is broken
