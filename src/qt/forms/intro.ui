@@ -236,9 +236,7 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../absolute.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>
