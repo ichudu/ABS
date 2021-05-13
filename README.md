@@ -1,10 +1,10 @@
 # Absolute 0.13.0.1
 
-https://www.absify.me
-
 Products designed by you. Create and configure your own items with the option to log your creation on the Absolute blockchain.
 
 Our goal is to allow you to produce excellent quality products that are designed by you using our online configurator. Certain designs have the choice of being recorded in the Absolute blockchain, allow independent verification that the design you made is unique to you.
+
+Find out more about Absolute: https://absify.me/
 
 The One Protocol is Absolutes goal aiming for there only to be one ABS left in circulation. Although this is unlikely due to the mechanics of supply and demand, it allows us to reward you by reducing supply based on the performance of our business. This makes your holdings absolute more valuable.
 
