@@ -116,7 +116,7 @@ static Consensus::LLMQParams llmq10_60 = {
         .minSize = 6,
         .threshold = 6,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 40, // one DKG per hour
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -129,7 +129,7 @@ static Consensus::LLMQParams llmq50_60 = {
         .minSize = 40,
         .threshold = 30,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 40, // one DKG per hour
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -142,7 +142,7 @@ static Consensus::LLMQParams llmq400_60 = {
         .minSize = 300,
         .threshold = 240,
 
-        .dkgInterval = 24 * 12, // one DKG every 12 hours
+        .dkgInterval = 40 * 12, // one DKG every 12 hours
         .dkgPhaseBlocks = 4,
         .dkgMiningWindowStart = 20, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 28,
@@ -156,7 +156,7 @@ static Consensus::LLMQParams llmq400_85 = {
         .minSize = 350,
         .threshold = 340,
 
-        .dkgInterval = 24 * 24, // one DKG every 24 hours
+        .dkgInterval = 40 * 24, // one DKG every 24 hours
         .dkgPhaseBlocks = 4,
         .dkgMiningWindowStart = 20, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 48, // give it a larger mining window to make sure it is mined
@@ -460,9 +460,8 @@ public:
         nExtCoinType = 1;
 
         // long living quorum params
-        consensus.llmqs[Consensus::LLMQ_50_60] = llmq50_60;
-        consensus.llmqs[Consensus::LLMQ_400_60] = llmq400_60;
-        consensus.llmqs[Consensus::LLMQ_400_85] = llmq400_85;
+        consensus.llmqs[Consensus::LLMQ_10_60] = llmq10_60;
+
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
@@ -477,6 +476,8 @@ public:
 
         vSporkAddresses = {"yQzniXSTqRwaEujSkvZicJsYZkt7wpa4NJ"};
         nMinSporkKeys = 1;
+        fBIP9CheckMasternodesUpgraded = true;
+        consensus.fLLMQAllowDummyCommitments = true;
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
