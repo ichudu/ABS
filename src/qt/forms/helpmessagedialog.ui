@@ -78,7 +78,7 @@
         <bool>false</bool>
        </property>
        <property name="pixmap">
-        <pixmap>:/images/drkblue/about</pixmap>
+        <pixmap resource="../absolute.qrc">:/images/drkblue/about</pixmap>
        </property>
        <property name="scaledContents">
         <bool>false</bool>
@@ -173,7 +173,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../absolute.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>okButton</sender>

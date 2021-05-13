@@ -356,6 +356,8 @@
    <header>qvalidatedlineedit.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../absolute.qrc"/>
+ </resources>
  <connections/>
 </ui>

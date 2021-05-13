@@ -141,6 +141,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../absolute.qrc"/>
+ </resources>
  <connections/>
 </ui>

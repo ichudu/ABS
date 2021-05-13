@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.mininode import *
-from test_framework.test_framework import DashTestFramework
+from test_framework.test_framework import AbsoluteTestFramework
 from test_framework.util import *
 from time import *
 
@@ -32,8 +32,8 @@ class AutoInstantSendTest(DashTestFramework):
 
     def get_autoix_bip9_status(self):
         info = self.nodes[0].getblockchaininfo()
-        # we reuse the aip3 deployment
-        return info['bip9_softforks']['aip0003']['status']
+        # we reuse the dip3 deployment
+        return info['bip9_softforks']['dip0003']['status']
 
     def activate_autoix_bip9(self):
         # sync nodes periodically

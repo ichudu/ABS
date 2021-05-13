@@ -103,8 +103,7 @@ static CMutableTransaction CreateProRegTx(SimpleUTXOMap& utxos, int port, const 
     auto inputs = SelectUTXOs(utxos, 1000 * COIN, change);
 
     CProRegTx proTx;
-    proTx.nProtocolVersion = PROTOCOL_VERSION;
-    proTx.nCollateralIndex = 0;
+    proTx.collateralOutpoint.n = 0;
     proTx.addr = LookupNumeric("1.1.1.1", port);
     proTx.keyIDOwner = ownerKeyRet.GetPubKey().GetID();
     proTx.pubKeyOperator = operatorKeyRet.GetPublicKey();
@@ -116,7 +115,7 @@ static CMutableTransaction CreateProRegTx(SimpleUTXOMap& utxos, int port, const 
     tx.nType = TRANSACTION_PROVIDER_REGISTER;
     FundTransaction(tx, utxos, scriptPayout, 1000 * COIN, coinbaseKey);
     proTx.inputsHash = CalcTxInputsHash(tx);
-    CHashSigner::SignHash(::SerializeHash(proTx), ownerKeyRet, proTx.vchSig);
+
     SetTxPayload(tx, proTx);
     SignTransaction(tx, coinbaseKey);
 
@@ -130,7 +129,7 @@ static CMutableTransaction CreateProUpServTx(SimpleUTXOMap& utxos, const uint256
 
     CProUpServTx proTx;
     proTx.proTxHash = proTxHash;
-    proTx.nProtocolVersion = PROTOCOL_VERSION;
+
     proTx.addr = LookupNumeric("1.1.1.1", port);
     proTx.scriptOperatorPayout = scriptOperatorPayout;
 
@@ -214,9 +213,9 @@ static CDeterministicMNCPtr FindPayoutDmn(const CBlock& block)
     return nullptr;
 }
 
-BOOST_AUTO_TEST_SUITE(evo_aip3_activation_tests)
+BOOST_AUTO_TEST_SUITE(evo_dip3_activation_tests)
 
-BOOST_FIXTURE_TEST_CASE(aip3_activation, TestChainAIP3BeforeActivationSetup)
+BOOST_FIXTURE_TEST_CASE(dip3_activation, TestChainDIP3BeforeActivationSetup)
 {
     auto utxos = BuildSimpleUtxoMap(coinbaseTxns);
     CKey ownerKey;
@@ -226,18 +225,18 @@ BOOST_FIXTURE_TEST_CASE(aip3_activation, TestChainAIP3BeforeActivationSetup)
 
     int nHeight = chainActive.Height();
 
-    // We start one block before AIP3 activation, so mining a block with a AIP3 transaction should fail
+    // We start one block before DIP3 activation, so mining a block with a DIP3 transaction should fail
     auto block = std::make_shared<CBlock>(CreateBlock(txns, coinbaseKey));
     ProcessNewBlock(Params(), block, true, nullptr);
     BOOST_ASSERT(chainActive.Height() == nHeight);
     BOOST_ASSERT(block->GetHash() != chainActive.Tip()->GetBlockHash());
     BOOST_ASSERT(!deterministicMNManager->GetListAtChainTip().HasMN(tx.GetHash()));
 
-    // This block should activate AIP3
+    // This block should activate DIP3
     CreateAndProcessBlock({}, coinbaseKey);
     BOOST_ASSERT(chainActive.Height() == nHeight + 1);
 
-    // Mining a block with a AIP3 transaction should succeed now
+    // Mining a block with a DIP3 transaction should succeed now
     block = std::make_shared<CBlock>(CreateBlock(txns, coinbaseKey));
     ProcessNewBlock(Params(), block, true, nullptr);
     deterministicMNManager->UpdatedBlockTip(chainActive.Tip());
@@ -246,7 +245,7 @@ BOOST_FIXTURE_TEST_CASE(aip3_activation, TestChainAIP3BeforeActivationSetup)
     BOOST_ASSERT(deterministicMNManager->GetListAtChainTip().HasMN(tx.GetHash()));
 }
 
-BOOST_FIXTURE_TEST_CASE(aip3_protx, TestChainAIP3Setup)
+BOOST_FIXTURE_TEST_CASE(dip3_protx, TestChainDIP3Setup)
 {
     CKey sporkKey;
     sporkKey.MakeNewKey(false);

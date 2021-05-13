@@ -33,6 +33,7 @@
 #include "evo/specialtx.h"
 #include "evo/providertx.h"
 #include "evo/cbtx.h"
+#include "llmq/quorums_commitment.h"
 
 #include <stdint.h>
 
@@ -135,37 +136,44 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     if (tx.nType == TRANSACTION_PROVIDER_REGISTER) {
         CProRegTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proRegTx", obj));
         }
     } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_SERVICE) {
         CProUpServTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proUpServTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proUpServTx", obj));
         }
     } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REGISTRAR) {
         CProUpRegTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proUpRegTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proUpRegTx", obj));
         }
     } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REVOKE) {
         CProUpRevTx proTx;
         if (GetTxPayload(tx, proTx)) {
-            UniValue proTxObj;
-            proTx.ToJson(proTxObj);
-            entry.push_back(Pair("proUpRevTx", proTxObj));
+            UniValue obj;
+            proTx.ToJson(obj);
+            entry.push_back(Pair("proUpRevTx", obj));
         }
     } else if (tx.nType == TRANSACTION_COINBASE) {
         CCbTx cbTx;
         if (GetTxPayload(tx, cbTx)) {
-            UniValue proTxObj;
-            cbTx.ToJson(proTxObj);
-            entry.push_back(Pair("cbTx", proTxObj));
+            UniValue obj;
+            cbTx.ToJson(obj);
+            entry.push_back(Pair("cbTx", obj));
+        }
+    } else if (tx.nType == TRANSACTION_QUORUM_COMMITMENT) {
+        llmq::CFinalCommitmentTxPayload qcTx;
+        if (GetTxPayload(tx, qcTx)) {
+            UniValue obj;
+            qcTx.ToJson(obj);
+            entry.push_back(Pair("qcTx", obj));
         }
     }
 
@@ -246,8 +254,8 @@ UniValue getrawtransaction(const JSONRPCRequest& request)
             "     }\n"
             "     ,...\n"
             "  ],\n"
-            "  \"extraPayloadSize\" : n    (numeric) Size of AIP2 extra payload. Only present if it's a special TX\n"
-            "  \"extraPayload\" : \"hex\"    (string) Hex encoded AIP2 extra payload data. Only present if it's a special TX\n"
+            "  \"extraPayloadSize\" : n    (numeric) Size of DIP2 extra payload. Only present if it's a special TX\n"
+            "  \"extraPayload\" : \"hex\"    (string) Hex encoded DIP2 extra payload data. Only present if it's a special TX\n"
             "  \"blockhash\" : \"hash\",   (string) the block hash\n"
             "  \"confirmations\" : n,      (numeric) The confirmations\n"
             "  \"time\" : ttt,             (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
@@ -582,8 +590,8 @@ UniValue decoderawtransaction(const JSONRPCRequest& request)
             "     }\n"
             "     ,...\n"
             "  ],\n"
-            "  \"extraPayloadSize\" : n           (numeric) Size of AIP2 extra payload. Only present if it's a special TX\n"
-            "  \"extraPayload\" : \"hex\"           (string) Hex encoded AIP2 extra payload data. Only present if it's a special TX\n"
+            "  \"extraPayloadSize\" : n           (numeric) Size of DIP2 extra payload. Only present if it's a special TX\n"
+            "  \"extraPayload\" : \"hex\"           (string) Hex encoded DIP2 extra payload data. Only present if it's a special TX\n"
             "}\n"
 
             "\nExamples:\n"

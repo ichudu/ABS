@@ -205,7 +205,7 @@ private:
     //! last time Good was called (memory only)
     int64_t nLastGood;
 
-    // discriminate entries based on port. Should be false on mainnet/testnet and can be true povnet/regtest
+    // discriminate entries based on port. Should be false on mainnet/testnet and can be true devnet/regtest
     bool discriminatePorts;
 
 protected:

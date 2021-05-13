@@ -1,11 +1,18 @@
-# Absolute 0.12.3.1
+# Absolute 0.13.0.1
 
-Absolute will service the AbsoluteX platform designed to help advertising, promotions and events, with smart contracts that will have a global reach of network enablers. Our Proof of View network will allow agents, organisers and promoters the ability to reach a global audience and utilise their participation to achieve their desired media goals.
+https://www.absify.me
 
-The network is driven by ultra-low transaction fees, reliable and fast transactions (10x faster than Bitcoin) which are supported by a large core network of Masternodes. 
+Products designed by you. Create and configure your own items with the option to log your creation on the Absolute blockchain.
 
-Absolute Coin gives you the access to the wide range of options created by two-tier blockchain system (Standard and Proof of View nodes). InstaSend payments are near-instant and greatly practical for the network users. PrivateSend is designed and implemented to ensure that sources of payments cannot be tracked and identified. Additionally, MasterNode holders will soon be assigned voting rights to decide about the future of the network.
+Our goal is to allow you to produce excellent quality products that are designed by you using our online configurator. Certain designs have the choice of being recorded in the Absolute blockchain, allow independent verification that the design you made is unique to you.
 
+The One Protocol is Absolutes goal aiming for there only to be one ABS left in circulation. Although this is unlikely due to the mechanics of supply and demand, it allows us to reward you by reducing supply based on the performance of our business. This makes your holdings absolute more valuable.
+
+On a monthly basis we take 10% of our profit margin to buy and then destroy those collected ABS. This destroyed ABS is sent to specific addresses which are then closed off and hardcoded into the system to make sure that they are never used again. We then use these addresses to offset the max supply calculations.
+
+Find out more about the One Protocol: https://absify.me/one-protocol/
+
+----------------
 
 ## Absolute Technical Details
 
@@ -16,18 +23,16 @@ Absolute Coin gives you the access to the wide range of options created by two-t
 | PoW Algorithm | Lyra2REv2 |
 | MN Collateral | 2500 ABS |
 | Rewards split | Miners 20% and MasterNodes 80% |
-| Maximum supply | 52.5 M - 20.35 M Block Rewards and 32.15 M PoV |
+| Maximum supply | 52.5 M |
+| One Protocol (As of v.13) | 0.48 M |
 | Difficulty retargeting algo | Dark Gravity Wave v3 | 
 
-| Area | Proof Of View Setting |
-| ------ | ------ |
-| Platform | On Demand |
-| Block Reward | Max 5% Fee of Block Volume |
-| PoV Node / Escrow Node Collateral | TBA ABS |
+
+
 
 For building please see INSTALL / proper files in the doc subfolder.
 
-Masternode install scripts are supported on Ubuntu 16.04 and 18.04
+Masternode install scripts are supported on Ubuntu 18.04 and 20.04
 
 Development Process
 -------------------

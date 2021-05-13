@@ -2,7 +2,7 @@ This docker image is built and pushed from travis. It does not contain any defau
 special startup scripts. This is to keep it simple and to not copy too much logic from the
 official/supported Docker Images found at https://hub.docker.com/r/absolutecommunity/docker-absoluted/
 
-The image is mostly used for devops purposes, e.g. for testnet/povnet deployments. Regular users
+The image is mostly used for devops purposes, e.g. for testnet/devnet deployments. Regular users
 should use the official images instead of this one.
 
 **NOTE: Please update the image description at https://hub.docker.com/r/absolutecommunity/docker-absoluted/ when changing the above text**

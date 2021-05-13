@@ -399,7 +399,7 @@ See detailed [change log](https://github.com/dashpay/dash/compare/v0.12.2.3...da
 - [`a9d8e2c5d`](https://github.com/dashpay/dash/commit/a9d8e2c5d) [Init] Avoid segfault when called with -enableinstantsend=0 (#1976)
 - [`3200eae9b`](https://github.com/dashpay/dash/commit/3200eae9b) Don't use short version of 'tinyformat/fmt' namespace in util.h (#1975)
 - [`97a07cbc4`](https://github.com/dashpay/dash/commit/97a07cbc4) Refactor `CMasternodePayment*` (#1974)
-- [`4ffa7bac0`](https://github.com/dashpay/dash/commit/4ffa7bac0) Introduce AIP0001Height (#1973)
+- [`4ffa7bac0`](https://github.com/dashpay/dash/commit/4ffa7bac0) Introduce DIP0001Height (#1973)
 - [`611879aa6`](https://github.com/dashpay/dash/commit/611879aa6) Use spork addresses instead of raw keys and allow changing them on startup (#1969)
 - [`9ef38c6d7`](https://github.com/dashpay/dash/commit/9ef38c6d7) Switch CNetFulfilledRequestManager and CMasternodeMan maps/funcs to CService (#1967)
 - [`929c1584a`](https://github.com/dashpay/dash/commit/929c1584a) Rename CheckPreviousBlockVotes to CheckBlockVotes and adjust its log output a bit (#1965)
@@ -479,7 +479,6 @@ Darkcoin tree 0.10.x used to be the closed source implementation of Darksend
 which was released open source on Sep/25/2014.
 
 Dash Core tree 0.11.x was a fork of Bitcoin Core tree 0.9,
-Darkcoin was rebranded to Dash.
 
 Dash Core tree 0.12.0.x was a fork of Bitcoin Core tree 0.10.
 

@@ -5,9 +5,10 @@
 #ifndef ABSOLUTE_SPECIALTX_H
 #define ABSOLUTE_SPECIALTX_H
 
+#include "primitives/transaction.h"
 #include "streams.h"
 #include "version.h"
-#include "primitives/transaction.h"
+
 
 class CBlock;
 class CBlockIndex;

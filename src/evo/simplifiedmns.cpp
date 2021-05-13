@@ -2,18 +2,22 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "cbtx.h"
+#include "core_io.h"
+#include "deterministicmns.h"
 #include "simplifiedmns.h"
 #include "specialtx.h"
-#include "deterministicmns.h"
-#include "cbtx.h"
 
-#include "validation.h"
-#include "univalue.h"
-#include "consensus/merkle.h"
+
+#include "base58.h"
 #include "chainparams.h"
+#include "consensus/merkle.h"
+#include "univalue.h"
+#include "validation.h"
 
 CSimplifiedMNListEntry::CSimplifiedMNListEntry(const CDeterministicMN& dmn) :
     proRegTxHash(dmn.proTxHash),
+    confirmedHash(dmn.pdmnState->confirmedHash),
     service(dmn.pdmnState->addr),
     pubKeyOperator(dmn.pdmnState->pubKeyOperator),
     keyIDVoting(dmn.pdmnState->keyIDVoting),
@@ -30,8 +34,8 @@ uint256 CSimplifiedMNListEntry::CalcHash() const
 
 std::string CSimplifiedMNListEntry::ToString() const
 {
-    return strprintf("CSimplifiedMNListEntry(proRegTxHash=%s, service=%s, pubKeyOperator=%s, keyIDVoting=%s, isValie=%d)",
-        proRegTxHash.ToString(), service.ToString(false), pubKeyOperator.ToString(), keyIDVoting.ToString(), isValid);
+    return strprintf("CSimplifiedMNListEntry(proRegTxHash=%s, confirmedHash=%s, service=%s, pubKeyOperator=%s, votingAddress=%s, isValie=%d)",
+        proRegTxHash.ToString(), confirmedHash.ToString(), service.ToString(false), pubKeyOperator.ToString(), CBitcoinAddress(keyIDVoting).ToString(), isValid);
 }
 
 void CSimplifiedMNListEntry::ToJson(UniValue& obj) const
@@ -39,9 +43,10 @@ void CSimplifiedMNListEntry::ToJson(UniValue& obj) const
     obj.clear();
     obj.setObject();
     obj.push_back(Pair("proRegTxHash", proRegTxHash.ToString()));
+    obj.push_back(Pair("confirmedHash", confirmedHash.ToString()));
     obj.push_back(Pair("service", service.ToString(false)));
     obj.push_back(Pair("pubKeyOperator", pubKeyOperator.ToString()));
-    obj.push_back(Pair("keyIDVoting", keyIDVoting.ToString()));
+    obj.push_back(Pair("votingAddress", CBitcoinAddress(keyIDVoting).ToString()));
     obj.push_back(Pair("isValid", isValid));
 }
 
@@ -67,7 +72,7 @@ CSimplifiedMNList::CSimplifiedMNList(const CDeterministicMNList& dmnList)
     });
 }
 
-uint256 CSimplifiedMNList::CalcMerkleRoot(bool *pmutated) const
+uint256 CSimplifiedMNList::CalcMerkleRoot(bool* pmutated) const
 {
     std::vector<uint256> leaves;
     leaves.reserve(mnList.size());
@@ -83,6 +88,11 @@ void CSimplifiedMNListDiff::ToJson(UniValue& obj) const
 
     obj.push_back(Pair("baseBlockHash", baseBlockHash.ToString()));
     obj.push_back(Pair("blockHash", blockHash.ToString()));
+    CDataStream ssCbTxMerkleTree(SER_NETWORK, PROTOCOL_VERSION);
+    ssCbTxMerkleTree << cbTxMerkleTree;
+    obj.push_back(Pair("cbTxMerkleTree", HexStr(ssCbTxMerkleTree.begin(), ssCbTxMerkleTree.end())));
+
+    obj.push_back(Pair("cbTx", EncodeHexTx(*cbTx)));
 
     UniValue deletedMNsArr(UniValue::VARR);
     for (const auto& h : deletedMNs) {
@@ -109,25 +119,28 @@ bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& bloc
     AssertLockHeld(cs_main);
     mnListDiffRet = CSimplifiedMNListDiff();
 
-    BlockMap::iterator baseBlockIt = mapBlockIndex.begin();
+    const CBlockIndex* baseBlockIndex = chainActive.Genesis();
     if (!baseBlockHash.IsNull()) {
-        baseBlockIt = mapBlockIndex.find(baseBlockHash);
+        auto it = mapBlockIndex.find(baseBlockHash);
+        if (it == mapBlockIndex.end()) {
+            errorRet = strprintf("block %s not found", baseBlockHash.ToString());
+            return false;
+        }
+        baseBlockIndex = it->second;
     }
     auto blockIt = mapBlockIndex.find(blockHash);
-    if (baseBlockIt == mapBlockIndex.end()) {
-        errorRet = strprintf("block %s not found", baseBlockHash.ToString());
-        return false;
-    }
+
     if (blockIt == mapBlockIndex.end()) {
         errorRet = strprintf("block %s not found", blockHash.ToString());
         return false;
     }
+    const CBlockIndex* blockIndex = blockIt->second;
 
-    if (!chainActive.Contains(baseBlockIt->second) || !chainActive.Contains(blockIt->second)) {
+    if (!chainActive.Contains(baseBlockIndex) || !chainActive.Contains(blockIndex)) {
         errorRet = strprintf("block %s and %s are not in the same chain", baseBlockHash.ToString(), blockHash.ToString());
         return false;
     }
-    if (baseBlockIt->second->nHeight > blockIt->second->nHeight) {
+    if (baseBlockIndex->nHeight > blockIndex->nHeight) {
         errorRet = strprintf("base block %s is higher then block %s", baseBlockHash.ToString(), blockHash.ToString());
         return false;
     }
@@ -136,17 +149,16 @@ bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& bloc
 
     auto baseDmnList = deterministicMNManager->GetListForBlock(baseBlockHash);
     auto dmnList = deterministicMNManager->GetListForBlock(blockHash);
-    auto dmnDiff = baseDmnList.BuildDiff(dmnList);
+    mnListDiffRet = baseDmnList.BuildSimplifiedDiff(dmnList);
 
     // TODO store coinbase TX in CBlockIndex
     CBlock block;
-    if (!ReadBlockFromDisk(block, blockIt->second, Params().GetConsensus())) {
+    if (!ReadBlockFromDisk(block, blockIndex, Params().GetConsensus())) {
         errorRet = strprintf("failed to read block %s from disk", blockHash.ToString());
         return false;
     }
 
-    mnListDiffRet.baseBlockHash = baseBlockHash;
-    mnListDiffRet.blockHash = blockHash;
+
     mnListDiffRet.cbTx = block.vtx[0];
 
     std::vector<uint256> vHashes;
@@ -156,17 +168,7 @@ bool BuildSimplifiedMNListDiff(const uint256& baseBlockHash, const uint256& bloc
     }
     vMatch[0] = true; // only coinbase matches
     mnListDiffRet.cbTxMerkleTree = CPartialMerkleTree(vHashes, vMatch);
-    mnListDiffRet.deletedMNs.assign(dmnDiff.removedMns.begin(), dmnDiff.removedMns.end());
 
-    for (const auto& p : dmnDiff.addedMNs) {
-        mnListDiffRet.mnList.emplace_back(*p.second);
-    }
-    for (const auto& p : dmnDiff.updatedMNs) {
-        const auto& dmn = dmnList.GetMN(p.first);
-        CDeterministicMN newDmn(*dmn);
-        newDmn.pdmnState = p.second;
-        mnListDiffRet.mnList.emplace_back(newDmn);
-    }
 
     return true;
 }

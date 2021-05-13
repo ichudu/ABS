@@ -17,6 +17,8 @@ public:
     //! If false, allows unselected inputs, but requires all selected inputs be used
     bool fAllowOtherInputs;
     //! Includes watch only addresses which match the ISMINE_WATCH_SOLVABLE criteria
+    bool fRequireAllInputs;
+    //! Includes watch only addresses which match the ISMINE_WATCH_SOLVABLE criteria
     bool fAllowWatchOnly;
     //! Minimum absolute fee (not per kilobyte)
     CAmount nMinimumTotalFee;
@@ -36,6 +38,7 @@ public:
     {
         destChange = CNoDestination();
         fAllowOtherInputs = false;
+        fRequireAllInputs = true;
         fAllowWatchOnly = false;
         setSelected.clear();
         fUseInstantSend = false;

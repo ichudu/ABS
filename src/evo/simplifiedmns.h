@@ -5,11 +5,12 @@
 #ifndef ABSOLUTE_SIMPLIFIEDMNS_H
 #define ABSOLUTE_SIMPLIFIEDMNS_H
 
-#include "serialize.h"
-#include "pubkey.h"
-#include "netaddress.h"
-#include "merkleblock.h"
+
 #include "bls/bls.h"
+#include "merkleblock.h"
+#include "netaddress.h"
+#include "pubkey.h"
+#include "serialize.h"
 
 class UniValue;
 class CDeterministicMNList;
@@ -19,6 +20,7 @@ class CSimplifiedMNListEntry
 {
 public:
     uint256 proRegTxHash;
+    uint256 confirmedHash;
     CService service;
     CBLSPublicKey pubKeyOperator;
     CKeyID keyIDVoting;
@@ -28,6 +30,20 @@ public:
     CSimplifiedMNListEntry() {}
     CSimplifiedMNListEntry(const CDeterministicMN& dmn);
 
+    bool operator==(const CSimplifiedMNListEntry& rhs) const
+    {
+        return proRegTxHash == rhs.proRegTxHash &&
+               confirmedHash == rhs.confirmedHash &&
+               service == rhs.service &&
+               pubKeyOperator == rhs.pubKeyOperator &&
+               keyIDVoting == rhs.keyIDVoting &&
+               isValid == rhs.isValid;
+    }
+
+    bool operator!=(const CSimplifiedMNListEntry& rhs) const
+    {
+        return !(rhs == *this);
+    }
 public:
     ADD_SERIALIZE_METHODS;
 
@@ -35,6 +51,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         READWRITE(proRegTxHash);
+        READWRITE(confirmedHash);
         READWRITE(service);
         READWRITE(pubKeyOperator);
         READWRITE(keyIDVoting);
@@ -58,7 +75,7 @@ public:
     CSimplifiedMNList(const std::vector<CSimplifiedMNListEntry>& smlEntries);
     CSimplifiedMNList(const CDeterministicMNList& dmnList);
 
-    uint256 CalcMerkleRoot(bool *pmutated = NULL) const;
+    uint256 CalcMerkleRoot(bool* pmutated = NULL) const;
 };
 
 /// P2P messages

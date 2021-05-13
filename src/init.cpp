@@ -69,6 +69,7 @@
 
 #include "evo/deterministicmns.h"
 
+#include "llmq/quorums_init.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <memory>
@@ -236,21 +237,29 @@ void PrepareShutdown()
     StopREST();
     StopRPC();
     StopHTTPServer();
+    // fRPCInWarmup should be `false` if we completed the loading sequence
+    // before a shutdown request was received
+    std::string statusmessage;
+    bool fRPCInWarmup = RPCIsInWarmup(&statusmessage);
 #ifdef ENABLE_WALLET
+    if (!fLiteMode && !fRPCInWarmup) {
+        // Stop PrivateSend, release keys
+        privateSendClient.fEnablePrivateSend = false;
+        privateSendClient.ResetPool();
+    }
     if (pwalletMain)
         pwalletMain->Flush(false);
 #endif
     MapPort(false);
     UnregisterValidationInterface(peerLogic.get());
     peerLogic.reset();
+    if (g_connman) {
+        // make sure to stop all threads before g_connman is reset to nullptr as these threads might still be accessing it
+        g_connman->Stop();
+    }
     g_connman.reset();
 
-    if (!fLiteMode) {
-#ifdef ENABLE_WALLET
-        // Stop PrivateSend, release keys
-        privateSendClient.fEnablePrivateSend = false;
-        privateSendClient.ResetPool();
-#endif
+    if (!fLiteMode && !fRPCInWarmup) {
         // STORE DATA CACHES INTO SERIALIZED DAT FILES
         CFlatDB<CMasternodeMan> flatdb1("mncache.dat", "magicMasternodeCache");
         flatdb1.Dump(mnodeman);
@@ -297,6 +306,7 @@ void PrepareShutdown()
         pcoinsdbview = NULL;
         delete pblocktree;
         pblocktree = NULL;
+        llmq::DestroyLLMQSystem();
         delete deterministicMNManager;
         deterministicMNManager = NULL;
         delete evoDb;
@@ -324,6 +334,9 @@ void PrepareShutdown()
         UnregisterValidationInterface(activeMasternodeManager);
     }
 
+    // make sure to clean up BLS keys before global destructors are called (they have allocated from the secure memory pool)
+    activeMasternodeInfo.blsKeyOperator.reset();
+    activeMasternodeInfo.blsPubKeyOperator.reset();
 #ifndef WIN32
     try {
         boost::filesystem::remove(GetPidFile());
@@ -571,14 +584,15 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-shrinkdebugfile", _("Shrink debug.log file on client startup (default: 1 when no -debug)"));
     AppendParamsHelpMessages(strUsage, showDebug);
     strUsage += HelpMessageOpt("-litemode=<n>", strprintf(_("Disable all Absolute specific functionality (Masternodes, PrivateSend, InstantSend, Governance) (0-1, default: %u)"), 0));
-    strUsage += HelpMessageOpt("-sporkaddr=<hex>", strprintf(_("Override spork address. Only useful for regtest and povnet. Using this on mainnet or testnet will ban you.")));
-    strUsage += HelpMessageOpt("-minsporkkeys=<n>", strprintf(_("Overrides minimum spork signers to change spork value. Only useful for regtest and povnet. Using this on mainnet or testnet will ban you.")));
+    strUsage += HelpMessageOpt("-sporkaddr=<hex>", strprintf(_("Override spork address. Only useful for regtest and devnet. Using this on mainnet or testnet will ban you.")));
+    strUsage += HelpMessageOpt("-minsporkkeys=<n>", strprintf(_("Overrides minimum spork signers to change spork value. Only useful for regtest and devnet. Using this on mainnet or testnet will ban you.")));
 
     strUsage += HelpMessageGroup(_("Masternode options:"));
     strUsage += HelpMessageOpt("-masternode=<n>", strprintf(_("Enable the client to act as a masternode (0-1, default: %u)"), 0));
     strUsage += HelpMessageOpt("-mnconf=<file>", strprintf(_("Specify masternode configuration file (default: %s)"), "masternode.conf"));
     strUsage += HelpMessageOpt("-mnconflock=<n>", strprintf(_("Lock masternodes from masternode configuration file (default: %u)"), 1));
     strUsage += HelpMessageOpt("-masternodeprivkey=<n>", _("Set the masternode private key"));
+    strUsage += HelpMessageOpt("-masternodeblsprivkey=<hex>", _("Set the masternode BLS private key"));
 
 #ifdef ENABLE_WALLET
     strUsage += HelpMessageGroup(_("PrivateSend options:"));
@@ -805,8 +819,22 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     // GetMainSignals().UpdatedBlockTip(chainActive.Tip());
     pdsNotificationInterface->InitializeCurrentBlockTip();
 
-    if (activeMasternodeManager && fAIP0003ActiveAtTip)
+    bool fDIP003Active;
+    {
+        LOCK(cs_main);
+        if (chainActive.Tip()->pprev) {
+            fDIP003Active = VersionBitsState(chainActive.Tip()->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
+        }
+    }
+
+    if (activeMasternodeManager && fDIP003Active)
         activeMasternodeManager->Init();
+#ifdef ENABLE_WALLET
+    // we can't do this before DIP3 is fully initialized
+    if (pwalletMain) {
+        pwalletMain->AutoLockMasternodeCollaterals();
+    }
+#endif
 
     LoadMempool();
     fDumpMempoolLater = !fRequestShutdown;
@@ -824,6 +852,9 @@ bool InitSanityCheck(void)
     }
     if (!glibc_sanity_test() || !glibcxx_sanity_test())
         return false;
+    if (!BLSInit()) {
+        return false;
+    }
 
     return true;
 }
@@ -920,10 +951,7 @@ void InitParameterInteraction()
             LogPrintf("%s: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1\n", __func__);
     }
 
-    if(!GetBoolArg("-enableinstantsend", fEnableInstantSend)){
-        if (SoftSetArg("-instantsenddepth", "0"))
-            LogPrintf("%s: parameter interaction: -enableinstantsend=false -> setting -nInstantSendDepth=0\n", __func__);
-    }
+
 
 #ifdef ENABLE_WALLET
     int nLiqProvTmp = GetArg("-liquidityprovider", DEFAULT_PRIVATESEND_LIQUIDITY);
@@ -1073,15 +1101,15 @@ bool AppInitParameterInteraction()
 
     }
 
-    if (IsArgSet("-povnet")) {
-        // Require setting of ports when running povnet
+    if (IsArgSet("-devnet")) {
+        // Require setting of ports when running devnet
         if (GetArg("-listen", DEFAULT_LISTEN) && !IsArgSet("-port"))
-            return InitError(_("-port must be specified when -povnet and -listen are specified"));
+            return InitError(_("-port must be specified when -devnet and -listen are specified"));
         if (GetArg("-server", false) && !IsArgSet("-rpcport"))
-            return InitError(_("-rpcport must be specified when -povnet and -server are specified"));
+            return InitError(_("-rpcport must be specified when -devnet and -server are specified"));
 
-        if (mapMultiArgs.count("-povnet") > 1)
-            return InitError(_("-povnet can only be specified once"));
+        if (mapMultiArgs.count("-devnet") > 1)
+            return InitError(_("-devnet can only be specified once"));
     }
 
     fAllowPrivateNet = GetBoolArg("-allowprivatenet", DEFAULT_ALLOWPRIVATENET);
@@ -1292,6 +1320,39 @@ bool AppInitParameterInteraction()
         }
     }
 
+    if (IsArgSet("-budgetparams")) {
+        // Allow overriding budget parameters for testing
+        if (!chainparams.MineBlocksOnDemand()) {
+            return InitError("Budget parameters may only be overridden on regtest.");
+        }
+
+        std::string strBudgetParams = GetArg("-budgetparams", "");
+        std::vector<std::string> vBudgetParams;
+        boost::split(vBudgetParams, strBudgetParams, boost::is_any_of(":"));
+        if (vBudgetParams.size() != 3) {
+            return InitError("Budget parameters malformed, expecting masternodePaymentsStartBlock:budgetPaymentsStartBlock:superblockStartBlock");
+        }
+        int nMasternodePaymentsStartBlock, nBudgetPaymentsStartBlock, nSuperblockStartBlock;
+        if (!ParseInt32(vBudgetParams[0], &nMasternodePaymentsStartBlock)) {
+            return InitError(strprintf("Invalid nMasternodePaymentsStartBlock (%s)", vBudgetParams[0]));
+        }
+        if (!ParseInt32(vBudgetParams[1], &nBudgetPaymentsStartBlock)) {
+            return InitError(strprintf("Invalid nBudgetPaymentsStartBlock (%s)", vBudgetParams[1]));
+        }
+        if (!ParseInt32(vBudgetParams[2], &nSuperblockStartBlock)) {
+            return InitError(strprintf("Invalid nSuperblockStartBlock (%s)", vBudgetParams[2]));
+        }
+        UpdateRegtestBudgetParameters(nMasternodePaymentsStartBlock, nBudgetPaymentsStartBlock, nSuperblockStartBlock);
+    }
+
+    if (chainparams.NetworkIDString() == CBaseChainParams::DEVNET) {
+        int nMinimumDifficultyBlocks = GetArg("-minimumdifficultyblocks", chainparams.GetConsensus().nMinimumDifficultyBlocks);
+        int nHighSubsidyBlocks = GetArg("-highsubsidyblocks", chainparams.GetConsensus().nHighSubsidyBlocks);
+        int nHighSubsidyFactor = GetArg("-highsubsidyfactor", chainparams.GetConsensus().nHighSubsidyFactor);
+        UpdateDevnetSubsidyAndDiffParams(nMinimumDifficultyBlocks, nHighSubsidyBlocks, nHighSubsidyFactor);
+    } else if (IsArgSet("-minimumdifficultyblocks") || IsArgSet("-highsubsidyblocks") || IsArgSet("-highsubsidyfactor")) {
+        return InitError("Difficulty and subsidy parameters may only be overridden on devnet.");
+    }
     return true;
 }
 
@@ -1441,9 +1502,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
 
-    if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-        // Add povnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own povnet
-        uacomments.push_back(strprintf("povnet=%s", GetPoVNETName()));
+    if (chainparams.NetworkIDString() == CBaseChainParams::DEVNET) {
+        // Add devnet name to user agent. This allows to disconnect nodes immediately if they don't belong to our own devnet
+        uacomments.push_back(strprintf("devnet=%s", GetDevNetName()));
     }
 
     if (mapMultiArgs.count("-uacomment")) {
@@ -1589,6 +1650,29 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         nMaxOutboundLimit = GetArg("-maxuploadtarget", DEFAULT_MAX_UPLOAD_TARGET)*1024*1024;
     }
 
+    // ********************************************************* Step 7a: check lite mode and load sporks
+
+    // lite mode disables all Dash-specific functionality
+    fLiteMode = GetBoolArg("-litemode", false);
+    LogPrintf("fLiteMode %d\n", fLiteMode);
+
+    if(fLiteMode) {
+        InitWarning(_("You are starting in lite mode, all Absolute-specific functionality is disabled."));
+    }
+
+    if((!fLiteMode && fTxIndex == false)
+       && chainparams.NetworkIDString() != CBaseChainParams::REGTEST) { // TODO remove this when pruning is fixed. See https://github.com/dashpay/dash/pull/1817 and https://github.com/dashpay/dash/pull/1743
+        return InitError(_("Transaction index can't be disabled in full mode. Either start with -litemode command line switch or enable transaction index."));
+    }
+
+    if (!fLiteMode) {
+        uiInterface.InitMessage(_("Loading sporks cache..."));
+        CFlatDB<CSporkManager> flatdb6("sporks.dat", "magicSporkCache");
+        if (!flatdb6.Load(sporkManager)) {
+            return InitError(_("Failed to load sporks cache from") + "\n" + (GetDataDir() / "sporks.dat").string());
+        }
+    }
+
     // ********************************************************* Step 7: load block chain
 
     fReindex = GetBoolArg("-reindex", false);
@@ -1656,16 +1740,18 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 delete pcoinsdbview;
                 delete pcoinscatcher;
                 delete pblocktree;
+                llmq::DestroyLLMQSystem();
                 delete deterministicMNManager;
                 delete evoDb;
 
                 evoDb = new CEvoDB(nEvoDbCache, false, fReindex || fReindexChainState);
 
+                deterministicMNManager = new CDeterministicMNManager(*evoDb);
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex);
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex || fReindexChainState);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
-                deterministicMNManager = new CDeterministicMNManager(*evoDb);
+                llmq::InitLLMQSystem(*evoDb);
 
                 if (fReindex) {
                     pblocktree->WriteReindexing(true);
@@ -1691,8 +1777,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
-                if (!chainparams.GetConsensus().hashPoVNETGenesisBlock.IsNull() && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashPoVNETGenesisBlock) == 0)
-                    return InitError(_("Incorrect or no povnet genesis block found. Wrong datadir for povnet specified?"));
+                if (!chainparams.GetConsensus().hashDevnetGenesisBlock.IsNull() && !mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashDevnetGenesisBlock) == 0)
+                    return InitError(_("Incorrect or no devnet genesis block found. Wrong datadir for devnet specified?"));
 
                 // Initialize the block index (no-op if non-empty database was already loaded)
                 if (!InitBlockIndex(chainparams)) {
@@ -1711,11 +1797,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (fHavePruned && !fPruneMode) {
                     strLoadError = _("You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain");
                     break;
-                }
 
-                // Needs to be called after chain is initialized
-                if (chainActive.Tip() && chainActive.Tip()->pprev) {
-                    fAIP0003ActiveAtTip = VersionBitsState(chainActive.Tip()->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE;
                 }
 
                 uiInterface.InitMessage(_("Verifying blocks..."));
@@ -1845,17 +1927,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     fMasternodeMode = GetBoolArg("-masternode", false);
     // TODO: masternode should have no wallet
 
-    //lite mode disables all Absolute-specific functionality
-    fLiteMode = GetBoolArg("-litemode", false);
 
-    if(fLiteMode) {
-        InitWarning(_("You are starting in lite mode, all Absolute-specific functionality is disabled."));
-    }
-
-    if((!fLiteMode && fTxIndex == false)
-       && chainparams.NetworkIDString() != CBaseChainParams::REGTEST) {
-        return InitError(_("Transaction index can't be disabled in full mode. Either start with -litemode command line switch or enable transaction index."));
-    }
 
     if(fLiteMode && fMasternodeMode) {
         return InitError(_("You can not start a masternode in lite mode."));
@@ -1890,7 +1962,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 return InitError(_("Invalid masternodeblsprivkey. Please see documenation."));
             }
         } else {
-            InitWarning(_("You should specify a masternodeblsprivkey in the configuration. Please see documentation for help."));
+            return InitError(_("You must specify a masternodeblsprivkey in the configuration. Please see documentation for help."));
         }
 
         // init and register activeMasternodeManager
@@ -1926,6 +1998,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             LogPrintf("  %s %s - locked successfully\n", mne.getTxHash(), mne.getOutputIndex());
         }
     }
+    // ********************************************************* Step 11b: setup PrivateSend
 
     privateSendClient.nLiquidityProvider = std::min(std::max((int)GetArg("-liquidityprovider", DEFAULT_PRIVATESEND_LIQUIDITY), MIN_PRIVATESEND_LIQUIDITY), MAX_PRIVATESEND_LIQUIDITY);
     int nMaxRounds = MAX_PRIVATESEND_ROUNDS;
@@ -1940,12 +2013,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     privateSendClient.nPrivateSendSessions = std::min(std::max((int)GetArg("-privatesendsessions", DEFAULT_PRIVATESEND_SESSIONS), MIN_PRIVATESEND_SESSIONS), MAX_PRIVATESEND_SESSIONS);
     privateSendClient.nPrivateSendRounds = std::min(std::max((int)GetArg("-privatesendrounds", DEFAULT_PRIVATESEND_ROUNDS), MIN_PRIVATESEND_ROUNDS), nMaxRounds);
     privateSendClient.nPrivateSendAmount = std::min(std::max((int)GetArg("-privatesendamount", DEFAULT_PRIVATESEND_AMOUNT), MIN_PRIVATESEND_AMOUNT), MAX_PRIVATESEND_AMOUNT);
-#endif // ENABLE_WALLET
 
-    fEnableInstantSend = GetBoolArg("-enableinstantsend", 1);
-
-    LogPrintf("fLiteMode %d\n", fLiteMode);
-#ifdef ENABLE_WALLET
     LogPrintf("PrivateSend liquidityprovider: %d\n", privateSendClient.nLiquidityProvider);
     LogPrintf("PrivateSend rounds: %d\n", privateSendClient.nPrivateSendRounds);
     LogPrintf("PrivateSend amount: %d\n", privateSendClient.nPrivateSendAmount);
@@ -1955,6 +2023,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 11b: Load cache data
 
+    fEnableInstantSend = GetBoolArg("-enableinstantsend", 1);
+
+    // ********************************************************* Step 11d: Load cache data
     // LOAD SERIALIZED DAT FILES INTO DATA CACHES FOR INTERNAL USE
 
     if (!fLiteMode) {
@@ -2002,21 +2073,15 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             if(!flatdb5.Load(instantsend)) {
                 return InitError(_("Failed to load InstantSend data cache from") + "\n" + (pathDB / strDBName).string());
             }
-        }
 
-        strDBName = "sporks.dat";
-        uiInterface.InitMessage(_("Loading sporks cache..."));
-        CFlatDB<CSporkManager> flatdb6(strDBName, "magicSporkCache");
-        if(!flatdb6.Load(sporkManager)) {
-            return InitError(_("Failed to load sporks cache from") + "\n" + (pathDB / strDBName).string());
         }
     }
 
-    // ********************************************************* Step 11c: schedule Dash-specific tasks
+    // ********************************************************* Step 11c: schedule Absolute-specific tasks
 
     if (!fLiteMode) {
         scheduler.scheduleEvery(boost::bind(&CNetFulfilledRequestManager::DoMaintenance, boost::ref(netfulfilledman)), 60);
-        scheduler.scheduleEvery(boost::bind(&CMasternodeSync::DoMaintenance, boost::ref(masternodeSync), boost::ref(*g_connman)), MASTERNODE_SYNC_TICK_SECONDS);
+        scheduler.scheduleEvery(boost::bind(&CMasternodeSync::DoMaintenance, boost::ref(masternodeSync), boost::ref(*g_connman)), 1);
         scheduler.scheduleEvery(boost::bind(&CMasternodeMan::DoMaintenance, boost::ref(mnodeman), boost::ref(*g_connman)), 1);
         scheduler.scheduleEvery(boost::bind(&CActiveLegacyMasternodeManager::DoMaintenance, boost::ref(legacyActiveMasternodeManager), boost::ref(*g_connman)), MASTERNODE_MIN_MNP_SECONDS);
 

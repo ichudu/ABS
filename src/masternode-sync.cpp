@@ -5,6 +5,7 @@
 
 #include "activemasternode.h"
 #include "governance.h"
+#include "init.h"
 #include "validation.h"
 #include "masternode-payments.h"
 #include "masternode-sync.h"
@@ -148,6 +149,10 @@ void CMasternodeSync::ProcessTick(CConnman& connman)
         Reset();
         SwitchToNextAsset(connman);
         nTimeLastProcess = GetTime();
+        return;
+    }
+    if(GetTime() - nTimeLastProcess < MASTERNODE_SYNC_TICK_SECONDS) {
+        // too early, nothing to do here
         return;
     }
     nTimeLastProcess = GetTime();
@@ -504,4 +509,11 @@ void CMasternodeSync::UpdatedBlockTip(const CBlockIndex *pindexNew, bool fInitia
         // We must be at the tip already, let's move to the next asset.
         SwitchToNextAsset(connman);
     }
+}
+
+void CMasternodeSync::DoMaintenance(CConnman &connman)
+{
+    if (ShutdownRequested()) return;
+
+    ProcessTick(connman);
 }

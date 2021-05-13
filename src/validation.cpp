@@ -7,6 +7,7 @@
 
 #include "validation.h"
 
+
 #include "addrman.h"
 #include "base58.h"
 #include "alert.h"
@@ -96,7 +97,7 @@ bool fAlerts = DEFAULT_ALERTS;
 int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 
 std::atomic<bool> fDIP0001ActiveAtTip{false};
-std::atomic<bool> fAIP0003ActiveAtTip{false};
+std::atomic<bool> fDIP0003ActiveAtTip{false};
 
 uint256 hashAssumeValid;
 
@@ -517,10 +518,14 @@ int GetUTXOConfirmations(const COutPoint& outpoint)
 
 bool CheckTransaction(const CTransaction& tx, CValidationState &state)
 {
+    bool allowEmptyTxInOut = false;
+    if (tx.nType == TRANSACTION_QUORUM_COMMITMENT) {
+        allowEmptyTxInOut = true;
+    }
     // Basic checks that don't depend on any context
-    if (tx.vin.empty())
+    if (!allowEmptyTxInOut && tx.vin.empty())
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty())
+    if (!allowEmptyTxInOut && tx.vout.empty())
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-vout-empty");
     // Size limits
     if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) > MAX_LEGACY_BLOCK_SIZE)
@@ -594,9 +599,9 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 {
     int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     bool fDIP0001Active_context = nHeight >= consensusParams.DIP0001Height;
-    bool fAIP0003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE;
+    bool fDIP0003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
 
-    if (fAIP0003Active_context) {
+    if (fDIP0003Active_context) {
         // check version 3 transaction types
         if (tx.nVersion >= 3) {
             if (tx.nType != TRANSACTION_NORMAL &&
@@ -604,7 +609,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                 tx.nType != TRANSACTION_PROVIDER_UPDATE_SERVICE &&
                 tx.nType != TRANSACTION_PROVIDER_UPDATE_REGISTRAR &&
                 tx.nType != TRANSACTION_PROVIDER_UPDATE_REVOKE &&
-                tx.nType != TRANSACTION_COINBASE) {
+                tx.nType != TRANSACTION_COINBASE &&
+                tx.nType != TRANSACTION_QUORUM_COMMITMENT) {
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-type");
             }
             if (tx.IsCoinBase() && tx.nType != TRANSACTION_COINBASE)
@@ -669,8 +675,10 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
     if (!ContextualCheckTransaction(tx, state, Params().GetConsensus(), chainActive.Tip()))
         return error("%s: ContextualCheckTransaction: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
 
-    if (!CheckSpecialTx(tx, chainActive.Tip(), state))
-        return false;
+    if (tx.nVersion == 3 && tx.nType == TRANSACTION_QUORUM_COMMITMENT) {
+        // quorum commitment is not allowed outside of blocks
+        return state.DoS(100, false, REJECT_INVALID, "qc-not-allowed");
+    }
 
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
@@ -681,9 +689,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
     if (fRequireStandard && !IsStandardTx(tx, reason))
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
-    if (pool.existsProviderTxConflict(tx)) {
-        return state.DoS(0, false, REJECT_DUPLICATE, "protx-dup");
-    }
+
 
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
@@ -878,6 +884,16 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
         std::string errString;
         if (!pool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants, nLimitDescendantSize, errString)) {
             return state.DoS(0, false, REJECT_NONSTANDARD, "too-long-mempool-chain", false, errString);
+        }
+
+        // If we aren't going to actually accept it but just were verifying it, we are fine already
+        // DoS scoring a node for non-critical errors, e.g. duplicate keys because a TX is received that was already
+        // mined
+        if (!CheckSpecialTx(tx, chainActive.Tip(), state))
+            return false;
+
+        if (pool.existsProviderTxConflict(tx)) {
+            return state.DoS(0, false, REJECT_DUPLICATE, "protx-dup");
         }
 
         // If we aren't going to actually accept it but just were verifying it, we are fine already
@@ -1611,6 +1627,13 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
 {
     assert(pindex->GetBlockHash() == view.GetBestBlock());
 
+    bool fDIP0003Active = VersionBitsState(pindex->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
+    bool fHasBestBlock = evoDb->VerifyBestBlock(pindex->GetBlockHash());
+
+    if (fDIP0003Active && !fHasBestBlock) {
+        // Nodes that upgraded after DIP3 activation will have to reindex to ensure evodb consistency
+        AbortNode("Found EvoDB inconsistency, you must reindex to continue");
+    }
     bool fClean = true;
 
     CBlockUndo blockUndo;
@@ -1746,10 +1769,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
             }
             // At this point, all of txundo.vprevout should have been moved out.
         }
-    }
 
-    if (pindex->pprev && pindex->pprev->pprev && VersionBitsState(pindex->pprev->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_AIP0003, versionbitscache) != THRESHOLD_ACTIVE) {
-        fAIP0003ActiveAtTip = false;
     }
 
     // move best block pointer to prevout block
@@ -1766,6 +1786,12 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
         }
     }
 
+    // make sure the flag is reset in case of a chain reorg
+    // (we reused the DIP3 deployment)
+    instantsend.isAutoLockBip9Active =
+            (VersionBitsState(pindex->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE);
+
+    evoDb->WriteBestBlock(pindex->pprev->GetBlockHash());
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
 
@@ -1804,7 +1830,7 @@ void ThreadScriptCheck() {
 // Protected by cs_main
 VersionBitsCache versionbitscache;
 
-int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params, bool fAssumeMasternodeIsUpgraded)
+int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params, bool fCheckMasternodesUpgraded)
 {
     LOCK(cs_main);
     int32_t nVersion = VERSIONBITS_TOP_BITS;
@@ -1813,27 +1839,35 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
         Consensus::DeploymentPos pos = Consensus::DeploymentPos(i);
         ThresholdState state = VersionBitsState(pindexPrev, params, pos, versionbitscache);
         const struct BIP9DeploymentInfo& vbinfo = VersionBitsDeploymentInfo[pos];
-        if (vbinfo.check_mn_protocol && state == THRESHOLD_STARTED && !fAssumeMasternodeIsUpgraded) {
-            std::vector<CTxOut> voutMasternodePayments;
-            masternode_info_t mnInfo;
-            if (!mnpayments.GetBlockTxOuts(pindexPrev->nHeight + 1, 0, voutMasternodePayments)) {
-                // no votes for this block
-                continue;
-            }
-            bool mnKnown = false;
-            for (const auto& txout : voutMasternodePayments) {
-                if (mnodeman.GetMasternodeInfo(txout.scriptPubKey, mnInfo)) {
-                    mnKnown = true;
-                    break;
+        if (vbinfo.check_mn_protocol && state == THRESHOLD_STARTED && fCheckMasternodesUpgraded) {
+            if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
+                auto mnList = deterministicMNManager->GetListForBlock(pindexPrev->GetBlockHash());
+                auto payee = mnList.GetMNPayee();
+                if (!payee) {
+                    continue;
                 }
-            }
-            if (!mnKnown) {
-                // unknown masternode
-                continue;
-            }
-            if (mnInfo.nProtocolVersion < MIN_INSTANTSEND_WITHOUT_FEE_PROTO_VERSION) {
-                // masternode is not upgraded yet
-                continue;
+            } else {
+                std::vector<CTxOut> voutMasternodePayments;
+                masternode_info_t mnInfo;
+                if (!mnpayments.GetBlockTxOuts(pindexPrev->nHeight + 1, 0, voutMasternodePayments)) {
+                    // no votes for this block
+                    continue;
+                }
+                bool mnKnown = false;
+                for (const auto& txout : voutMasternodePayments) {
+                    if (mnodeman.GetMasternodeInfo(txout.scriptPubKey, mnInfo)) {
+                        mnKnown = true;
+                        break;
+                    }
+                }
+                if (!mnKnown) {
+                    // unknown masternode
+                    continue;
+                }
+                if (mnInfo.nProtocolVersion < DMN_PROTO_VERSION) {
+                    // masternode is not upgraded yet
+                    continue;
+                }
             }
         }
         if (state == THRESHOLD_LOCKED_IN || state == THRESHOLD_STARTED) {
@@ -1874,7 +1908,7 @@ public:
     {
         return ((pindex->nVersion & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) &&
                ((pindex->nVersion >> bit) & 1) != 0 &&
-               ((ComputeBlockVersion(pindex->pprev, params, true) >> bit) & 1) == 0;
+               ((ComputeBlockVersion(pindex->pprev, params) >> bit) & 1) == 0;
     }
 };
 
@@ -1884,6 +1918,7 @@ static ThresholdConditionCache warningcache[VERSIONBITS_NUM_BITS];
 static int64_t nTimeCheck = 0;
 static int64_t nTimeForks = 0;
 static int64_t nTimeVerify = 0;
+static int64_t nTimePayeeAndSpecial = 0;
 static int64_t nTimeConnect = 0;
 static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
@@ -1907,6 +1942,15 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
     assert(hashPrevBlock == view.GetBestBlock());
 
+    if (pindex->pprev) {
+        bool fDIP0003Active = VersionBitsState(pindex->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
+        bool fHasBestBlock = evoDb->VerifyBestBlock(pindex->pprev->GetBlockHash());
+
+        if (fDIP0003Active && !fHasBestBlock) {
+            // Nodes that upgraded after DIP3 activation will have to reindex to ensure evodb consistency
+            AbortNode("Found EvoDB inconsistency, you must reindex to continue");
+        }
+    }
     // Special case for the genesis block, skipping connection of its transactions
     // (its coinbase is unspendable)
     if (block.GetHash() == chainparams.GetConsensus().hashGenesisBlock) {
@@ -2017,12 +2061,7 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
 
     if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_BIP147, versionbitscache) == THRESHOLD_ACTIVE) {
         flags |= SCRIPT_VERIFY_NULLDUMMY;
-    }
 
-    if (!fJustCheck && VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE) {
-        if (!fAIP0003ActiveAtTip)
-            LogPrintf("ConnectBlock -- AIP0003 got activated at height %d\n", pindex->nHeight);
-        fAIP0003ActiveAtTip = true;
     }
 
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
@@ -2182,8 +2221,15 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
 
-    if (!ProcessSpecialTxsInBlock(block, pindex, state))
-        return false;
+    if (!control.Wait())
+        return state.DoS(100, false);
+    int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
+    LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
+
+    if (!ProcessSpecialTxsInBlock(block, pindex, state)) {
+        return error("ConnectBlock(): ProcessSpecialTxsInBlock for block %s failed with %s",
+                     pindex->GetBlockHash().ToString(), FormatStateMessage(state));
+    }
 
     // ABSOLUTE: MODIFIED TO CHECK MASTERNODE PAYMENTS AND SUPERBLOCKS
 
@@ -2192,6 +2238,31 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     // that's why this is in ConnectBlock. Could be the other way around however -
     // the peer who sent us this block is missing some data and wasn't able
     // to recognize that block is actually invalid.
+    // DASH : CHECK TRANSACTIONS FOR INSTANTSEND
+
+    if (sporkManager.IsSporkActive(SPORK_3_INSTANTSEND_BLOCK_FILTERING)) {
+        // Require other nodes to comply, send them some data in case they are missing it.
+        for (const auto& tx : block.vtx) {
+            // skip txes that have no inputs
+            if (tx->vin.empty()) continue;
+            // LOOK FOR TRANSACTION LOCK IN OUR MAP OF OUTPOINTS
+            for (const auto& txin : tx->vin) {
+                uint256 hashLocked;
+                if (instantsend.GetLockedOutPointTxHash(txin.prevout, hashLocked) && hashLocked != tx->GetHash()) {
+                    // The node which relayed this should switch to correct chain.
+                    // TODO: relay instantsend data/proof.
+                    LOCK(cs_main);
+                    mapRejectedBlocks.insert(std::make_pair(block.GetHash(), GetTime()));
+                    return state.DoS(10, error("ConnectBlock(DASH): transaction %s conflicts with transaction lock %s", tx->GetHash().ToString(), hashLocked.ToString()),
+                                     REJECT_INVALID, "conflict-tx-lock");
+                }
+            }
+        }
+    } else {
+        LogPrintf("ConnectBlock(DASH): spork is off, skipping transaction locking checks\n");
+    }
+
+    // DASH : MODIFIED TO CHECK MASTERNODE PAYMENTS AND SUPERBLOCKS
     // TODO: resync data (both ways?) and try to reprocess this block later.
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->pprev->nBits, pindex->pprev->nHeight, chainparams.GetConsensus());
     std::string strError = "";
@@ -2204,12 +2275,11 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
         return state.DoS(0, error("ConnectBlock(ABS): couldn't find masternode or superblock payments"),
                                 REJECT_INVALID, "bad-cb-payee");
     }
+    int64_t nTime5 = GetTimeMicros(); nTimePayeeAndSpecial += nTime5 - nTime4;
+    LogPrint("bench", "    - Payee and special txes: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimePayeeAndSpecial * 0.000001);
     // END ABSOLUTE
 
-    if (!control.Wait())
-        return state.DoS(100, false);
-    int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
-    LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
+
 
     if (fJustCheck)
         return true;
@@ -2258,17 +2328,26 @@ static bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockInd
     // add this block to the view's block chain
     view.SetBestBlock(pindex->GetBlockHash());
 
-    int64_t nTime5 = GetTimeMicros(); nTimeIndex += nTime5 - nTime4;
-    LogPrint("bench", "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
+    if (!fJustCheck) {
+        // check if previous block had DIP3 disabled and the new block has it enabled
+        if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) != THRESHOLD_ACTIVE &&
+            VersionBitsState(pindex, chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE) {
+            LogPrintf("%s -- DIP0003 got activated at height %d\n", __func__, pindex->nHeight);
+        }
+    }
+
+    int64_t nTime6 = GetTimeMicros(); nTimeIndex += nTime6 - nTime5;
+    LogPrint("bench", "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeIndex * 0.000001);
 
     // Watch for changes to the previous coinbase transaction.
     static uint256 hashPrevBestCoinBase;
     GetMainSignals().UpdatedTransaction(hashPrevBestCoinBase);
     hashPrevBestCoinBase = block.vtx[0]->GetHash();
 
+    evoDb->WriteBestBlock(pindex->GetBlockHash());
 
-    int64_t nTime6 = GetTimeMicros(); nTimeCallbacks += nTime6 - nTime5;
-    LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
+    int64_t nTime7 = GetTimeMicros(); nTimeCallbacks += nTime7 - nTime6;
+    LogPrint("bench", "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime7 - nTime6), nTimeCallbacks * 0.000001);
 
     return true;
 }
@@ -2370,6 +2449,9 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int n
         // Flush the chainstate (which may refer to block index entries).
         if (!pcoinsTip->Flush())
             return AbortNode(state, "Failed to write to coin database");
+        if (!evoDb->CommitRootTransaction()) {
+            return AbortNode(state, "Failed to commit EvoDB");
+        }
         nLastFlush = nNow;
     }
     if (fDoFullFlush || ((mode == FLUSH_STATE_ALWAYS || mode == FLUSH_STATE_PERIODIC) && nNow > nLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000)) {
@@ -2428,7 +2510,7 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
         // Check the version of the last 100 blocks to see if we need to upgrade:
         for (int i = 0; i < 100 && pindex != NULL; i++)
         {
-            int32_t nExpectedVersion = ComputeBlockVersion(pindex->pprev, chainParams.GetConsensus(), true);
+            int32_t nExpectedVersion = ComputeBlockVersion(pindex->pprev, chainParams.GetConsensus());
             if (pindex->nVersion > VERSIONBITS_LAST_OLD_BLOCK_VERSION && (pindex->nVersion & ~nExpectedVersion) != 0)
                 ++nUpgraded;
             pindex = pindex->pprev;
@@ -2475,8 +2557,7 @@ bool static DisconnectTip(CValidationState& state, const CChainParams& chainpara
             return error("DisconnectTip(): DisconnectBlock %s failed", pindexDelete->GetBlockHash().ToString());
         bool flushed = view.Flush();
         assert(flushed);
-        bool committed = dbTx->Commit();
-        assert(committed);
+        dbTx->Commit();
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
     // Write the chain state to disk, if necessary.
@@ -2565,8 +2646,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
         LogPrint("bench", "  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001, nTimeConnectTotal * 0.000001);
         bool flushed = view.Flush();
         assert(flushed);
-        bool committed = dbTx->Commit();
-        assert(committed);
+        dbTx->Commit();
     }
     int64_t nTime4 = GetTimeMicros(); nTimeFlush += nTime4 - nTime3;
     LogPrint("bench", "  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
@@ -3173,11 +3253,11 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const 
         return state.DoS(50, false, REJECT_INVALID, "high-hash", false, "proof of work failed");
 
     // Check PoVNet
-    if (!consensusParams.hashPoVNETGenesisBlock.IsNull() &&
+    if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
             block.hashPrevBlock == consensusParams.hashGenesisBlock &&
-            block.GetHash() != consensusParams.hashPoVNETGenesisBlock) {
-        return state.DoS(100, error("CheckBlockHeader(): wrong povnet genesis"),
-                         REJECT_INVALID, "povnet-genesis");
+            block.GetHash() != consensusParams.hashDevnetGenesisBlock) {
+        return state.DoS(100, error("CheckBlockHeader(): wrong devnet genesis"),
+                         REJECT_INVALID, "devnet-genesis");
     }
     return true;
 }
@@ -3224,33 +3304,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::P
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
 
 
-    // ABSOLUTE : CHECK TRANSACTIONS FOR INSTANTSEND
 
-    if(sporkManager.IsSporkActive(SPORK_3_INSTANTSEND_BLOCK_FILTERING)) {
-        // We should never accept block which conflicts with completed transaction lock,
-        // that's why this is in CheckBlock unlike coinbase payee/amount.
-        // Require other nodes to comply, send them some data in case they are missing it.
-        for(const auto& tx : block.vtx) {
-            // skip coinbase, it has no inputs
-            if (tx->IsCoinBase()) continue;
-            // LOOK FOR TRANSACTION LOCK IN OUR MAP OF OUTPOINTS
-            for (const auto& txin : tx->vin) {
-                uint256 hashLocked;
-                if(instantsend.GetLockedOutPointTxHash(txin.prevout, hashLocked) && hashLocked != tx->GetHash()) {
-                    // The node which relayed this will have to switch later,
-                    // relaying instantsend data won't help it.
-                    LOCK(cs_main);
-                    mapRejectedBlocks.insert(std::make_pair(block.GetHash(), GetTime()));
-                    return state.DoS(100, false, REJECT_INVALID, "conflict-tx-lock", false,
-                                     strprintf("transaction %s conflicts with transaction lock %s", tx->GetHash().ToString(), hashLocked.ToString()));
-                }
-            }
-        }
-    } else {
-        LogPrintf("CheckBlock(ABS): spork is off, skipping transaction locking checks\n");
-    }
-
-    // END ABSOLUTE
 
     // Check transactions
     for (const auto& tx : block.vtx)
@@ -3338,7 +3392,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
                               : block.GetBlockTime();
 
     bool fDIP0001Active_context = nHeight >= Params().GetConsensus().DIP0001Height;
-    bool fAIP0003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE;
+    bool fDIP0003Active_context = VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
 
     // Size limits
     unsigned int nMaxBlockSize = MaxBlockSize(fDIP0001Active_context);
@@ -3363,9 +3417,9 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
         return state.DoS(10, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
 
     // Enforce rule that the coinbase starts with serialized block height
-    // After AIP3/AIP4 activation, we don't enforce the height in the input script anymore.
+    // After DIP3/DIP4 activation, we don't enforce the height in the input script anymore.
     // The CbTx special transaction payload will then contain the height, which is checked in CheckCbTx
-    if (nHeight >= consensusParams.BIP34Height && !fAIP0003Active_context)
+    if (nHeight >= consensusParams.BIP34Height && !fDIP0003Active_context)
     {
         CScript expect = CScript() << nHeight;
         if (block.vtx[0]->vin[0].scriptSig.size() < expect.size() ||
@@ -3374,7 +3428,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
         }
     }
 
-    if (fAIP0003Active_context) {
+    if (fDIP0003Active_context) {
         if (block.vtx[0]->nType != TRANSACTION_COINBASE) {
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-type", false, "coinbase is not a CbTx");
         }
@@ -4113,11 +4167,11 @@ bool InitBlockIndex(const CChainParams& chainparams)
             if (!AddGenesisBlock(chainparams, chainparams.GenesisBlock(), state))
                 return false;
 
-            if (chainparams.NetworkIDString() == CBaseChainParams::POVNET) {
-                // We can't continue if povnet genesis block is invalid
-                std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(chainparams.PoVNETGenesisBlock());
-                bool fProcessPoVNETGenesisBlock = ProcessNewBlock(chainparams, shared_pblock, true, NULL);
-                assert(fProcessPoVNETGenesisBlock);
+            if (chainparams.NetworkIDString() == CBaseChainParams::DEVNET) {
+                // We can't continue if devnet genesis block is invalid
+                std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(chainparams.DevNetGenesisBlock());
+                bool fProcessDevnetGenesisBlock = ProcessNewBlock(chainparams, shared_pblock, true, NULL);
+                assert(fProcessDevnetGenesisBlock);
             }
             // Force a chainstate write so that when we VerifyDB in a moment, it doesn't check stale data
             return FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
@@ -4456,6 +4510,10 @@ static const uint64_t MEMPOOL_DUMP_VERSION = 1;
 
 bool LoadMempool(void)
 {
+    if (GetBoolArg("-zapwallettxes", false)) {
+        LogPrintf("Skipping mempool.dat because of zapwallettxes\n");
+        return true;
+    }
     int64_t nExpiryTimeout = GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60;
     FILE* filestr = fopen((GetDataDir() / "mempool.dat").string().c_str(), "rb");
     CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);

@@ -25,14 +25,12 @@
 
 
 CMasternode::CMasternode() :
-    masternode_info_t{ MASTERNODE_ENABLED, PROTOCOL_VERSION, GetAdjustedTime()},
-    fAllowMixingTx(true)
+    masternode_info_t{ MASTERNODE_ENABLED, PROTOCOL_VERSION, GetAdjustedTime()}
 {}
 
 CMasternode::CMasternode(CService addr, COutPoint outpoint, CPubKey pubKeyCollateralAddressNew, CPubKey pubKeyMasternodeNew, int nProtocolVersionIn) :
     masternode_info_t{ MASTERNODE_ENABLED, nProtocolVersionIn, GetAdjustedTime(),
-                       outpoint, addr, pubKeyCollateralAddressNew, pubKeyMasternodeNew},
-    fAllowMixingTx(true)
+                       outpoint, addr, pubKeyCollateralAddressNew, pubKeyMasternodeNew}
 {}
 
 CMasternode::CMasternode(const CMasternode& other) :
@@ -43,7 +41,7 @@ CMasternode::CMasternode(const CMasternode& other) :
     nBlockLastPaid(other.nBlockLastPaid),
     nPoSeBanScore(other.nPoSeBanScore),
     nPoSeBanHeight(other.nPoSeBanHeight),
-    fAllowMixingTx(other.fAllowMixingTx),
+    nMixingTxCount(other.nMixingTxCount),
     fUnitTest(other.fUnitTest)
 {}
 
@@ -51,19 +49,14 @@ CMasternode::CMasternode(const CMasternodeBroadcast& mnb) :
     masternode_info_t{ mnb.nActiveState, mnb.nProtocolVersion, mnb.sigTime,
                        mnb.outpoint, mnb.addr, mnb.pubKeyCollateralAddress, mnb.pubKeyMasternode},
     lastPing(mnb.lastPing),
-    vchSig(mnb.vchSig),
-    fAllowMixingTx(true)
+    vchSig(mnb.vchSig)
 {}
 
 CMasternode::CMasternode(const uint256 &proTxHash, const CDeterministicMNCPtr& dmn) :
-    masternode_info_t{ MASTERNODE_ENABLED, dmn->pdmnState->nProtocolVersion, GetAdjustedTime(),
-                       COutPoint(proTxHash, dmn->nCollateralIndex), dmn->pdmnState->addr, CKeyID(), dmn->pdmnState->keyIDOwner, dmn->pdmnState->pubKeyOperator, dmn->pdmnState->keyIDVoting},
-    fAllowMixingTx(true)
+    masternode_info_t{ MASTERNODE_ENABLED, DMN_PROTO_VERSION, GetAdjustedTime(),
+                       dmn->collateralOutpoint, dmn->pdmnState->addr, CKeyID() /* not valid with DIP3 */, dmn->pdmnState->keyIDOwner, dmn->pdmnState->pubKeyOperator, dmn->pdmnState->keyIDVoting}
 {
-    CTxDestination dest;
-    if (!ExtractDestination(dmn->pdmnState->scriptPayout, dest) || !boost::get<CKeyID>(&dest))
-        assert(false); // should not happen (previous verification forbids non p2pkh/p2pk
-    keyIDCollateralAddress = *boost::get<CKeyID>(&dest);
+
 }
 
 //
@@ -113,6 +106,7 @@ bool CMasternode::UpdateFromNewBroadcast(CMasternodeBroadcast& mnb, CConnman& co
 arith_uint256 CMasternode::CalculateScore(const uint256& blockHash) const
 {
     // Deterministically calculate a "score" for a Masternode based on any given (block)hash
+    // Deterministically calculate a "score" for a Masternode based on any given (block)hash
     CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
     ss << outpoint << nCollateralMinConfBlockHash << blockHash;
     return UintToArith256(ss.GetHash());
@@ -141,21 +135,7 @@ CMasternode::CollateralStatus CMasternode::CheckCollateral(const COutPoint& outp
         return COLLATERAL_INVALID_PUBKEY;
     }
 
-    CTransactionRef tx;
-    uint256 hashBlock;
-    if (!GetTransaction(outpoint.hash, tx, Params().GetConsensus(), hashBlock, true)) {
-        // should not happen
-        return COLLATERAL_UTXO_NOT_FOUND;
-    }
-    if (tx->nType != TRANSACTION_PROVIDER_REGISTER) {
-        assert(mapBlockIndex.count(hashBlock));
 
-        CBlockIndex *pindex = mapBlockIndex[hashBlock];
-        if (VersionBitsState(pindex->pprev, Params().GetConsensus(), Consensus::DEPLOYMENT_AIP0003, versionbitscache) == THRESHOLD_ACTIVE) {
-            LogPrintf("CMasternode::CheckCollateral -- ERROR: Collateral of masternode %s was created after AIP3 activation and is not a ProTx\n", outpoint.ToStringShort());
-            return COLLATERAL_UTXO_NOT_PROTX;
-        }
-    }
 
     nHeightRet = coin.nHeight;
     return COLLATERAL_OK;
@@ -266,7 +246,7 @@ void CMasternode::Check(bool fForce)
 
     // We require MNs to be in PRE_ENABLED until they either start to expire or receive a ping and go into ENABLED state
     // Works on mainnet/testnet only and not the case on regtest/devnet.
-    if (Params().NetworkIDString() != CBaseChainParams::REGTEST && Params().NetworkIDString() != CBaseChainParams::POVNET) {
+    if (Params().NetworkIDString() != CBaseChainParams::REGTEST && Params().NetworkIDString() != CBaseChainParams::DEVNET) {
         if (lastPing.sigTime - sigTime < MASTERNODE_MIN_MNP_SECONDS) {
             nActiveState = MASTERNODE_PRE_ENABLED;
             if (nActiveStatePrev != nActiveState) {
@@ -328,7 +308,7 @@ std::string CMasternode::StateToString(int nStateIn)
         case MASTERNODE_EXPIRED:                return "EXPIRED";
         case MASTERNODE_OUTPOINT_SPENT:         return "OUTPOINT_SPENT";
         case MASTERNODE_UPDATE_REQUIRED:        return "UPDATE_REQUIRED";
-        case MASTERNODE_SENTINEL_PING_EXPIRED:  return "NO_SENTINEL_PING";
+        case MASTERNODE_SENTINEL_PING_EXPIRED:  return "SENTINEL_PING_EXPIRED";
         case MASTERNODE_NEW_START_REQUIRED:     return "NEW_START_REQUIRED";
         case MASTERNODE_POSE_BAN:               return "POSE_BAN";
         default:                                return "UNKNOWN";
@@ -353,7 +333,7 @@ void CMasternode::UpdateLastPaid(const CBlockIndex *pindex, int nMaxBlocksToScan
     if(!pindex) return;
 
     if (deterministicMNManager->IsDeterministicMNsSporkActive(pindex->nHeight)) {
-        auto dmn = deterministicMNManager->GetListForBlock(pindex->GetBlockHash()).GetMN(outpoint.hash);
+        auto dmn = deterministicMNManager->GetListForBlock(pindex->GetBlockHash()).GetMNByCollateral(outpoint);
         if (!dmn || dmn->pdmnState->nLastPaidHeight == -1) {
             LogPrint("masternode", "CMasternode::UpdateLastPaidBlock -- searching for block with payment to %s -- not found\n", outpoint.ToStringShort());
         } else {
@@ -597,16 +577,12 @@ bool CMasternodeBroadcast::CheckOutpoint(int& nDos)
     CollateralStatus err = CheckCollateral(outpoint, keyIDCollateralAddress, nHeight);
     if (err == COLLATERAL_UTXO_NOT_FOUND) {
         LogPrint("masternode", "CMasternodeBroadcast::CheckOutpoint -- Failed to find Masternode UTXO, masternode=%s\n", outpoint.ToStringShort());
-        return false;
-    }
 
-    if (err == COLLATERAL_UTXO_NOT_PROTX) {
-        LogPrint("masternode", "CMasternodeBroadcast::CheckOutpoint -- Masternode UTXO should be a ProTx, masternode=%s\n", outpoint.ToStringShort());
         return false;
     }
 
     if (err == COLLATERAL_INVALID_AMOUNT) {
-        LogPrint("masternode", "CMasternodeBroadcast::CheckOutpoint -- Masternode UTXO should have 2500 ABS, masternode=%s\n", outpoint.ToStringShort());
+        LogPrint("masternode", "CMasternodeBroadcast::CheckOutpoint -- Masternode UTXO should have 1000 DASH, masternode=%s\n", outpoint.ToStringShort());
         nDos = 33;
         return false;
     }

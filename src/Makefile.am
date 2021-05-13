@@ -137,6 +137,11 @@ BITCOIN_CORE_H = \
   keystore.h \
   dbwrapper.h \
   limitedmap.h \
+  llmq/quorums_commitment.h \
+  llmq/quorums_blockprocessor.h \
+  llmq/quorums_dummydkg.h \
+  llmq/quorums_utils.h \
+  llmq/quorums_init.h \
   masternode.h \
   masternode-payments.h \
   masternode-sync.h \
@@ -170,6 +175,8 @@ BITCOIN_CORE_H = \
   script/ismine.h \
   spork.h \
   streams.h \
+  support/allocators/mt_pooled_secure.h \
+  support/allocators/pooled_secure.h \
   support/allocators/secure.h \
   support/allocators/zeroafterfree.h \
   support/cleanse.h \
@@ -239,6 +246,11 @@ libabsolute_server_a_SOURCES = \
   governance-validators.cpp \
   governance-vote.cpp \
   governance-votedb.cpp \
+  llmq/quorums_commitment.cpp \
+  llmq/quorums_blockprocessor.cpp \
+  llmq/quorums_dummydkg.cpp \
+  llmq/quorums_utils.cpp \
+  llmq/quorums_init.cpp \
   masternode.cpp \
   masternode-payments.cpp \
   masternode-sync.cpp \
@@ -386,6 +398,7 @@ libabsolute_consensus_a_SOURCES = \
   script/script_error.cpp \
   script/script_error.h \
   serialize.h \
+  streams.h \
   tinyformat.h \
   uint256.cpp \
   uint256.h \
@@ -446,7 +459,7 @@ libabsolute_util_a_SOURCES = \
 
 if GLIBC_BACK_COMPAT
 libabsolute_util_a_SOURCES += compat/glibc_compat.cpp
-AM_LDFLAGS += $(COMPAT_LDFLAGS)
+AM_LDFLAGS += -Wl,--wrap=log2f -Wl,--wrap=__divmoddi4
 endif
 
 # cli: shared between absolute-cli and absolute-qt
@@ -526,20 +539,7 @@ absolute_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS) $(BLS_LIBS)
 # absoluteconsensus library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/absoluteconsensus.h
-libabsoluteconsensus_la_SOURCES = \
-  crypto/hmac_sha512.cpp \
-  crypto/ripemd160.cpp \
-  crypto/sha1.cpp \
-  crypto/sha256.cpp \
-  crypto/sha512.cpp \
-  hash.cpp \
-  primitives/transaction.cpp \
-  pubkey.cpp \
-  script/absoluteconsensus.cpp \
-  script/interpreter.cpp \
-  script/script.cpp \
-  uint256.cpp \
-  utilstrencodings.cpp
+libabsoluteconsensus_la_SOURCES = $(crypto_libabsolute_crypto_a_SOURCES) $(libabsolute_consensus_a_SOURCES)
 
 if GLIBC_BACK_COMPAT
   libabsoluteconsensus_la_SOURCES += compat/glibc_compat.cpp
@@ -599,6 +599,9 @@ clean-local:
 	@test -f $(WINDRES)
 	## FIXME: How to get the appropriate modulename_CPPFLAGS in here?
 	$(AM_V_GEN) $(WINDRES) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) -DWINDRES_PREPROC -i $< -o $@
+.mm.o:
+	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	  $(CPPFLAGS) $(AM_CXXFLAGS) $(QT_INCLUDES) $(AM_CXXFLAGS) $(PIE_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
 check-symbols: $(bin_PROGRAMS)
 if GLIBC_BACK_COMPAT

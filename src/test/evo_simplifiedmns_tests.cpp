@@ -18,6 +18,7 @@ BOOST_AUTO_TEST_CASE(simplifiedmns_merkleroots)
     for (size_t i = 0; i < 15; i++) {
         CSimplifiedMNListEntry smle;
         smle.proRegTxHash.SetHex(strprintf("%064x", i));
+        smle.confirmedHash.SetHex(strprintf("%064x", i));
 
         std::string ip = strprintf("%d.%d.%d.%d", 0, 0, 0, i);
         Lookup(ip.c_str(), smle.service, i, false);

@@ -245,167 +245,98 @@ For example, to connect as `root` from a Linux command prompt use
 
 Replace `root` with `debian` to log in as user.
 
-Setting up Debian for Gitian building
---------------------------------------
+Non-Debian / Ubuntu, Manual and Offline Building
+------------------------------------------------
 
-In this section we will be setting up the Debian installation for Gitian building.
-
-First we need to log in as `root` to set up dependencies and make sure that our
-user can use the sudo command. Type/paste the following in the terminal:
+The `gitian-build.py` script will checkout different release tags, so it's best to copy it:
 
 ```bash
-apt-get install git ruby sudo apt-cacher-ng qemu-utils debootstrap lxc python-cheetah parted kpartx bridge-utils make ubuntu-archive-keyring curl
-adduser debian sudo
+cp absolute/contrib/gitian-build.py .
 ```
 
-Then set up LXC and the rest with the following, which is a complex jumble of settings and workarounds:
+You only need to do this once:
 
-```bash
-# the version of lxc-start in Debian needs to run as root, so make sure
-# that the build script can execute it without providing a password
-echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-start" > /etc/sudoers.d/gitian-lxc
-echo "%sudo ALL=NOPASSWD: /usr/bin/lxc-execute" >> /etc/sudoers.d/gitian-lxc
-# make /etc/rc.local script that sets up bridge between guest and host
-echo '#!/bin/sh -e' > /etc/rc.local
-echo 'brctl addbr lxcbr0' >> /etc/rc.local
-echo 'ifconfig lxcbr0 10.0.3.1/24 up' >> /etc/rc.local
-echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> /etc/rc.local
-echo 'echo 1 > /proc/sys/net/ipv4/ip_forward' >> /etc/rc.local
-echo 'exit 0' >> /etc/rc.local
-# make sure that USE_LXC is always set when logging in as debian,
-# and configure LXC IP addresses
-echo 'export USE_LXC=1' >> /home/debian/.profile
-echo 'export GITIAN_HOST_IP=10.0.3.1' >> /home/debian/.profile
-echo 'export LXC_GUEST_IP=10.0.3.5' >> /home/debian/.profile
-reboot
+```
+./gitian-build.py --setup
 ```
 
-At the end the VM is rebooted to make sure that the changes take effect. The steps in this
-section only need to be performed once.
+In order to sign gitian builds on your host machine, which has your PGP key, fork the gitian.sigs repository and clone it on your host machine:
 
-Installing Gitian
+```
+export NAME=absolute
+git clone git@github.com:$NAME/gitian.sigs.git
+git remote add $NAME git@github.com:$NAME/gitian.sigs.git
+```
+
+Where `absolute` is your GitHub name.
+
+macOS code signing
 ------------------
+In order to sign builds for macOS, you need to download the free SDK and extract a file.
+The steps are described:
+- [here](https://github.com/bitcoin/bitcoin/blob/master/contrib/macdeploy/README.md#sdk-extraction) for `Xcode-11.3.1-11C505-extracted-SDK-with-libcxx-headers.tar.gz`
+- [here](https://github.com/bitcoin/bitcoin/blob/eb37275a6f972c81caef010b4ee9c5dc88edc759/contrib/macdeploy/README.md) for `MacOSX10.14.sdk.tar.gz`
+- [here](https://github.com/bitcoin-core/docs/blob/7ae95352931b14272a45154226123550bb92c516/gitian-building/gitian-building-mac-os-sdk.md) for `MacOSX10.11.sdk.tar.gz`.
 
-Re-login as the user `debian` that was created during installation.
-The rest of the steps in this guide will be performed as that user.
-
-There is no `python-vm-builder` package in Debian, so we need to install it from source ourselves,
-
+Copy the extracted SDK file into the `gitian-builder/inputs` directory:
 ```bash
-wget http://archive.ubuntu.com/ubuntu/pool/universe/v/vm-builder/vm-builder_0.12.4+bzr494.orig.tar.gz
-echo "76cbf8c52c391160b2641e7120dbade5afded713afaa6032f733a261f13e6a8e  vm-builder_0.12.4+bzr494.orig.tar.gz" | sha256sum -c
-# (verification -- must return OK)
-tar -zxvf vm-builder_0.12.4+bzr494.orig.tar.gz
-cd vm-builder-0.12.4+bzr494
-sudo python setup.py install
-cd ..
+mkdir -p gitian-builder/inputs
+cp 'path/to/extracted-SDK-file' gitian-builder/inputs
 ```
 
-**Note**: When sudo asks for a password, enter the password for the user *debian* not for *root*.
+Alternatively, you can skip the macOS build by adding `--os=lw` below.
 
-Clone the git repositories for Absolute Core and Gitian.
+Build binaries
+-----------------------------
+Windows and macOS have code signed binaries, but those won't be available until a few developers have gitian signed the non-codesigned binaries.
 
-```bash
-git clone https://github.com/devrandom/gitian-builder.git
-git clone https://github.com/absolute-community/absolute.git
-git clone https://github.com/absolute-community/gitian.signatures.git
+To build the most recent tag:
+```
+ export NAME=absolute
+ export VERSION=13.0.1
+ ./gitian-build.py --detach-sign --no-commit -b $NAME $VERSION
 ```
 
-Setting up the Gitian image
--------------------------
+Where `0.18.0rc2` is the most recent tag (without `v`).
 
-Gitian needs a virtual image of the operating system to build in.
-Currently this is Ubuntu Bionic x86_64.
-This image will be copied and used every time that a build is started to
-make sure that the build is deterministic.
-Creating the image will take a while, but only has to be done once.
+To speed up the build, use `-j 5 -m 5000` as the first arguments, where `5` is the number of CPU cores you allocated to the VM plus one, and `5000` is a little bit less than the MBs of RAM you allocated.
 
-Execute the following as user `debian`:
+If all went well, this produces a number of (uncommited) `.assert` files in the gitian.sigs repository.
 
-```bash
-cd gitian-builder
-bin/make-base-vm --lxc --arch amd64 --suite bionic
+You need to copy these uncommited changes to your host machine, where you can sign them:
+
+```
+gpg --output ${VERSION}-linux/${NAME}/absolute-core-linux-${VERSION%\.*}-build.assert.sig --detach-sign ${VERSION}-linux/$NAME/absolute-core-linux-${VERSION%\.*}-build.assert
+gpg --output ${VERSION}-osx-unsigned/$NAME/absolute-core-osx-${VERSION%\.*}-build.assert.sig --detach-sign ${VERSION}-osx-unsigned/$NAME/absolute-core-osx-${VERSION%\.*}-build.assert
+gpg --output ${VERSION}-win-unsigned/$NAME/absolute-core-win-${VERSION%\.*}-build.assert.sig --detach-sign ${VERSION}-win-unsigned/$NAME/absolute-core-win-${VERSION%\.*}-build.assert
 ```
 
-There will be a lot of warnings printed during the build of the image. These can be ignored.
+Make a PR (both the `.assert` and `.assert.sig` files) to the
+[absolute-core/gitian.sigs](https://github.com/absolute-community/gitian.signatures/) repository:
 
-**Note**: When sudo asks for a password, enter the password for the user *debian* not for *root*.
-
-**Note**: Repeat this step when you have upgraded to a newer version of Gitian.
-
-**Note**: if you get the error message *"bin/make-base-vm: mkfs.ext4: not found"* during this process you have to make the following change in file *"gitian-builder/bin/make-base-vm"* at line 117:
-```bash
-# mkfs.ext4 -F $OUT-lxc
-/sbin/mkfs.ext4 -F $OUT-lxc # (some Gitian environents do NOT find mkfs.ext4. Some do...)
+```
+git checkout -b ${VERSION}-not-codesigned
+git commit -S -a -m "Add $NAME $VERSION non-code signed signatures"
+git push --set-upstream $NAME $VERSION-not-codesigned
 ```
 
-Getting and building the inputs
---------------------------------
-
-At this point you have two options, you can either use the automated script (found in [contrib/gitian-build.py](/contrib/gitian-build.py)) or you could manually do everything by following this guide. If you're using the automated script, then run it with the "--setup" command. Afterwards, run it with the "--build" command (example: "contrib/gitian-building.sh -b signer 0.13.0"). Otherwise ignore this.
-
-Follow the instructions in [doc/release-process.md](release-process.md#fetch-and-create-inputs-first-time-or-when-dependency-versions-change)
-in the Absolute Core repository under 'Fetch and create inputs' to install sources which require
-manual intervention. Also optionally follow the next step: 'Seed the Gitian sources cache
-and offline git repositories' which will fetch the remaining files required for building
-offline.
-
-Building Absolute Core
-----------------
-
-To build Absolute Core (for Linux, OS X and Windows) just follow the steps under 'perform
-Gitian builds' in [doc/release-process.md](release-process.md#perform-gitian-builds) in the Absolute Core repository.
-
-This may take some time as it will build all the dependencies needed for each descriptor.
-These dependencies will be cached after a successful build to avoid rebuilding them when possible.
-
-At any time you can check the package installation and build progress with
+You can also mail the files to Wladimir (laanwj@gmail.com) and he will commit them.
 
 ```bash
-tail -f var/install.log
-tail -f var/build.log
+    gpg --detach-sign ${VERSION}-linux/${NAME}/absolute-core-linux-*-build.assert
+    gpg --detach-sign ${VERSION}-win-unsigned/${NAME}/absolute-core-win-*-build.assert
+    gpg --detach-sign ${VERSION}-osx-unsigned/${NAME}/absolute-core-osx-*-build.assert
 ```
 
-Output from `gbuild` will look something like
+You may have other .assert files as well (e.g. `signed` ones), in which case you should sign them too. You can see all of them by doing `ls ${VERSION}-*/${NAME}`.
 
-```bash
-    Initialized empty Git repository in /home/debian/gitian-builder/inputs/absolute/.git/
-    remote: Counting objects: 57959, done.
-    remote: Total 57959 (delta 0), reused 0 (delta 0), pack-reused 57958
-    Receiving objects: 100% (57959/57959), 53.76 MiB | 484.00 KiB/s, done.
-    Resolving deltas: 100% (41590/41590), done.
-    From https://github.com/absolute-community/absolute
-    ... (new tags, new branch etc)
-    --- Building for bionic amd64 ---
-    Stopping target if it is up
-    Making a new image copy
-    stdin: is not a tty
-    Starting target
-    Checking if target is up
-    Preparing build environment
-    Updating apt-get repository (log in var/install.log)
-    Installing additional packages (log in var/install.log)
-    Grabbing package manifest
-    stdin: is not a tty
-    Creating build script (var/build-script)
-    lxc-start: Connection refused - inotify event with no name (mask 32768)
-    Running build script (log in var/build.log)
-```
-Building an alternative repository
------------------------------------
+This will create the `.sig` files that can be committed together with the `.assert` files to assert your
+Gitian build.
 
-If you want to do a test build of a pull on GitHub it can be useful to point
-the Gitian builder at an alternative repository, using the same descriptors
-and inputs.
 
-For example:
-```bash
-URL=https://github.com/crowning-/absolute.git
-COMMIT=b616fb8ef0d49a919b72b0388b091aaec5849b96
-./bin/gbuild --commit absolute=${COMMIT} --url absolute=${URL} ../absolute/contrib/gitian-descriptors/gitian-linux.yml
-./bin/gbuild --commit absolute=${COMMIT} --url absolute=${URL} ../absolute/contrib/gitian-descriptors/gitian-win.yml
-./bin/gbuild --commit absolute=${COMMIT} --url absolute=${URL} ../absolute/contrib/gitian-descriptors/gitian-osx.yml
-```
+ `./gitian-build.py --detach-sign --no-commit -s $NAME $VERSION`
+
+Make another pull request for these.
 
 Building fully offline
 -----------------------
