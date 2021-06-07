@@ -89,6 +89,7 @@ or
 //! Description before the member
 int var;
 ```
+
 Also OK:
 ```c++
 ///
@@ -178,6 +179,8 @@ Threads
 
 - ThreadOpenConnections : Initiates new connections to peers.
 
+- ThreadOpenMasternodeConnections : Opens network connections to masternodes.
+
 - ThreadMessageHandler : Higher-level message handling (sending and receiving).
 
 - DumpAddresses : Dumps IP addresses of nodes to peers.dat.
@@ -241,6 +244,7 @@ General Absolute Core
   - *Rationale*: Makes sure that they pass thorough testing, and that the tester will keep passing
      on the master branch. Otherwise all new pull requests will start failing the tests, resulting in
      confusion and mayhem
+
   - *Explanation*: If the test suite is to be updated for a change, this has to
     be done first
 
@@ -338,6 +342,32 @@ Strings and formatting
 - For `strprintf`, `LogPrint`, `LogPrintf` formatting characters don't need size specifiers
 
   - *Rationale*: Absolute Core uses tinyformat, which is type safe. Leave them out to avoid confusion
+
+Variable names
+--------------
+
+The shadowing warning (`-Wshadow`) is enabled by default. It prevents issues rising
+from using a different variable with the same name.
+
+Please name variables so that their names do not shadow variables defined in the source code.
+
+E.g. in member initializers, prepend `_` to the argument name shadowing the
+member name:
+
+```c++
+class AddressBookPage
+{
+    Mode mode;
+}
+
+AddressBookPage::AddressBookPage(Mode _mode) :
+      mode(_mode)
+...
+```
+
+When using nested cycles, do not name the inner cycle variable the same as in
+upper cycle etc.
+
 
 Variable names
 --------------

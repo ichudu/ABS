@@ -161,6 +161,7 @@ namespace tfm = tinyformat;
 #else
 #   define TINYFORMAT_HIDDEN
 #endif
+
 namespace tinyformat {
 
 //------------------------------------------------------------------------------
@@ -260,6 +261,29 @@ struct convertToInt<T,true>
 {
     static int invoke(const T& value) { return static_cast<int>(value); }
 };
+// Format at most ntrunc characters to the given stream.
+template<typename T>
+inline void formatTruncated(std::ostream& out, const T& value, int ntrunc)
+{
+    std::ostringstream tmp;
+    tmp << value;
+    std::string result = tmp.str();
+    out.write(result.c_str(), (std::min)(ntrunc, static_cast<int>(result.size())));
+}
+#define TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR(type)       \
+inline void formatTruncated(std::ostream& out, type* value, int ntrunc) \
+{                                                           \
+    std::streamsize len = 0;                                \
+    while(len < ntrunc && value[len] != 0)                  \
+        ++len;                                              \
+    out.write(value, len);                                  \
+}
+// Overload for const char* and char*.  Could overload for signed & unsigned
+// char too, but these are technically unneeded for printf compatibility.
+TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR(const char)
+TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR(char)
+#undef TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR
+
 // Format at most ntrunc characters to the given stream.
 template<typename T>
 inline void formatTruncated(std::ostream& out, const T& value, int ntrunc)
@@ -562,7 +586,6 @@ inline const char* printFormatStringLiteral(std::ostream& out, const char* fmt)
                 break;
             default:
                 break;
-
         }
     }
 }
@@ -762,7 +785,6 @@ inline const char* streamStateFromFormat(std::ostream& out, bool& spacePadPositi
     }
     return c+1;
 }
-
 
 
 //------------------------------------------------------------------------------
@@ -1030,8 +1052,8 @@ void printfln(const char* fmt, TINYFORMAT_VARARGS(n))                     \
 
 TINYFORMAT_FOREACH_ARGNUM(TINYFORMAT_MAKE_FORMAT_FUNCS)
 #undef TINYFORMAT_MAKE_FORMAT_FUNCS
-#endif
 
+#endif
 
 // Added for Bitcoin Core
 template<typename... Args>
@@ -1041,7 +1063,6 @@ std::string format(const std::string &fmt, const Args&... args)
     format(oss, fmt.c_str(), args...);
     return oss.str();
 }
-
 
 } // namespace tinyformat
 

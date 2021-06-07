@@ -9,13 +9,16 @@
 #include "sync.h"
 #include "uint256.h"
 
-static const std::string EVODB_BEST_BLOCK = "b_b";
+// "b_b" was used in the initial version of deterministic MN storage
+// "b_b2" was used after compact diffs were introduced
+static const std::string EVODB_BEST_BLOCK = "b_b2";
 
 class CEvoDB
 {
 private:
     CCriticalSection cs;
     CDBWrapper db;
+
     typedef CDBTransaction<CDBWrapper, CDBBatch> RootTransaction;
     typedef CDBTransaction<RootTransaction, RootTransaction> CurTransaction;
     typedef CScopedDBTransaction<RootTransaction, RootTransaction> ScopedTransaction;
@@ -32,6 +35,11 @@ public:
         LOCK(cs);
         auto t = ScopedTransaction::Begin(curDBTransaction);
         return t;
+    }
+
+    CurTransaction& GetCurTransaction()
+    {
+        return curDBTransaction;
     }
 
     template <typename K, typename V>
@@ -66,6 +74,12 @@ public:
     {
         return db;
     }
+
+    size_t GetMemoryUsage()
+    {
+        return rootDBTransaction.GetMemoryUsage();
+    }
+
     bool CommitRootTransaction();
 
     bool VerifyBestBlock(const uint256& hash);

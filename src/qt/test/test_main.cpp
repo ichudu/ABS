@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -35,6 +35,7 @@ Q_IMPORT_PLUGIN(qkrcodecs)
 #endif
 
 extern void noui_connect();
+
 // This is all you need to run all the tests
 int main(int argc, char *argv[])
 {
@@ -43,6 +44,7 @@ int main(int argc, char *argv[])
     SetupNetworking();
     SelectParams(CBaseChainParams::MAIN);
     noui_connect();
+
     bool fInvalid = false;
 
     // Don't remove this, it's needed to access
@@ -63,6 +65,7 @@ int main(int argc, char *argv[])
     RPCNestedTests test3;
     if (QTest::qExec(&test3) != 0)
         fInvalid = true;
+
     CompatTests test4;
     if (QTest::qExec(&test4) != 0)
         fInvalid = true;
@@ -70,7 +73,6 @@ int main(int argc, char *argv[])
     TrafficGraphDataTests test5;
     if (QTest::qExec(&test5) != 0)
         fInvalid = true;
-
     ECC_Stop();
     return fInvalid;
 }

@@ -28,25 +28,6 @@ for(int i = 0; i < targets.size(); i++) {
 
       checkout scm
 
-      // restore cache
-      try {
-        copyArtifacts(projectName: "absolute-community-absolute/${BRANCH_NAME}", optional: true, selector: lastSuccessful(), filter: "ci-cache-${target}.tar.gz")
-      } catch (Exception e) {
-      }
-      if (fileExists("ci-cache-${target}.tar.gz")) {
-        hasCache = true
-        echo "Using cache from absolute-community-absolute/${BRANCH_NAME}"
-      } else {
-        try {
-          copyArtifacts(projectName: 'absolute-community-absolute/develop', optional: true, selector: lastSuccessful(), filter: "ci-cache-${target}.tar.gz");
-        } catch (Exception e) {
-        }
-        if (fileExists("ci-cache-${target}.tar.gz")) {
-          hasCache = true
-          echo "Using cache from absolute-community-absolute/develop"
-        }
-      }
-
       def env = [
         "BUILD_TARGET=${target}",
         "PULL_REQUEST=false",
@@ -60,29 +41,55 @@ for(int i = 0; i < targets.size(); i++) {
           builderImage = docker.build("${builderImageName}", "--build-arg BUILD_TARGET=${target} ci -f ci/Dockerfile.builder")
         }
 
-        if (hasCache) {
-          sh "cd ${pwd} && tar xzfv ci-cache-${target}.tar.gz"
-        } else {
-          sh "mkdir -p ${pwd}/ci-cache-${target}"
-        }
-
         builderImage.inside("-t") {
+          // copy source into fixed path
+          // we must build under the same path everytime as otherwise caches won't work properly
+          sh "cp -ra ${pwd}/. /absolute-src/"
+
+          // restore cache
+          def hasCache = false
+          try {
+            copyArtifacts(projectName: "absolute/${BRANCH_NAME}", optional: true, selector: lastSuccessful(), filter: "ci-cache-${target}.tar.gz")
+          } catch (Exception e) {
+          }
+          if (fileExists("ci-cache-${target}.tar.gz")) {
+            hasCache = true
+            echo "Using cache from absolute/${BRANCH_NAME}"
+          } else {
+            try {
+              copyArtifacts(projectName: 'absolute/develop', optional: true, selector: lastSuccessful(), filter: "ci-cache-${target}.tar.gz");
+            } catch (Exception e) {
+            }
+            if (fileExists("ci-cache-${target}.tar.gz")) {
+              hasCache = true
+              echo "Using cache from absolute/develop"
+            }
+          }
+
+          if (hasCache) {
+            sh "cd /absolute-src && tar xzf ${pwd}/ci-cache-${target}.tar.gz"
+          } else {
+            sh "mkdir -p /absolute-src/ci-cache-${target}"
+          }
+
           stage("${target}/depends") {
-            sh './ci/build_depends.sh'
+            sh 'cd /absolute-src && ./ci/build_depends.sh'
           }
           stage("${target}/build") {
-            sh './ci/build_src.sh'
+            sh 'cd /absolute-src && ./ci/build_src.sh'
           }
           stage("${target}/test") {
-            sh './ci/test_unittests.sh'
+            sh 'cd /absolute-src && ./ci/test_unittests.sh'
           }
           stage("${target}/test") {
-            sh './ci/test_integrationtests.sh'
+            sh 'cd /absolute-src && ./ci/test_integrationtests.sh'
           }
+
+          // archive cache and copy it into the jenkins workspace
+          sh "cd /absolute-src && tar czfv ci-cache-${target}.tar.gz ci-cache-${target} && cp ci-cache-${target}.tar.gz ${pwd}/"
         }
 
-        // archive cache
-        sh "tar czfv ci-cache-${target}.tar.gz ci-cache-${target}"
+        // upload cache
         archiveArtifacts artifacts: "ci-cache-${target}.tar.gz", fingerprint: true
       }
     }

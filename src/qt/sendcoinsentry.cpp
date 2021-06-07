@@ -1,6 +1,6 @@
 // Copyright (c) 2011-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -41,7 +41,7 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *par
     ui->deleteButton->setIcon(QIcon(":/icons/" + theme + "/remove"));
     ui->deleteButton_is->setIcon(QIcon(":/icons/" + theme + "/remove"));
     ui->deleteButton_s->setIcon(QIcon(":/icons/" + theme + "/remove"));
-      
+
     // normal absolute address field
     GUIUtil::setupAddressWidget(ui->payTo, this);
     // just a label for displaying absolute address(es)

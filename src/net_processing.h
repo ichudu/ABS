@@ -9,12 +9,13 @@
 #include "net.h"
 #include "validationinterface.h"
 
-/** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
-static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
+/** Default for -maxorphantxsize, maximum size in megabytes the orphan map can grow before entries are removed */
+static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS_SIZE = 10; // this allows around 100 TXs of max size (and many more of normal size)
 /** Expiration time for orphan transactions in seconds */
 static const int64_t ORPHAN_TX_EXPIRE_TIME = 20 * 60;
 /** Minimum time between orphan transactions expire time checks in seconds */
 static const int64_t ORPHAN_TX_EXPIRE_INTERVAL = 5 * 60;
+
 /** Headers download timeout expressed in microseconds
  *  Timeout = base + per_header * (expected number of headers) */
 static constexpr int64_t HEADERS_DOWNLOAD_TIMEOUT_BASE = 15 * 60 * 1000000; // 15 minutes
@@ -52,6 +53,7 @@ struct CNodeStateStats {
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
 /** Increase a node's misbehavior score. */
 void Misbehaving(NodeId nodeid, int howmuch);
+bool IsBanned(NodeId nodeid);
 
 /** Process protocol messages received from a given node */
 bool ProcessMessages(CNode* pfrom, CConnman& connman, const std::atomic<bool>& interrupt);

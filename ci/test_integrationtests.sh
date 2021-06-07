@@ -5,6 +5,7 @@
 set -e
 
 PASS_ARGS="$@"
+
 source ./ci/matrix.sh
 
 if [ "$RUN_TESTS" != "true" ]; then

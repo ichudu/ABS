@@ -35,8 +35,6 @@
 #endif
 #endif
 
-
-
 /** Maximum size of http request (request line + headers) */
 static const size_t MAX_HEADERS_SIZE = 8192;
 
@@ -373,8 +371,9 @@ static void libevent_log_cb(int severity, const char *msg)
 #endif
     if (severity >= EVENT_LOG_WARN) // Log warn messages and higher without debug category
         LogPrintf("libevent: %s\n", msg);
-    else
-        LogPrint("libevent", "libevent: %s\n", msg);
+    // The below code causes log spam on Travis and the output of these logs has never been of any use so far
+    //else
+    //    LogPrint("libevent", "libevent: %s\n", msg);
 }
 
 bool InitHTTPServer()
@@ -488,7 +487,7 @@ void StopHTTPServer()
         // closing during a repair-restart. It doesn't hurt, though, because threadHTTP.timed_join
         // below takes care of this and sends a loopbreak.
         workQueue->WaitExit();
-#endif        
+#endif
         delete workQueue;
     }
     if (eventBase) {
@@ -500,10 +499,8 @@ void StopHTTPServer()
         // could be used again (if desirable).
         // (see discussion in https://github.com/bitcoin/bitcoin/pull/6990)
         if (threadResult.valid() && threadResult.wait_for(std::chrono::milliseconds(2000)) == std::future_status::timeout) {
-
             LogPrintf("HTTP event loop did not exit within allotted time, sending loopbreak\n");
             event_base_loopbreak(eventBase);
-
         }
         threadHTTP.join();
     }
@@ -679,4 +676,3 @@ void UnregisterHTTPHandler(const std::string &prefix, bool exactMatch)
         pathHandlers.erase(i);
     }
 }
-

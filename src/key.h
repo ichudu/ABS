@@ -138,7 +138,6 @@ public:
 
     //! Load private key and check that public key matches.
     bool Load(CPrivKey& privkey, CPubKey& vchPubKey, bool fSkipCheck);
-
 };
 
 struct CExtKey {

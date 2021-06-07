@@ -115,7 +115,6 @@ static CMutableTransaction CreateProRegTx(SimpleUTXOMap& utxos, int port, const 
     tx.nType = TRANSACTION_PROVIDER_REGISTER;
     FundTransaction(tx, utxos, scriptPayout, 1000 * COIN, coinbaseKey);
     proTx.inputsHash = CalcTxInputsHash(tx);
-
     SetTxPayload(tx, proTx);
     SignTransaction(tx, coinbaseKey);
 
@@ -129,7 +128,6 @@ static CMutableTransaction CreateProUpServTx(SimpleUTXOMap& utxos, const uint256
 
     CProUpServTx proTx;
     proTx.proTxHash = proTxHash;
-
     proTx.addr = LookupNumeric("1.1.1.1", port);
     proTx.scriptOperatorPayout = scriptOperatorPayout;
 
@@ -281,8 +279,8 @@ BOOST_FIXTURE_TEST_CASE(dip3_protx, TestChainDIP3Setup)
         nHeight++;
     }
 
-    // activate spork15
-    sporkManager.UpdateSpork(SPORK_15_DETERMINISTIC_MNS_ENABLED, chainActive.Height() + 1, *g_connman);
+    int DIP0003EnforcementHeightBackup = Params().GetConsensus().DIP0003EnforcementHeight;
+    const_cast<Consensus::Params&>(Params().GetConsensus()).DIP0003EnforcementHeight = chainActive.Height() + 1;
     CreateAndProcessBlock({}, coinbaseKey);
     deterministicMNManager->UpdatedBlockTip(chainActive.Tip());
     nHeight++;
@@ -400,5 +398,7 @@ BOOST_FIXTURE_TEST_CASE(dip3_protx, TestChainDIP3Setup)
         nHeight++;
     }
     BOOST_ASSERT(foundRevived);
+
+    const_cast<Consensus::Params&>(Params().GetConsensus()).DIP0003EnforcementHeight = DIP0003EnforcementHeightBackup;
 }
 BOOST_AUTO_TEST_SUITE_END()

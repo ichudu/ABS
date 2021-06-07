@@ -9,7 +9,6 @@
 #include "bitcoingui.h"
 #include "clientmodel.h"
 #include "guiutil.h"
-#include "masternodeconfig.h"
 #include "optionsmodel.h"
 #include "overviewpage.h"
 #include "platformstyle.h"
@@ -204,10 +203,10 @@ void WalletView::processNewTransaction(const QModelIndex& parent, int start, int
             nType == TransactionRecord::PrivateSendMakeCollaterals ||
             nType == TransactionRecord::PrivateSendCreateDenominations) return;
     }
+
     QString date = ttm->index(start, TransactionTableModel::Date, parent).data().toString();
     qint64 amount = ttm->index(start, TransactionTableModel::Amount, parent).data(Qt::EditRole).toULongLong();
     QString type = ttm->index(start, TransactionTableModel::Type, parent).data().toString();
-
     QString address = ttm->data(index, TransactionTableModel::AddressRole).toString();
     QString label = ttm->data(index, TransactionTableModel::LabelRole).toString();
 

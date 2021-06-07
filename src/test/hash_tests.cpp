@@ -76,6 +76,7 @@ uint64_t siphash_4_2_testvec[] = {
     0xb78dbfaf3a8d83bd, 0xea1ad565322a1a0b, 0x60e61c23a3795013, 0x6606d7e446282b93,
     0x6ca4ecb15c5f91e1, 0x9f626da15c9625f3, 0xe51b38608ef25f57, 0x958a324ceb064572
 };
+
 BOOST_AUTO_TEST_CASE(siphash)
 {
     CSipHasher hasher(0x0706050403020100ULL, 0x0F0E0D0C0B0A0908ULL);
@@ -103,6 +104,29 @@ BOOST_AUTO_TEST_CASE(siphash)
     BOOST_CHECK_EQUAL(hasher.Finalize(),  0xe612a3cb9ecba951ull);
 
     BOOST_CHECK_EQUAL(SipHashUint256(0x0706050403020100ULL, 0x0F0E0D0C0B0A0908ULL, uint256S("1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100")), 0x7127512f72f27cceull);
+    // Check test vectors from spec, one byte at a time
+    CSipHasher hasher2(0x0706050403020100ULL, 0x0F0E0D0C0B0A0908ULL);
+    for (uint8_t x=0; x<ARRAYLEN(siphash_4_2_testvec); ++x)
+    {
+        BOOST_CHECK_EQUAL(hasher2.Finalize(), siphash_4_2_testvec[x]);
+        hasher2.Write(&x, 1);
+    }
+    // Check test vectors from spec, eight bytes at a time
+    CSipHasher hasher3(0x0706050403020100ULL, 0x0F0E0D0C0B0A0908ULL);
+    for (uint8_t x=0; x<ARRAYLEN(siphash_4_2_testvec); x+=8)
+    {
+        BOOST_CHECK_EQUAL(hasher3.Finalize(), siphash_4_2_testvec[x]);
+        hasher3.Write(uint64_t(x)|(uint64_t(x+1)<<8)|(uint64_t(x+2)<<16)|(uint64_t(x+3)<<24)|
+                     (uint64_t(x+4)<<32)|(uint64_t(x+5)<<40)|(uint64_t(x+6)<<48)|(uint64_t(x+7)<<56));
+    }
+
+    CHashWriter ss(SER_DISK, CLIENT_VERSION);
+    CMutableTransaction tx;
+    // Note these tests were originally written with tx.nVersion=1
+    // and the test would be affected by default tx version bumps if not fixed.
+    tx.nVersion = 1;
+    ss << tx;
+
     // Check test vectors from spec, one byte at a time
     CSipHasher hasher2(0x0706050403020100ULL, 0x0F0E0D0C0B0A0908ULL);
     for (uint8_t x=0; x<ARRAYLEN(siphash_4_2_testvec); ++x)

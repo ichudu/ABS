@@ -2,6 +2,11 @@
 # Copyright (c) 2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test version bits warning system.
+
+Generate chains with block versions that appear to be signalling unknown
+soft-forks, and test that warning alerts are generated.
+"""
 
 from test_framework.mininode import *
 from test_framework.test_framework import BitcoinTestFramework
@@ -9,13 +14,6 @@ from test_framework.util import *
 import re
 import time
 from test_framework.blocktools import create_block, create_coinbase
-
-'''
-Test version bits' warning system.
-
-Generate chains with block versions that appear to be signalling unknown
-soft-forks, and test that warning alerts are generated.
-'''
 
 VB_PERIOD = 144 # versionbits period length for regtest
 VB_THRESHOLD = 108 # versionbits activation threshold for regtest
@@ -25,6 +23,7 @@ VB_UNKNOWN_BIT = 27 # Choose a bit unassigned to any deployment
 WARN_UNKNOWN_RULES_MINED = "Unknown block versions being mined! It's possible unknown rules are in effect"
 WARN_UNKNOWN_RULES_ACTIVE = "unknown new rules activated (versionbit {})".format(VB_UNKNOWN_BIT)
 VB_PATTERN = re.compile("^Warning.*versionbit")
+
 # TestNode: bare-bones "peer".  Used mostly as a conduit for a test to sending
 # p2p messages to a node, generating the messages in the main testing logic.
 class TestNode(NodeConnCB):
@@ -69,12 +68,11 @@ class VersionBitsWarningTest(BitcoinTestFramework):
         self.num_nodes = 1
 
     def setup_network(self):
-
         self.alert_filename = os.path.join(self.options.tmpdir, "alert.txt")
         # Open and close to create zero-length file
         with open(self.alert_filename, 'w', encoding='utf8') as _:
             pass
-        self.extra_args = [["-debug", "-logtimemicros=1", "-alertnotify=echo %s >> \"" + self.alert_filename + "\""]]
+        self.extra_args = [["-alertnotify=echo %s >> \"" + self.alert_filename + "\""]]
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, self.extra_args)
 
     # Send numblocks blocks via peer with nVersionToUse set.
@@ -160,7 +158,6 @@ class VersionBitsWarningTest(BitcoinTestFramework):
 
         # Test framework expects the node to still be running...
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, self.extra_args)
-
 
 if __name__ == '__main__':
     VersionBitsWarningTest().main()

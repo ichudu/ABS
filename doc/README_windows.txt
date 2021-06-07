@@ -1,4 +1,4 @@
-Absolute Core 0.12.3.1
+Absolute Core 0.14.0
 =====================
 
 Intro
@@ -19,5 +19,5 @@ depending on the speed of your computer and network connection, the synchronizat
 process can take anywhere from a few hours to a day or more.
 
 See the absolute wiki at:
-  https://github.com/absolute-community/absolute/wiki
+  https://absify.me/support
 for more help and information.

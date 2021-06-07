@@ -2,20 +2,8 @@
 # Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test bitcoind with different proxy configuration.
 
-import socket
-import os
-
-from test_framework.socks5 import Socks5Configuration, Socks5Command, Socks5Server, AddressType
-from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import (
-    PORT_MIN,
-    PORT_RANGE,
-    start_nodes,
-    assert_equal,
-)
-from test_framework.netutil import test_ipv6_local
-'''
 Test plan:
 - Start bitcoind's with different proxy configurations
 - Use addnode to initiate connections
@@ -37,7 +25,22 @@ addnode connect to IPv4
 addnode connect to IPv6
 addnode connect to onion
 addnode connect to generic DNS name
-'''
+"""
+
+import socket
+import os
+
+from test_framework.socks5 import Socks5Configuration, Socks5Command, Socks5Server, AddressType
+from test_framework.test_framework import BitcoinTestFramework
+from test_framework.util import (
+    PORT_MIN,
+    PORT_RANGE,
+    start_nodes,
+    assert_equal,
+)
+from test_framework.netutil import test_ipv6_local
+
+RANGE_BEGIN = PORT_MIN + 2 * PORT_RANGE  # Start after p2p and rpc ports
 
 RANGE_BEGIN = PORT_MIN + 2 * PORT_RANGE  # Start after p2p and rpc ports
 
@@ -47,6 +50,7 @@ class ProxyTest(BitcoinTestFramework):
         super().__init__()
         self.num_nodes = 4
         self.setup_clean_chain = False
+
         self.have_ipv6 = test_ipv6_local()
         # Create two proxies on different ports
         # ... one unauthenticated
@@ -81,13 +85,13 @@ class ProxyTest(BitcoinTestFramework):
         # Note: proxies are not used to connect to local nodes
         # this is because the proxy to use is based on CService.GetNetwork(), which return NET_UNROUTABLE for localhost
         args = [
-            ['-listen', '-debug=net', '-debug=proxy', '-proxy=%s:%i' % (self.conf1.addr),'-proxyrandomize=1'], 
-            ['-listen', '-debug=net', '-debug=proxy', '-proxy=%s:%i' % (self.conf1.addr),'-onion=%s:%i' % (self.conf2.addr),'-proxyrandomize=0'], 
-            ['-listen', '-debug=net', '-debug=proxy', '-proxy=%s:%i' % (self.conf2.addr),'-proxyrandomize=1'], 
+            ['-listen', '-proxy=%s:%i' % (self.conf1.addr),'-proxyrandomize=1'],
+            ['-listen', '-proxy=%s:%i' % (self.conf1.addr),'-onion=%s:%i' % (self.conf2.addr),'-proxyrandomize=0'],
+            ['-listen', '-proxy=%s:%i' % (self.conf2.addr),'-proxyrandomize=1'],
             []
             ]
         if self.have_ipv6:
-            args[3] = ['-listen', '-debug=net', '-debug=proxy', '-proxy=[%s]:%i' % (self.conf3.addr),'-proxyrandomize=0', '-noonion']
+            args[3] = ['-listen', '-proxy=[%s]:%i' % (self.conf3.addr),'-proxyrandomize=0', '-noonion']
         return start_nodes(self.num_nodes, self.options.tmpdir, extra_args=args)
 
     def node_test(self, node, proxies, auth, test_onion=True):
@@ -183,7 +187,7 @@ class ProxyTest(BitcoinTestFramework):
         assert_equal(n1['onion']['proxy'], '%s:%i' % (self.conf2.addr))
         assert_equal(n1['onion']['proxy_randomize_credentials'], False)
         assert_equal(n1['onion']['reachable'], True)
-        
+
         n2 = networks_dict(self.nodes[2].getnetworkinfo())
         for net in ['ipv4','ipv6','onion']:
             assert_equal(n2[net]['proxy'], '%s:%i' % (self.conf2.addr))
@@ -199,4 +203,3 @@ class ProxyTest(BitcoinTestFramework):
 
 if __name__ == '__main__':
     ProxyTest().main()
-

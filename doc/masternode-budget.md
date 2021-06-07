@@ -156,4 +156,3 @@ The following RPC commands are supported:
   - getvotes    - Get vote information for each finalized budget
   - prepare     - Manually prepare a finalized budget
   - submit      - Manually submit a finalized budget
-

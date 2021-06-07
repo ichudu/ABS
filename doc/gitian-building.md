@@ -101,6 +101,7 @@ Unixy OSes by entering the following in a terminal:
 
     echo "ad4e8c27c561ad8248d5ebc1d36eb172f884057bfeb2c22ead823f59fa8c3dff  debian-8.5.0-amd64-netinst.iso" | sha256sum -c
     # (must return OK)
+
 Then start the VM. On the first launch you will be asked for a CD or DVD image. Choose the downloaded ISO.
 
 ![](gitian-building/select_startup_disk.png)
@@ -158,6 +159,10 @@ To select a different button, press `Tab`.
   - Select disk to partition: SCSI1 (0,0,0)
 
 ![](gitian-building/debian_install_12_choose_disk.png)
+  - Partition Disks -> *All files in one partition*
+
+![](gitian-building/all_files_in_one_partition.png)
+
   - Partition Disks -> *All files in one partition*
 
 ![](gitian-building/all_files_in_one_partition.png)

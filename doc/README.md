@@ -1,4 +1,4 @@
-Absolute 0.12.3.1
+Absolute Core 0.14.0
 =====================
 
 You may find below instructions for setting up Absolute wallet.
@@ -24,7 +24,7 @@ Drag Absolute-Qt to your applications folder, and then run Absolute-Qt.
 
 ### Need Help?
 
-* See the [Absolute documentation](https://github.com/absolute-community/absolute/wiki)
+* See the [Absolute documentation](https://absify.me/support)
 for help and more information.
 
 Building
@@ -55,7 +55,7 @@ The Absolute Core repo's [root README](/README.md) contains relevant information
 - [Benchmarking](benchmarking.md)
 
 ### Resources
-* Discuss on the Absolute Discord Server if advice is needed 
+* Discuss on the Absolute Discord Server if advice is needed
 
 ### Miscellaneous
 - [Assets Attribution](assets-attribution.md)

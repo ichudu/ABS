@@ -11,6 +11,9 @@
 #include "utilstrencodings.h"
 #include "key.h"
 
+#include <unordered_map>
+#include <unordered_set>
+
 class CSporkMessage;
 class CSporkManager;
 
@@ -22,17 +25,16 @@ static const int SPORK_2_INSTANTSEND_ENABLED                            = 10001;
 static const int SPORK_3_INSTANTSEND_BLOCK_FILTERING                    = 10002;
 static const int SPORK_5_INSTANTSEND_MAX_VALUE                          = 10004;
 static const int SPORK_6_NEW_SIGS                                       = 10005;
-static const int SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT                 = 10007;
 static const int SPORK_9_SUPERBLOCKS_ENABLED                            = 10008;
-static const int SPORK_10_MASTERNODE_PAY_UPDATED_NODES                  = 10009;
 static const int SPORK_12_RECONSIDER_BLOCKS                             = 10011;
-static const int SPORK_14_REQUIRE_SENTINEL_FLAG                         = 10013;
 static const int SPORK_15_DETERMINISTIC_MNS_ENABLED                     = 10014;
 static const int SPORK_16_INSTANTSEND_AUTOLOCKS                         = 10015;
 static const int SPORK_17_QUORUM_DKG_ENABLED                            = 10016;
+static const int SPORK_19_CHAINLOCKS_ENABLED                            = 10018;
+static const int SPORK_20_INSTANTSEND_LLMQ_BASED                        = 10019;
 
 static const int SPORK_START                                            = SPORK_2_INSTANTSEND_ENABLED;
-static const int SPORK_END                                              = SPORK_17_QUORUM_DKG_ENABLED;
+static const int SPORK_END                                              = SPORK_20_INSTANTSEND_LLMQ_BASED;
 
 extern std::map<int, int64_t> mapSporkDefaults;
 extern CSporkManager sporkManager;
@@ -137,8 +139,8 @@ private:
     static const std::string SERIALIZATION_VERSION_STRING;
 
     mutable CCriticalSection cs;
-    std::map<uint256, CSporkMessage> mapSporksByHash;
-    std::map<int, std::map<CKeyID, CSporkMessage> > mapSporksActive;
+    std::unordered_map<uint256, CSporkMessage> mapSporksByHash;
+    std::unordered_map<int, std::map<CKeyID, CSporkMessage> > mapSporksActive;
 
     std::set<CKeyID> setSporkPubKeyIDs;
     int nMinSporkKeys;
@@ -170,7 +172,7 @@ public:
         }
         // we don't serialize pubkey ids because pubkeys should be
         // hardcoded or be setted with cmdline or options, should
-        // not reuse pubkeys from previous dashd run
+        // not reuse pubkeys from previous absoluted run
         READWRITE(mapSporksByHash);
         READWRITE(mapSporksActive);
         // we don't serialize private key to prevent its leakage

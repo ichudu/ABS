@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -22,6 +22,9 @@ private:
     // Mixing uses collateral transactions to trust parties entering the pool
     // to behave honestly. If they don't it takes their money.
     std::vector<CTransactionRef> vecSessionCollaterals;
+
+    // Maximum number of participants in a certain session, random between min and max.
+    int nSessionMaxParticipants;
 
     bool fUnitTest;
 
@@ -46,7 +49,7 @@ private:
     bool CreateNewSession(const CPrivateSendAccept& dsa, PoolMessage& nMessageIDRet, CConnman& connman);
     bool AddUserToExistingSession(const CPrivateSendAccept& dsa, PoolMessage& nMessageIDRet);
     /// Do we have enough users to take entries?
-    bool IsSessionReady() { return (int)vecSessionCollaterals.size() >= CPrivateSend::GetMaxPoolTransactions(); }
+    bool IsSessionReady();
 
     /// Check that all inputs are signed. (Are all inputs signed?)
     bool IsSignaturesComplete();
@@ -68,7 +71,9 @@ private:
 
 public:
     CPrivateSendServer() :
-        vecSessionCollaterals(), fUnitTest(false) {}
+        vecSessionCollaterals(),
+        nSessionMaxParticipants(0),
+        fUnitTest(false) {}
 
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
