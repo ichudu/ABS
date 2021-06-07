@@ -3,6 +3,7 @@ dnl Copying and distribution of this file, with or without modification, are
 dnl permitted in any medium without royalty provided the copyright notice
 dnl and this notice are preserved. This file is offered as-is, without any
 dnl warranty.
+
 # Some versions of gcc/libstdc++ require linking with -latomic if
 # using the C++ atomic library.
 #

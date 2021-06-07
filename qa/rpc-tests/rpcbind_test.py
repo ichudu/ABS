@@ -2,8 +2,7 @@
 # Copyright (c) 2014-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
-# Test for -rpcbind, as well as -rpcallowip and -rpcconnect
+"""Test running bitcoind with the -rpcbind and -rpcallowip options."""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
@@ -39,7 +38,6 @@ class RPCBindTest(BitcoinTestFramework):
         assert_equal(set(get_bind_addrs(pid)), set(expected))
         stop_nodes(self.nodes)
 
-
     def run_allowip_test(self, allow_ips, rpchost, rpcport):
         '''
         Start a node with rpcallow IP, and request getnetworkinfo
@@ -63,7 +61,7 @@ class RPCBindTest(BitcoinTestFramework):
                 break
         if non_loopback_ip is None:
             assert(not 'This test requires at least one non-loopback IPv4 interface')
-        print("Using interface %s for testing" % non_loopback_ip)
+        self.log.info("Using interface %s for testing" % non_loopback_ip)
 
         defaultport = rpc_port(0)
 

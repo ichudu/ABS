@@ -425,7 +425,6 @@ bool CBLSSignature::Recover(const std::vector<CBLSSignature>& sigs, const std::v
 
 #ifndef BUILD_BITCOIN_INTERNAL
 
-
 static std::once_flag init_flag;
 static mt_pooled_secure_allocator<uint8_t>* secure_allocator_instance;
 static void create_secure_allocator()
@@ -439,12 +438,6 @@ static void create_secure_allocator()
     secure_allocator_instance = &a;
 }
 
-// every thread has it's own pool allocator for secure data to speed things up
-// otherwise locking of mutexes slows down the system at places were you'd never expect it
-// downside is that we must make sure that all threads have destroyed their copy of the pool before the global
-// LockedPool is destroyed. This means that all worker threads must finish before static destruction begins
-// we use sizeof(bn_t) as the pool request size as this is what Chia's BLS library will request in most cases
-// In case something larger is requested, we directly call into LockedPool and accept the slowness
 static mt_pooled_secure_allocator<uint8_t>& get_secure_allocator()
 {
     std::call_once(init_flag, create_secure_allocator);
@@ -463,6 +456,7 @@ static void secure_free(void* p)
     if (!p) {
         return;
     }
+
     uint8_t* ptr = (uint8_t*)p - sizeof(size_t);
     size_t n = *(size_t*)ptr;
     return get_secure_allocator().deallocate(ptr, n);
@@ -471,7 +465,6 @@ static void secure_free(void* p)
 
 bool BLSInit()
 {
-
 #ifndef BUILD_BITCOIN_INTERNAL
     bls::BLS::SetSecureAllocator(secure_allocate, secure_free);
 #endif

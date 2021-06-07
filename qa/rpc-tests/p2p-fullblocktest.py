@@ -2,6 +2,14 @@
 # Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test block processing.
+
+This reimplements tests from the bitcoinj/FullBlockTestGenerator used
+by the pull-tester.
+
+We use the testing framework in which we expect a particular answer from
+each test.
+"""
 
 from test_framework.test_framework import ComparisonTestFramework
 from test_framework.util import *
@@ -16,13 +24,28 @@ class PreviousSpendableOutput(object):
         self.tx = tx
         self.n = n  # the output we're spending
 
-'''
-This reimplements tests from the bitcoinj/FullBlockTestGenerator used
-by the pull-tester.
+#  Use this class for tests that require behavior other than normal "mininode" behavior.
+#  For now, it is used to serialize a bloated varint (b64).
+class CBrokenBlock(CBlock):
+    def __init__(self, header=None):
+        super(CBrokenBlock, self).__init__(header)
 
-We use the testing framework in which we expect a particular answer from
-each test.
-'''
+    def initialize(self, base_block):
+        self.vtx = copy.deepcopy(base_block.vtx)
+        self.hashMerkleRoot = self.calc_merkle_root()
+
+    def serialize(self):
+        r = b""
+        r += super(CBlock, self).serialize()
+        r += struct.pack("<BQ", 255, len(self.vtx))
+        for tx in self.vtx:
+            r += tx.serialize()
+        return r
+
+    def normal_serialize(self):
+        r = b""
+        r += super(CBrokenBlock, self).serialize()
+        return r
 
 #  Use this class for tests that require behavior other than normal "mininode" behavior.
 #  For now, it is used to serialize a bloated varint (b64).
@@ -61,9 +84,16 @@ class FullBlockTest(ComparisonTestFramework):
         self.tip = None
         self.blocks = {}
 
+    def setup_network(self):
+        # Must set '-dip3params=2000:2000' to create pre-dip3 blocks only
+        self.nodes = start_nodes(self.num_nodes, self.options.tmpdir,
+                                 extra_args=[['-whitelist=127.0.0.1', '-dip3params=2000:2000']],
+                                 binary=[self.options.testbinary])
+
     def add_options(self, parser):
         super().add_options(parser)
         parser.add_option("--runbarelyexpensive", dest="runbarelyexpensive", default=True)
+
     def run_test(self):
         self.test = TestManager(self, self.options.tmpdir)
         self.test.add_all_connections(self.nodes)
@@ -74,6 +104,7 @@ class FullBlockTest(ComparisonTestFramework):
     def add_transactions_to_block(self, block, tx_list):
         [ tx.rehash() for tx in tx_list ]
         block.vtx.extend(tx_list)
+
     # this is a little handier to use than the version in blocktools.py
     def create_tx(self, spend_tx, n, value, script=CScript([OP_TRUE])):
         tx = create_transaction(spend_tx, n, b"", value, script)
@@ -148,6 +179,7 @@ class FullBlockTest(ComparisonTestFramework):
                 return TestInstance([[self.tip, False]])
             else:
                 return TestInstance([[self.tip, reject]])
+
         # move the tip back to a previous block
         def tip(number):
             self.tip = self.blocks[number]
@@ -204,7 +236,6 @@ class FullBlockTest(ComparisonTestFramework):
 
         block(2, spend=out[1])
         yield accepted()
-
         save_spendable_output()
 
         # so fork like this:
@@ -238,7 +269,6 @@ class FullBlockTest(ComparisonTestFramework):
         block(6, spend=out[3])
         yield accepted()
 
-
         # Try to create a fork that double-spends
         #     genesis -> b1 (0) -> b2 (1) -> b5 (2) -> b6 (3)
         #                                          \-> b7 (2) -> b8 (4)
@@ -249,7 +279,6 @@ class FullBlockTest(ComparisonTestFramework):
 
         block(8, spend=out[4])
         yield rejected()
-
 
         # Try to create a block that has too much fee
         #     genesis -> b1 (0) -> b2 (1) -> b5 (2) -> b6 (3)
@@ -296,6 +325,7 @@ class FullBlockTest(ComparisonTestFramework):
         #     genesis -> b1 (0) -> b2 (1) -> b5 (2) -> b6  (3)
         #                                          \-> b12 (3) -> b13 (4) -> b15 (5) -> b16 (6)
         #                      \-> b3 (1) -> b4 (2)
+
         # Test that a block with a lot of checksigs is okay
         lots_of_checksigs = CScript([OP_CHECKSIG] * (MAX_BLOCK_SIGOPS - 1))
         tip(13)
@@ -733,7 +763,7 @@ class FullBlockTest(ComparisonTestFramework):
         #                                                \-> b56p2 (16)
         #                                                \-> b56   (16)
         #
-        # Merkle tree malleability (CVE-2012-2459): repeating sequences of transactions in a block without 
+        # Merkle tree malleability (CVE-2012-2459): repeating sequences of transactions in a block without
         #                           affecting the merkle root of a block, while still invalidating it.
         #                           See:  src/consensus/merkle.h
         #
@@ -1238,7 +1268,7 @@ class FullBlockTest(ComparisonTestFramework):
         yield rejected()
 
 
-        #  Test re-org of a week's worth of blocks (1088 blocks)
+        #  Test re-org of a ~2 days' worth of blocks (1088 blocks)
         #  This test takes a minute or two and can be accomplished in memory
         #
         if self.options.runbarelyexpensive:
@@ -1282,6 +1312,7 @@ class FullBlockTest(ComparisonTestFramework):
             yield accepted()
 
             chain1_tip += 2
+
 
 
 if __name__ == '__main__':

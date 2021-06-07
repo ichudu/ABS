@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +12,6 @@
 #include "primitives/transaction.h"
 #include "pubkey.h"
 #include "sync.h"
-
 #include "timedata.h"
 #include "tinyformat.h"
 
@@ -26,7 +25,7 @@ static const int PRIVATESEND_QUEUE_TIMEOUT = 30;
 static const int PRIVATESEND_SIGNING_TIMEOUT = 15;
 
 //! minimum peer version accepted by mixing pool
-static const int MIN_PRIVATESEND_PEER_PROTO_VERSION = 70212;
+static const int MIN_PRIVATESEND_PEER_PROTO_VERSION = 70213;
 
 static const size_t PRIVATESEND_ENTRY_MAX_SIZE = 9;
 
@@ -120,7 +119,6 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         READWRITE(nDenom);
-
         READWRITE(txCollateral);
     }
 
@@ -177,7 +175,6 @@ class CPrivateSendQueue
 {
 public:
     int nDenom;
-
     COutPoint masternodeOutpoint;
     int64_t nTime;
     bool fReady; //ready for submit
@@ -187,7 +184,6 @@ public:
 
     CPrivateSendQueue() :
         nDenom(0),
-
         masternodeOutpoint(COutPoint()),
         nTime(0),
         fReady(false),
@@ -212,7 +208,6 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         READWRITE(nDenom);
-
         READWRITE(masternodeOutpoint);
         READWRITE(nTime);
         READWRITE(fReady);
@@ -231,12 +226,12 @@ public:
      */
     bool Sign();
     /// Check if we have a valid Masternode address
-    bool CheckSignature(const CKeyID& keyIDOperator, const CBLSPublicKey& blsPubKey) const;
+    bool CheckSignature(const CBLSPublicKey& blsPubKey) const;
 
     bool Relay(CConnman& connman);
 
-    /// Is this queue expired?
-    bool IsExpired() { return GetAdjustedTime() - nTime > PRIVATESEND_QUEUE_TIMEOUT; }
+    /// Check if a queue is too old or too far into the future
+    bool IsTimeOutOfBounds() const;
 
     std::string ToString() const
     {
@@ -312,7 +307,7 @@ public:
     uint256 GetSignatureHash() const;
 
     bool Sign();
-    bool CheckSignature(const CKeyID& keyIDOperator, const CBLSPublicKey& blsPubKey) const;
+    bool CheckSignature(const CBLSPublicKey& blsPubKey) const;
 
     void SetConfirmedHeight(int nConfirmedHeightIn) { nConfirmedHeight = nConfirmedHeightIn; }
     bool IsExpired(int nHeight);
@@ -409,8 +404,9 @@ public:
 
     static std::string GetMessageByID(PoolMessage nMessageID);
 
-    /// Get the maximum number of transactions for the pool
-    static int GetMaxPoolTransactions() { return Params().PoolMaxTransactions(); }
+    /// Get the minimum/maximum number of participants for the pool
+    static int GetMinPoolParticipants() { return Params().PoolMinParticipants(); }
+    static int GetMaxPoolParticipants() { return Params().PoolMaxParticipants(); }
 
     static CAmount GetMaxPoolAmount() { return vecStandardDenominations.empty() ? 0 : PRIVATESEND_ENTRY_MAX_SIZE * vecStandardDenominations.front(); }
 

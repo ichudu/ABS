@@ -1,4 +1,5 @@
-# Absolute 0.13.0.1
+Absolute Core 0.14.0.1
+===============================
 
 Products designed by you. Create and configure your own items with the option to log your creation on the Absolute blockchain.
 
@@ -25,7 +26,7 @@ Find out more about the One Protocol: https://absify.me/one-protocol/
 | Rewards split | Miners 20% and MasterNodes 80% |
 | Maximum supply | 52.5 M |
 | One Protocol (As of v.13) | 0.48 M |
-| Difficulty retargeting algo | Dark Gravity Wave v3 | 
+| Difficulty retargeting algo | Dark Gravity Wave v3 |
 
 
 
@@ -82,4 +83,3 @@ Translations are periodically pulled from Transifex and merged into the git repo
 
 **Important**: We do not accept translation changes as GitHub pull requests because the next
 pull from Transifex would automatically overwrite them again.
-

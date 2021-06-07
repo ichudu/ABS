@@ -1,7 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -26,6 +26,7 @@
 #include <map>
 #include <stdint.h>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <boost/filesystem/path.hpp>
@@ -43,7 +44,7 @@
 #ifdef ENABLE_ABSOLUTE_DEBUG
 #define DBG( x ) x
 #else
-#define DBG( x ) 
+#define DBG( x )
 #endif
 
 //Absolute only features
@@ -65,7 +66,7 @@ public:
     boost::signals2::signal<std::string (const char* psz)> Translate;
 };
 
-extern const std::map<std::string, std::vector<std::string> >& mapMultiArgs;
+extern const std::unordered_map<std::string, std::vector<std::string> >& mapMultiArgs;
 extern bool fDebug;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
@@ -95,6 +96,8 @@ bool SetupNetworking();
 
 /** Return true if log accepts specified category */
 bool LogAcceptCategory(const char* category);
+/** Reset internal log category caching (call this when debug categories have changed) */
+void ResetLogAcceptCategoryCache();
 /** Send a string to the log output */
 int LogPrintStr(const std::string &str);
 
@@ -128,7 +131,7 @@ bool error(const char* fmt, const Args&... args)
     return false;
 }
 
-void PrintExceptionContinue(const std::exception *pex, const char* pszThread);
+void PrintExceptionContinue(const std::exception_ptr pex, const char* pszThread);
 void ParseParameters(int argc, const char*const argv[]);
 void FileCommit(FILE *file);
 bool TruncateFile(FILE *file, unsigned int length);
@@ -141,7 +144,6 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 boost::filesystem::path GetBackupsDir();
 void ClearDatadirCache();
 boost::filesystem::path GetConfigFile(const std::string& confPath);
-boost::filesystem::path GetMasternodeConfigFile();
 #ifndef WIN32
 boost::filesystem::path GetPidFile();
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
@@ -271,12 +273,8 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
         LogPrintf("%s thread interrupt\n", name);
         throw;
     }
-    catch (const std::exception& e) {
-        PrintExceptionContinue(&e, name);
-        throw;
-    }
     catch (...) {
-        PrintExceptionContinue(NULL, name);
+        PrintExceptionContinue(std::current_exception(), name);
         throw;
     }
 }

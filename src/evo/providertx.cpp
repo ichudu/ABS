@@ -1,11 +1,10 @@
-// Copyright (c) 2018 The Dash Core developers
+// Copyright (c) 2021 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "deterministicmns.h"
 #include "providertx.h"
 #include "specialtx.h"
-
 
 #include "base58.h"
 #include "chainparams.h"
@@ -79,7 +78,6 @@ static bool CheckInputsHash(const CTransaction& tx, const ProTx& proTx, CValidat
     uint256 inputsHash = CalcTxInputsHash(tx);
     if (inputsHash != proTx.inputsHash) {
         return state.DoS(100, false, REJECT_INVALID, "bad-protx-inputs-hash");
-
     }
 
     return true;
@@ -118,13 +116,13 @@ bool CheckProRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValid
         // should not happen as we checked script types before
         return state.DoS(10, false, REJECT_INVALID, "bad-protx-payee-dest");
     }
-    // don't allow reuse of collateral key for other keys (don't allow people to put the collateral key onto an online server)
+    // don't allow reuse of payout key for other keys (don't allow people to put the payee key onto an online server)
     if (payoutDest == CTxDestination(ptx.keyIDOwner) || payoutDest == CTxDestination(ptx.keyIDVoting)) {
         return state.DoS(10, false, REJECT_INVALID, "bad-protx-payee-reuse");
     }
 
-    // This is a temporary restriction that will be lifted later
-    // It is required while we are transitioning from the old MN list to the deterministic list
+    // It's allowed to set addr to 0, which will put the MN into PoSe-banned state and require a ProUpServTx to be issues later
+    // If any of both is set, it must be valid however
     if (ptx.addr != CService() && !CheckService(tx.GetHash(), ptx, state)) {
         return false;
     }
@@ -176,7 +174,8 @@ bool CheckProRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValid
     }
 
     if (pindexPrev) {
-        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev->GetBlockHash());
+        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev);
+
         // only allow reusing of addresses when it's for the same collateral (which replaces the old MN)
         if (mnList.HasUniqueProperty(ptx.addr) && mnList.GetUniquePropertyMN(ptx.addr)->collateralOutpoint != collateralOutpoint) {
             return state.DoS(10, false, REJECT_DUPLICATE, "bad-protx-dup-addr");
@@ -187,7 +186,7 @@ bool CheckProRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValid
             return state.DoS(10, false, REJECT_DUPLICATE, "bad-protx-dup-key");
         }
 
-        if (!fLiteMode && !deterministicMNManager->IsDeterministicMNsSporkActive(pindexPrev->nHeight)) {
+        if (!deterministicMNManager->IsDIP3Enforced(pindexPrev->nHeight)) {
             if (ptx.keyIDOwner != ptx.keyIDVoting) {
                 return state.DoS(10, false, REJECT_INVALID, "bad-protx-key-not-same");
             }
@@ -209,6 +208,7 @@ bool CheckProRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CValid
             return state.DoS(100, false, REJECT_INVALID, "bad-protx-sig");
         }
     }
+
     return true;
 }
 
@@ -232,7 +232,7 @@ bool CheckProUpServTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVa
     }
 
     if (pindexPrev) {
-        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev->GetBlockHash());
+        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev);
         auto mn = mnList.GetMN(ptx.proTxHash);
         if (!mn) {
             return state.DoS(100, false, REJECT_INVALID, "bad-protx-hash");
@@ -257,7 +257,7 @@ bool CheckProUpServTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVa
         if (!CheckInputsHash(tx, ptx, state)) {
             return false;
         }
-        if (!CheckHashSig(ptx, mn->pdmnState->pubKeyOperator, state)) {
+        if (!CheckHashSig(ptx, mn->pdmnState->pubKeyOperator.Get(), state)) {
             return false;
         }
     }
@@ -297,23 +297,23 @@ bool CheckProUpRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVal
     }
 
     if (pindexPrev) {
-        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev->GetBlockHash());
+        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev);
         auto dmn = mnList.GetMN(ptx.proTxHash);
         if (!dmn) {
             return state.DoS(100, false, REJECT_INVALID, "bad-protx-hash");
         }
 
-        // don't allow reuse of collateral key for other keys (don't allow people to put the collateral key onto an online server)
+        // don't allow reuse of payee key for other keys (don't allow people to put the payee key onto an online server)
         if (payoutDest == CTxDestination(dmn->pdmnState->keyIDOwner) || payoutDest == CTxDestination(ptx.keyIDVoting)) {
             return state.DoS(10, false, REJECT_INVALID, "bad-protx-payee-reuse");
         }
-
 
         Coin coin;
         if (!GetUTXOCoin(dmn->collateralOutpoint, coin)) {
             // this should never happen (there would be no dmn otherwise)
             return state.DoS(100, false, REJECT_INVALID, "bad-protx-collateral");
         }
+
         // don't allow reuse of collateral key for other keys (don't allow people to put the collateral key onto an online server)
         CTxDestination collateralTxDest;
         if (!ExtractDestination(coin.out.scriptPubKey, collateralTxDest)) {
@@ -330,7 +330,7 @@ bool CheckProUpRegTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVal
             }
         }
 
-        if (!fLiteMode && !deterministicMNManager->IsDeterministicMNsSporkActive(pindexPrev->nHeight)) {
+        if (!deterministicMNManager->IsDIP3Enforced(pindexPrev->nHeight)) {
             if (dmn->pdmnState->keyIDOwner != ptx.keyIDVoting) {
                 return state.DoS(10, false, REJECT_INVALID, "bad-protx-key-not-same");
             }
@@ -369,14 +369,14 @@ bool CheckProUpRevTx(const CTransaction& tx, const CBlockIndex* pindexPrev, CVal
     }
 
     if (pindexPrev) {
-        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev->GetBlockHash());
+        auto mnList = deterministicMNManager->GetListForBlock(pindexPrev);
         auto dmn = mnList.GetMN(ptx.proTxHash);
         if (!dmn)
             return state.DoS(100, false, REJECT_INVALID, "bad-protx-hash");
 
         if (!CheckInputsHash(tx, ptx, state))
             return false;
-        if (!CheckHashSig(ptx, dmn->pdmnState->pubKeyOperator, state))
+        if (!CheckHashSig(ptx, dmn->pdmnState->pubKeyOperator.Get(), state))
             return false;
     }
 
@@ -461,7 +461,6 @@ void CProUpServTx::ToJson(UniValue& obj) const
     obj.setObject();
     obj.push_back(Pair("version", nVersion));
     obj.push_back(Pair("proTxHash", proTxHash.ToString()));
-
     obj.push_back(Pair("service", addr.ToString(false)));
     CTxDestination dest;
     if (ExtractDestination(scriptOperatorPayout, dest)) {
@@ -513,5 +512,4 @@ void CProUpRevTx::ToJson(UniValue& obj) const
     obj.push_back(Pair("proTxHash", proTxHash.ToString()));
     obj.push_back(Pair("reason", (int)nReason));
     obj.push_back(Pair("inputsHash", inputsHash.ToString()));
-
 }

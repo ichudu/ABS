@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -29,6 +29,7 @@ void CGovernanceObjectVoteFile::AddVote(const CGovernanceVote& vote)
     listVotes.push_front(vote);
     mapVoteIndex.emplace(nHash, listVotes.begin());
     ++nMemoryVotes;
+    RemoveOldVotes(vote);
 }
 
 bool CGovernanceObjectVoteFile::HasVote(const uint256& nHash) const
@@ -69,14 +70,15 @@ void CGovernanceObjectVoteFile::RemoveVotesFromMasternode(const COutPoint& outpo
     }
 }
 
-std::set<uint256> CGovernanceObjectVoteFile::RemoveInvalidProposalVotes(const COutPoint& outpointMasternode)
+std::set<uint256> CGovernanceObjectVoteFile::RemoveInvalidVotes(const COutPoint& outpointMasternode, bool fProposal)
 {
     std::set<uint256> removedVotes;
 
     vote_l_it it = listVotes.begin();
     while (it != listVotes.end()) {
-        if (it->GetSignal() == VOTE_SIGNAL_FUNDING && it->GetMasternodeOutpoint() == outpointMasternode) {
-            if (!it->IsValid(true)) {
+        if (it->GetMasternodeOutpoint() == outpointMasternode) {
+            bool useVotingKey = fProposal && (it->GetSignal() == VOTE_SIGNAL_FUNDING);
+            if (!it->IsValid(useVotingKey)) {
                 removedVotes.emplace(it->GetHash());
                 --nMemoryVotes;
                 mapVoteIndex.erase(it->GetHash());
@@ -90,21 +92,22 @@ std::set<uint256> CGovernanceObjectVoteFile::RemoveInvalidProposalVotes(const CO
     return removedVotes;
 }
 
-std::vector<uint256> CGovernanceObjectVoteFile::RemoveOldVotes(unsigned int nMinTime)
+void CGovernanceObjectVoteFile::RemoveOldVotes(const CGovernanceVote& vote)
 {
-    std::vector<uint256> removed;
     vote_l_it it = listVotes.begin();
     while (it != listVotes.end()) {
-        if (it->GetTimestamp() < nMinTime) {
+        if (it->GetMasternodeOutpoint() == vote.GetMasternodeOutpoint() // same masternode
+            && it->GetParentHash() == vote.GetParentHash() // same governance object (e.g. same proposal)
+            && it->GetSignal() == vote.GetSignal() // same signal (e.g. "funding", "delete", etc.)
+            && it->GetTimestamp() < vote.GetTimestamp()) // older than new vote
+        {
             --nMemoryVotes;
-            removed.emplace_back(it->GetHash());
             mapVoteIndex.erase(it->GetHash());
             listVotes.erase(it++);
         } else {
             ++it;
         }
     }
-    return removed;
 }
 
 void CGovernanceObjectVoteFile::RebuildIndex()

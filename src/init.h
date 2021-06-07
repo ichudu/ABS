@@ -16,7 +16,6 @@ namespace boost
 class thread_group;
 } // namespace boost
 
-
 void StartShutdown();
 void StartRestart();
 bool ShutdownRequested();

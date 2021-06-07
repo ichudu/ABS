@@ -49,9 +49,8 @@ public:
         READWRITE(keyIDOwner);
         READWRITE(pubKeyOperator);
         READWRITE(keyIDVoting);
-
         READWRITE(nOperatorReward);
-        READWRITE(*(CScriptBase*)(&scriptPayout));
+        READWRITE(scriptPayout);
         READWRITE(inputsHash);
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(vchSig);
@@ -61,6 +60,7 @@ public:
     // When signing with the collateral key, we don't sign the hash but a generated message instead
     // This is needed for HW wallet support which can only sign text messages as of now
     std::string MakeSignString() const;
+
     std::string ToString() const;
     void ToJson(UniValue& obj) const;
 };
@@ -73,7 +73,6 @@ public:
 public:
     uint16_t nVersion{CURRENT_VERSION}; // message version
     uint256 proTxHash;
-
     CService addr;
     CScript scriptOperatorPayout;
     uint256 inputsHash; // replay protection
@@ -87,9 +86,8 @@ public:
     {
         READWRITE(nVersion);
         READWRITE(proTxHash);
-
         READWRITE(addr);
-        READWRITE(*(CScriptBase*)(&scriptOperatorPayout));
+        READWRITE(scriptOperatorPayout);
         READWRITE(inputsHash);
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(sig);
@@ -127,7 +125,7 @@ public:
         READWRITE(nMode);
         READWRITE(pubKeyOperator);
         READWRITE(keyIDVoting);
-        READWRITE(*(CScriptBase*)(&scriptPayout));
+        READWRITE(scriptPayout);
         READWRITE(inputsHash);
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(vchSig);

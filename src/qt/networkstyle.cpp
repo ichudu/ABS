@@ -11,6 +11,7 @@
 
 #include "chainparams.h"
 #include "tinyformat.h"
+
 #include <QApplication>
 
 static const struct {
@@ -113,6 +114,7 @@ const NetworkStyle *NetworkStyle::instantiate(const QString &networkId)
                 appName = strprintf(appName, GetDevNetName());
                 titleAddText = strprintf(titleAddText, GetDevNetName());
             }
+
             return new NetworkStyle(
                     appName.c_str(),
                     network_styles[x].iconColorHueShift,

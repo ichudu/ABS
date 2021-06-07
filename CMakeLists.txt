@@ -31,6 +31,7 @@ if(DEFINED DEPENDS_PREFIX)
     include_directories(${DEPENDS_PREFIX}/include)
     include_directories(${DEPENDS_PREFIX}/include/QtWidgets)
 endif()
+
 add_definitions(
         -DENABLE_WALLET=1
 )
@@ -38,6 +39,8 @@ add_definitions(
 file(GLOB SOURCE_FILES
         src/bench/*.cpp
         src/bench/*.h
+        src/bls/*.cpp
+        src/bls/*.h
         src/compat/*.cpp
         src/compat/*.h
         src/consensus/*.h

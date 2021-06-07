@@ -3,105 +3,75 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "absoluteconsensus.h"
+#ifndef BITCOIN_BITCOINCONSENSUS_H
+#define BITCOIN_BITCOINCONSENSUS_H
 
-#include "primitives/transaction.h"
-#include "pubkey.h"
-#include "script/interpreter.h"
-#include "version.h"
+#if defined(BUILD_BITCOIN_INTERNAL) && defined(HAVE_CONFIG_H)
+#include "config/absolute-config.h"
+  #if defined(_WIN32)
+    #if defined(DLL_EXPORT)
+      #if defined(HAVE_FUNC_ATTRIBUTE_DLLEXPORT)
+        #define EXPORT_SYMBOL __declspec(dllexport)
+      #else
+        #define EXPORT_SYMBOL
+      #endif
+    #endif
+  #elif defined(HAVE_FUNC_ATTRIBUTE_VISIBILITY)
+    #define EXPORT_SYMBOL __attribute__ ((visibility ("default")))
+  #endif
+#elif defined(MSC_VER) && !defined(STATIC_LIBBITCOINCONSENSUS)
+  #define EXPORT_SYMBOL __declspec(dllimport)
+#endif
 
-namespace {
+#ifndef EXPORT_SYMBOL
+  #define EXPORT_SYMBOL
+#endif
 
-/** A class that deserializes a single CTransaction one time. */
-class TxInputStream
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define BITCOINCONSENSUS_API_VER 0
+
+typedef enum absoluteconsensus_error_t
 {
-public:
-    TxInputStream(int nTypeIn, int nVersionIn, const unsigned char *txTo, size_t txToLen) :
-    m_type(nTypeIn),
-    m_version(nVersionIn),
-    m_data(txTo),
-    m_remaining(txToLen)
-    {}
+    absoluteconsensus_ERR_OK = 0,
+    absoluteconsensus_ERR_TX_INDEX,
+    absoluteconsensus_ERR_TX_SIZE_MISMATCH,
+    absoluteconsensus_ERR_TX_DESERIALIZE,
+    absoluteconsensus_ERR_INVALID_FLAGS,
+} absoluteconsensus_error;
 
-    void read(char* pch, size_t nSize)
-    {
-        if (nSize > m_remaining)
-            throw std::ios_base::failure(std::string(__func__) + ": end of data");
-
-        if (pch == NULL)
-            throw std::ios_base::failure(std::string(__func__) + ": bad destination buffer");
-
-        if (m_data == NULL)
-            throw std::ios_base::failure(std::string(__func__) + ": bad source buffer");
-
-        memcpy(pch, m_data, nSize);
-        m_remaining -= nSize;
-        m_data += nSize;
-    }
-
-    template<typename T>
-    TxInputStream& operator>>(T& obj)
-    {
-        ::Unserialize(*this, obj);
-        return *this;
-    }
-
-    int GetVersion() const { return m_version; }
-    int GetType() const { return m_type; }
-private:
-    const int m_type;
-    const int m_version;
-    const unsigned char* m_data;
-    size_t m_remaining;
+/** Script verification flags */
+enum
+{
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_DERSIG              = (1U << 2), // enforce strict DER (BIP66) compliance
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
+    absoluteconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = absoluteconsensus_SCRIPT_FLAGS_VERIFY_P2SH | absoluteconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
+                                                            absoluteconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
+                                                            absoluteconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY
 };
+/// Returns 1 if the input nIn of the serialized transaction pointed to by
+/// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
+/// the additional constraints specified by flags.
+/// If not NULL, err will contain an error/success code for the operation
 
-inline int set_error(absoluteconsensus_error* ret, absoluteconsensus_error serror)
-{
-    if (ret)
-        *ret = serror;
-    return 0;
-}
 
-struct ECCryptoClosure
-{
-    ECCVerifyHandle handle;
-};
 
-ECCryptoClosure instance_of_eccryptoclosure;
-}
-
-/** Check that all specified flags are part of the libconsensus interface. */
-static bool verify_flags(unsigned int flags)
-{
-    return (flags & ~(absoluteconsensus_SCRIPT_FLAGS_VERIFY_ALL)) == 0;
-}
-
-int absoluteconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+EXPORT_SYMBOL int absoluteconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
                                     const unsigned char *txTo        , unsigned int txToLen,
-                                    unsigned int nIn, unsigned int flags, absoluteconsensus_error* err)
-{
-    if (!verify_flags(flags)) {
-        return absoluteconsensus_ERR_INVALID_FLAGS;
-    }
-    try {
-        TxInputStream stream(SER_NETWORK, PROTOCOL_VERSION, txTo, txToLen);
-        CTransaction tx(deserialize, stream);
-        if (nIn >= tx.vin.size())
-            return set_error(err, absoluteconsensus_ERR_TX_INDEX);
-        if (GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION) != txToLen)
-            return set_error(err, absoluteconsensus_ERR_TX_SIZE_MISMATCH);
+                                    unsigned int nIn, unsigned int flags, absoluteconsensus_error* err);
 
-         // Regardless of the verification result, the tx did not error.
-         set_error(err, absoluteconsensus_ERR_OK);
+EXPORT_SYMBOL unsigned int absoluteconsensus_version();
 
-        return VerifyScript(tx.vin[nIn].scriptSig, CScript(scriptPubKey, scriptPubKey + scriptPubKeyLen), flags, TransactionSignatureChecker(&tx, nIn), NULL);
-    } catch (const std::exception&) {
-        return set_error(err, absoluteconsensus_ERR_TX_DESERIALIZE); // Error deserializing
-    }
-}
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
-unsigned int absoluteconsensus_version()
-{
-    // Just use the API version for now
-    return BITCOINCONSENSUS_API_VER;
-}
+#undef EXPORT_SYMBOL
+
+#endif // BITCOIN_BITCOINCONSENSUS_H

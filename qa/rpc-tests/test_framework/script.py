@@ -2,16 +2,11 @@
 # Copyright (c) 2015-2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#
-# script.py
-#
-# This file is modified from python-bitcoinlib.
-#
+"""Functionality to build scripts, as well as SignatureHash().
 
-"""Scripts
-
-Functionality to build scripts, as well as SignatureHash().
+This file is modified from python-bitcoinlib.
 """
+
 
 from .mininode import CTransaction, CTxOut, sha256, hash256
 from binascii import hexlify
@@ -36,6 +31,10 @@ MAX_SCRIPT_OPCODES = 201
 OPCODE_NAMES = {}
 def hash160(s):
     return hashlib.new('ripemd160', sha256(s)).digest()
+
+def hash160(s):
+    return hashlib.new('ripemd160', sha256(s)).digest()
+
 
 _opcode_instances = []
 class CScriptOp(int):

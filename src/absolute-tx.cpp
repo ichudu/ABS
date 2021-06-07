@@ -26,6 +26,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 
+#include "stacktraces.h"
+
 static bool fCreateBlank;
 static std::map<std::string,UniValue> registers;
 static const int CONTINUE_EXECUTION=-1;
@@ -203,6 +205,7 @@ static void MutateTxAddInput(CMutableTransaction& tx, const std::string& strInpu
 {
     std::vector<std::string> vStrInputParts;
     boost::split(vStrInputParts, strInput, boost::is_any_of(":"));
+
     // separate TXID:VOUT in string
     if (vStrInputParts.size()<2)
         throw std::runtime_error("TX input missing separator");
@@ -771,7 +774,7 @@ static int CommandLineRawTx(int argc, char* argv[])
         nRet = EXIT_FAILURE;
     }
     catch (...) {
-        PrintExceptionContinue(NULL, "CommandLineRawTx()");
+        PrintExceptionContinue(std::current_exception(), "CommandLineRawTx()");
         throw;
     }
 
@@ -783,6 +786,9 @@ static int CommandLineRawTx(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
+    RegisterPrettyTerminateHander();
+    RegisterPrettySignalHandlers();
+
     SetupEnvironment();
 
     try {
@@ -791,21 +797,15 @@ int main(int argc, char* argv[])
             return ret;
     }
     catch (const std::exception& e) {
-        PrintExceptionContinue(&e, "AppInitRawTx()");
-        return EXIT_FAILURE;
-    } catch (...) {
-        PrintExceptionContinue(NULL, "AppInitRawTx()");
+        PrintExceptionContinue(std::current_exception(), "AppInitRawTx()");
         return EXIT_FAILURE;
     }
 
     int ret = EXIT_FAILURE;
     try {
         ret = CommandLineRawTx(argc, argv);
-    }
-    catch (const std::exception& e) {
-        PrintExceptionContinue(&e, "CommandLineRawTx()");
     } catch (...) {
-        PrintExceptionContinue(NULL, "CommandLineRawTx()");
+        PrintExceptionContinue(std::current_exception(), "CommandLineRawTx()");
     }
     return ret;
 }

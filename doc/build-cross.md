@@ -1,3 +1,8 @@
+===============================
+
+Absolute Core can be cross-compiled on Linux to all other supported host systems. This is done by changing
+the `HOST` parameter when building the dependencies and then specifying another `--prefix` directory when building Absolute.
+=======
 Cross-compiliation of Absolute Core
 ===============================
 

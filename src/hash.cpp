@@ -108,6 +108,7 @@ CSipHasher& CSipHasher::Write(uint64_t data)
     uint64_t v0 = v[0], v1 = v[1], v2 = v[2], v3 = v[3];
 
     assert(count % 8 == 0);
+
     v3 ^= data;
     SIPROUND;
     SIPROUND;
@@ -146,6 +147,7 @@ CSipHasher& CSipHasher::Write(const unsigned char* data, size_t size)
     v[3] = v3;
     count = c;
     tmp = t;
+
     return *this;
 }
 
