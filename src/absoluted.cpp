@@ -134,27 +134,7 @@ bool AppInit(int argc, char* argv[])
 
         if (fCommandLine)
         {
-            fprintf(stderr, "Error: There is no RPC client functionality in absoluted. Use the absolute-cli utility instead.\n");
-            exit(EXIT_FAILURE);
-        }
-        // -server defaults to true for bitcoind but not for the GUI so do this here
-        SoftSetBoolArg("-server", true);
-        // Set this early so that parameter interactions go to console
-        InitLogging();
-        InitParameterInteraction();
-        if (!AppInitBasicSetup())
-        {
-            // InitError will have been called with detailed error, which ends up on console
-            exit(EXIT_FAILURE);
-        }
-        if (!AppInitParameterInteraction())
-        {
-            // InitError will have been called with detailed error, which ends up on console
-            exit(EXIT_FAILURE);
-        }
-        if (!AppInitSanityChecks())
-        {
-            // InitError will have been called with detailed error, which ends up on console
+            fprintf(stderr, "Error: There is no RPC client functionality in dashd anymore. Use the absolute-cli utility instead.\n");
             exit(EXIT_FAILURE);
         }
         // -server defaults to true for bitcoind but not for the GUI so do this here

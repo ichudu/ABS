@@ -1758,6 +1758,7 @@ static DisconnectResult DisconnectBlock(const CBlock& block, CValidationState& s
             }
             // At this point, all of txundo.vprevout should have been moved out.
         }
+    }
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());

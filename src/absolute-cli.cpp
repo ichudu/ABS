@@ -185,13 +185,7 @@ static void http_request_done(struct evhttp_request *req, void *ctx)
         evbuffer_drain(buf, size);
     }
 }
-#if LIBEVENT_VERSION_NUMBER >= 0x02010300
-static void http_error_cb(enum evhttp_request_error err, void *ctx)
-{
-    HTTPReply *reply = static_cast<HTTPReply*>(ctx);
-    reply->error = err;
-}
-#endif
+
 
 #if LIBEVENT_VERSION_NUMBER >= 0x02010300
 static void http_error_cb(enum evhttp_request_error err, void *ctx)
