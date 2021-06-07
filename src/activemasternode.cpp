@@ -175,13 +175,13 @@ bool CActiveDeterministicMasternodeManager::GetLocalAddress(CService& addrRet)
         // If we have some peers, let's try to find our local address from one of them
         g_connman->ForEachNodeContinueIf(CConnman::AllNodes, [&fFoundLocal, &empty](CNode* pnode) {
             empty = false;
-            if (pnode->addr.IsIPv4())
+            if (pnode->addr.IsIPv4() || pnode->addr.IsIPv6())
                 fFoundLocal = GetLocal(activeMasternodeInfo.service, &pnode->addr) && CMasternode::IsValidNetAddr(activeMasternodeInfo.service);
             return !fFoundLocal;
         });
         // nothing and no live connections, can't do anything for now
         if (empty) {
-            strError = "Can't detect valid external address. Please consider using the externalip configuration option if problem persists. Make sure to use IPv4 address only.";
+            strError = "Can't detect valid external address. Please consider using the externalip configuration option if problem persists. Make sure to use IPv4 or IPv6 address only.";
             LogPrintf("CActiveDeterministicMasternodeManager::GetLocalAddress -- ERROR: %s\n", strError);
             return false;
         }
@@ -349,7 +349,7 @@ void CActiveLegacyMasternodeManager::ManageStateInitial(CConnman& connman)
         // If we have some peers, let's try to find our local address from one of them
         connman.ForEachNodeContinueIf(CConnman::AllNodes, [&fFoundLocal, &empty](CNode* pnode) {
             empty = false;
-            if (pnode->addr.IsIPv4())
+            if (pnode->addr.IsIPv4() || pnode->addr.IsIPv6())
                 fFoundLocal = GetLocal(activeMasternodeInfo.service, &pnode->addr) && CMasternode::IsValidNetAddr(activeMasternodeInfo.service);
             return !fFoundLocal;
         });
@@ -370,7 +370,7 @@ void CActiveLegacyMasternodeManager::ManageStateInitial(CConnman& connman)
 
     if (!fFoundLocal) {
         nState = ACTIVE_MASTERNODE_NOT_CAPABLE;
-        strNotCapableReason = "Can't detect valid external address. Please consider using the externalip configuration option if problem persists. Make sure to use IPv4 address only.";
+        strNotCapableReason = "Can't detect valid external address. Please consider using the externalip configuration option if problem persists. Make sure to use IPv4 or IPv6 address only.";
         LogPrintf("CActiveLegacyMasternodeManager::ManageStateInitial -- %s: %s\n", GetStateString(), strNotCapableReason);
         return;
     }
