@@ -262,27 +262,7 @@ struct convertToInt<T,true>
     static int invoke(const T& value) { return static_cast<int>(value); }
 };
 // Format at most ntrunc characters to the given stream.
-template<typename T>
-inline void formatTruncated(std::ostream& out, const T& value, int ntrunc)
-{
-    std::ostringstream tmp;
-    tmp << value;
-    std::string result = tmp.str();
-    out.write(result.c_str(), (std::min)(ntrunc, static_cast<int>(result.size())));
-}
-#define TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR(type)       \
-inline void formatTruncated(std::ostream& out, type* value, int ntrunc) \
-{                                                           \
-    std::streamsize len = 0;                                \
-    while(len < ntrunc && value[len] != 0)                  \
-        ++len;                                              \
-    out.write(value, len);                                  \
-}
-// Overload for const char* and char*.  Could overload for signed & unsigned
-// char too, but these are technically unneeded for printf compatibility.
-TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR(const char)
-TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR(char)
-#undef TINYFORMAT_DEFINE_FORMAT_TRUNCATED_CSTR
+
 
 // Format at most ntrunc characters to the given stream.
 template<typename T>

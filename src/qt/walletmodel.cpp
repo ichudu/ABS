@@ -372,11 +372,7 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
                      CClientUIInterface::MSG_ERROR);
         return TransactionCreationFailed;
     }
-    // reject absurdly high fee. (This can never happen because the
-    // wallet caps the fee at maxTxFee. This merely serves as a
-    // belt-and-suspenders check)
-    if (nFeeRequired > maxTxFee)
-        return AbsurdFee;
+
 
     // reject absurdly high fee. (This can never happen because the
     // wallet caps the fee at maxTxFee. This merely serves as a

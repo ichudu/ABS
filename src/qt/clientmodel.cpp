@@ -284,6 +284,7 @@ QString ClientModel::formatSubVersion() const
 bool ClientModel::isReleaseVersion() const
 {
     return CLIENT_VERSION_IS_RELEASE;
+}
 
 QString ClientModel::formatClientStartupTime() const
 {

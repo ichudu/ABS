@@ -484,6 +484,7 @@ libabsolute_common_a_SOURCES = \
 libabsolute_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libabsolute_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libabsolute_util_a_SOURCES = \
+  bls/bls_batchverifier.h \
   bls/bls_ies.cpp \
   bls/bls_ies.h \
   bls/bls_worker.cpp \

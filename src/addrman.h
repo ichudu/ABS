@@ -213,8 +213,7 @@ private:
 protected:
     //! secret key to randomize bucket select with
     uint256 nKey;
-    //! Source of random numbers for randomization in inner loops
-    FastRandomContext insecure_rand;
+
 
     //! Source of random numbers for randomization in inner loops
     FastRandomContext insecure_rand;

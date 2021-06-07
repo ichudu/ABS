@@ -53,7 +53,7 @@ void SelectBaseParams(const std::string& chain);
  * @return CBaseChainParams::MAX_NETWORK_TYPES if an invalid combination is given. CBaseChainParams::MAIN by default.
  */
 std::string ChainNameFromCommandLine();
-std::string GetDevNetName();
+
 
 std::string GetDevNetName();
 

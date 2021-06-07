@@ -223,11 +223,7 @@ void CGovernanceManager::ProcessMessage(CNode* pfrom, const std::string& strComm
     else if (strCommand == NetMsgType::MNGOVERNANCEOBJECTVOTE) {
         CGovernanceVote vote;
         vRecv >> vote;
-        // TODO remove this check after full DIP3 deployment
-        if (vote.GetTimestamp() < GetMinVoteTime()) {
-            // Ignore votes pre-DIP3
-            return;
-        }
+
 
         uint256 nHash = vote.GetHash();
 
@@ -345,7 +341,7 @@ void CGovernanceManager::AddGovernanceObject(CGovernanceObject& govobj, CConnman
             }
             return;
         }
-        DBG(std::cout << "CGovernanceManager::AddGovernanceObject After AddNewTrigger" << std::endl;);
+
     }
 
     LogPrintf("CGovernanceManager::AddGovernanceObject -- %s new, received from %s\n", strHash, pfrom ? pfrom->GetAddrName() : "nullptr");
@@ -1274,10 +1270,7 @@ void CGovernanceManager::UpdatedBlockTip(const CBlockIndex* pindex, CConnman& co
 
     nCachedBlockHeight = pindex->nHeight;
     LogPrint("gobject", "CGovernanceManager::UpdatedBlockTip -- nCachedBlockHeight: %d\n", nCachedBlockHeight);
-    if (deterministicMNManager->IsDeterministicMNsSporkActive(pindex->nHeight)) {
-        ClearPreDIP3Votes();
-        RemoveInvalidProposalVotes();
-    }
+
 
     if (deterministicMNManager->IsDIP3Enforced(pindex->nHeight)) {
         RemoveInvalidVotes();

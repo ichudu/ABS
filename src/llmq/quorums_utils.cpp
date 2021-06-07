@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "quorums.h"
 #include "quorums_utils.h"
 
 #include "chainparams.h"

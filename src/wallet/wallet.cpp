@@ -2633,14 +2633,7 @@ struct CompareByPriority
     }
 };
 
-struct CompareByPriority
-{
-    bool operator()(const COutput& t1,
-                    const COutput& t2) const
-    {
-        return t1.Priority() > t2.Priority();
-    }
-};
+
 // move denoms down
 bool less_then_denom (const COutput& out1, const COutput& out2)
 {
@@ -2718,8 +2711,7 @@ bool CWallet::SelectCoinsMinConf(const CAmount& nTargetValue, const int nConfMin
             if (!mempool.TransactionWithinChainLimit(pcoin->GetHash(), nMaxAncestors))
                 continue;
 
-            if (!mempool.TransactionWithinChainLimit(pcoin->GetHash(), nMaxAncestors))
-                continue;
+
 
             int i = output.i;
             CAmount n = pcoin->tx->vout[i].nValue;

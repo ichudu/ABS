@@ -266,10 +266,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     const CAmount HIGHFEE = COIN;
     const CAmount HIGHERFEE = 4*COIN;
 
-    const CAmount BLOCKSUBSIDY = 500*COIN;
-    const CAmount LOWFEE = CENT;
-    const CAmount HIGHFEE = COIN;
-    const CAmount HIGHERFEE = 4*COIN;
+
     // block sigops > limit: 1000 CHECKMULTISIG + 1
     tx.vin.resize(1);
     // NOTE: OP_NOP is used to force 20 SigOps for the CHECKMULTISIG

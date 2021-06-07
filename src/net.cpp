@@ -1651,13 +1651,7 @@ void MapPort(bool)
 }
 #endif
 
-static std::string GetDNSHost(const CDNSSeedData& data, ServiceFlags* requiredServiceBits)
-{
-    //use default host for non-filter-capable seeds or if we use the default service bits (NODE_NETWORK)
-    if (!data.supportsServiceBitsFiltering || *requiredServiceBits == NODE_NETWORK) {
-        *requiredServiceBits = NODE_NETWORK;
-        return data.host;
-    }
+
 
 
 
@@ -2946,43 +2940,7 @@ void CConnman::RemoveAskFor(const uint256& hash)
     }
 }
 
-void CConnman::RelayInvFiltered(CInv &inv, const CTransaction& relatedTx, const int minProtoVersion)
-{
-    LOCK(cs_vNodes);
-    for (const auto& pnode : vNodes) {
-        if(pnode->nVersion < minProtoVersion)
-            continue;
-        {
-            LOCK(pnode->cs_filter);
-            if(pnode->pfilter && !pnode->pfilter->IsRelevantAndUpdate(relatedTx))
-                continue;
-        }
-        pnode->PushInventory(inv);
-    }
-}
 
-void CConnman::RelayInvFiltered(CInv &inv, const uint256& relatedTxHash, const int minProtoVersion)
-{
-    LOCK(cs_vNodes);
-    for (const auto& pnode : vNodes) {
-        if(pnode->nVersion < minProtoVersion) continue;
-        {
-            LOCK(pnode->cs_filter);
-            if(pnode->pfilter && !pnode->pfilter->contains(relatedTxHash)) continue;
-        }
-        pnode->PushInventory(inv);
-    }
-}
-
-void CConnman::RemoveAskFor(const uint256& hash)
-{
-    mapAlreadyAskedFor.erase(hash);
-
-    LOCK(cs_vNodes);
-    for (const auto& pnode : vNodes) {
-        pnode->RemoveAskFor(hash);
-    }
-}
 void CConnman::RecordBytesRecv(uint64_t bytes)
 {
     LOCK(cs_totalBytesRecv);

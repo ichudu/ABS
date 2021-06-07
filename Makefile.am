@@ -107,8 +107,7 @@ OSX_APP_BUILT=$(OSX_APP)/Contents/PkgInfo $(OSX_APP)/Contents/Resources/empty.lp
 osx_volname:
 	echo $(OSX_VOLNAME) >$@
 
-osx_volname:
-	echo $(OSX_VOLNAME) >$@
+
 
 if BUILD_DARWIN
 $(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING) $(OSX_BACKGROUND_IMAGE)
@@ -228,11 +227,10 @@ dist_noinst_SCRIPTS = autogen.sh
 EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.py qa/rpc-tests $(DIST_CONTRIB) $(DIST_DOCS) $(WINDOWS_PACKAGING) $(OSX_PACKAGING) $(BIN_CHECKS)
 
 CLEANFILES = $(OSX_DMG) $(BITCOIN_WIN_INSTALLER)
-# This file is problematic for out-of-tree builds if it exists.
-DISTCLEANFILES = qa/pull-tester/tests_config.pyc
+
 
 .INTERMEDIATE: $(COVERAGE_INFO)
-DISTCHECK_CONFIGURE_FLAGS = --enable-man
+
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-man
 

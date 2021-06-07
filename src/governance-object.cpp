@@ -296,7 +296,7 @@ std::string CGovernanceObject::GetSignatureMessage() const
     return strMessage;
 }
 
-bool CGovernanceObject::CheckSignature(const CBLSPublicKey& pubKey) const
+uint256 CGovernanceObject::GetHash() const
 {
     // Note: doesn't match serialization
 
@@ -574,8 +574,7 @@ bool CGovernanceObject::IsCollateralValid(std::string& strError, bool& fMissingC
         }
         if (output.scriptPubKey == findScript && output.nValue >= nMinFee) {
             foundOpReturn = true;
-        } else {
-            DBG(std::cout << "IsCollateralValid No match, continuing" << std::endl;);
+
         }
     }
 
@@ -748,5 +747,5 @@ void CGovernanceObject::CheckOrphanVotes(CConnman& connman)
         }
     }
 
-    return removed;
+
 }

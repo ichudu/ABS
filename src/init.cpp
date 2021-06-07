@@ -71,9 +71,7 @@
 
 #include "llmq/quorums_init.h"
 
-#include "evo/deterministicmns.h"
 
-#include "llmq/quorums_init.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <memory>
@@ -341,9 +339,7 @@ void PrepareShutdown()
     activeMasternodeInfo.blsKeyOperator.reset();
     activeMasternodeInfo.blsPubKeyOperator.reset();
 
-    // make sure to clean up BLS keys before global destructors are called (they have allocated from the secure memory pool)
-    activeMasternodeInfo.blsKeyOperator.reset();
-    activeMasternodeInfo.blsPubKeyOperator.reset();
+
 #ifndef WIN32
     try {
         boost::filesystem::remove(GetPidFile());
@@ -852,9 +848,7 @@ bool InitSanityCheck(void)
 
     if (!glibc_sanity_test() || !glibcxx_sanity_test())
         return false;
-    if (!BLSInit()) {
-        return false;
-    }
+
 
     if (!BLSInit()) {
         return false;
@@ -1975,7 +1969,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (activeMasternodeInfo.blsPubKeyOperator == nullptr) {
         activeMasternodeInfo.blsPubKeyOperator = std::make_unique<CBLSPublicKey>();
     }
-    // ********************************************************* Step 11b: setup PrivateSend
+
 
     // ********************************************************* Step 10b: setup PrivateSend
 
@@ -2009,9 +2003,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 10c: Load cache data
 
-    fEnableInstantSend = GetBoolArg("-enableinstantsend", 1);
 
-    // ********************************************************* Step 11d: Load cache data
     // LOAD SERIALIZED DAT FILES INTO DATA CACHES FOR INTERNAL USE
 
     bool fIgnoreCacheFiles = fLiteMode || fReindex || fReindexChainState;
@@ -2026,11 +2018,11 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError(_("Failed to load masternode cache from") + "\n" + (pathDB / strDBName).string());
         }
 
-        strDBName = "netfulfilled.dat";
-        uiInterface.InitMessage(_("Loading fulfilled requests cache..."));
-        CFlatDB<CNetFulfilledRequestManager> flatdb4(strDBName, "magicFulfilledCache");
-        if(!flatdb4.Load(netfulfilledman)) {
-            return InitError(_("Failed to load fulfilled requests cache from") + "\n" + (pathDB / strDBName).string());
+        strDBName = "governance.dat";
+        uiInterface.InitMessage(_("Loading governance cache..."));
+        CFlatDB<CGovernanceManager> flatdb3(strDBName, "magicGovernanceCache");
+        if(!flatdb3.Load(governance)) {
+            return InitError(_("Failed to load governance cache from") + "\n" + (pathDB / strDBName).string());
         }
         governance.InitOnLoad();
 
@@ -2132,8 +2124,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     connOptions.uiInterface = &uiInterface;
     connOptions.nSendBufferMaxSize = 1000*GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
     connOptions.nReceiveFloodSize = 1000*GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
-    connOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
-    connOptions.nMaxOutboundLimit = nMaxOutboundLimit;
+
 
     connOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     connOptions.nMaxOutboundLimit = nMaxOutboundLimit;

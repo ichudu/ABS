@@ -6,11 +6,11 @@
 bin_PROGRAMS += qt/absolute-qt
 EXTRA_LIBRARIES += qt/libabsoluteqt.a
 
-bin_PROGRAMS += qt/absolute-qt
-EXTRA_LIBRARIES += qt/libabsoluteqt.a
+
 
 # absolute qt core #
 QT_TS = \
+  qt/locale/absolute_ar.ts \
   qt/locale/absolute_bg.ts \
   qt/locale/absolute_de.ts \
   qt/locale/absolute_en.ts \
@@ -19,11 +19,15 @@ QT_TS = \
   qt/locale/absolute_fr.ts \
   qt/locale/absolute_it.ts \
   qt/locale/absolute_ja.ts \
+  qt/locale/absolute_ko.ts \
+  qt/locale/absolute_nl.ts \
   qt/locale/absolute_pl.ts \
   qt/locale/absolute_pt.ts \
   qt/locale/absolute_ru.ts \
   qt/locale/absolute_sk.ts \
   qt/locale/absolute_sv.ts \
+  qt/locale/absolute_th.ts \
+  qt/locale/absolute_tr.ts \
   qt/locale/absolute_vi.ts \
   qt/locale/absolute_zh_CN.ts \
   qt/locale/absolute_zh_TW.ts

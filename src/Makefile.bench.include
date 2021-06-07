@@ -31,7 +31,7 @@ bench_bench_absolute_SOURCES = \
   bench/prevector_destructor.cpp \
   bench/string_cast.cpp
 
-nodist_bench_bench_absolute_SOURCES = $(GENERATED_TEST_FILES)
+
 
 nodist_bench_bench_absolute_SOURCES = $(GENERATED_TEST_FILES)
 

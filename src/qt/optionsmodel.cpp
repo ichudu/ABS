@@ -97,8 +97,7 @@ void OptionsModel::Init(bool resetSettings)
     if (!settings.contains("fShowAdvancedPSUI"))
         settings.setValue("fShowAdvancedPSUI", false);
     fShowAdvancedPSUI = settings.value("fShowAdvancedPSUI", false).toBool();
-    if (!settings.contains("fShowPrivateSendPopups"))
-        settings.setValue("fShowPrivateSendPopups", true);
+
 
     if (!settings.contains("fShowPrivateSendPopups"))
         settings.setValue("fShowPrivateSendPopups", true);

@@ -261,8 +261,7 @@ private:
     hash_s_t setRequestedVotes;
 
     bool fRateChecksEnabled;
-    // used to check for changed voting keys
-    CDeterministicMNList lastMNListForVotingKeys;
+
 
     // used to check for changed voting keys
     CDeterministicMNList lastMNListForVotingKeys;
@@ -454,7 +453,7 @@ private:
     void RequestOrphanObjects(CConnman& connman);
 
     void CleanOrphanObjects();
-    void RemoveInvalidProposalVotes();
+
 
     void RemoveInvalidVotes();
 

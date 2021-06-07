@@ -66,7 +66,7 @@ public:
 
     static bool IsValidNetAddr(CService addrIn);
 
-    void DoMaintenance(CConnman& connman);
+
 
 private:
     bool GetLocalAddress(CService& addrRet);

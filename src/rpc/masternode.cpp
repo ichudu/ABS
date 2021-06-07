@@ -627,25 +627,7 @@ static const CRPCCommand commands[] =
     { "absolute",               "masternode",             &masternode,             true,  {} },
     { "absolute",               "masternodelist",         &masternodelist,         true,  {} },
     { "absolute",               "getpoolinfo",            &getpoolinfo,            true,  {} },
-#ifdef ENABLE_WALLET
-    { "absolute",               "privatesend",            &privatesend,            false, {} },
-#endif // ENABLE_WALLET
-};
 
-void RegisterMasternodeRPCCommands(CRPCTable &t)
-{
-    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
-        t.appendCommand(commands[vcidx].name, &commands[vcidx]);
-}
-
-static const CRPCCommand commands[] =
-{ //  category              name                      actor (function)         okSafe argNames
-  //  --------------------- ------------------------  -----------------------  ------ ----------
-    { "absolute",               "masternode",             &masternode,             true,  {} },
-    { "absolute",               "masternodelist",         &masternodelist,         true,  {} },
-    { "absolute",               "masternodebroadcast",    &masternodebroadcast,    true,  {} },
-    { "absolute",               "getpoolinfo",            &getpoolinfo,            true,  {} },
-    { "absolute",               "sentinelping",           &sentinelping,           true,  {} },
 #ifdef ENABLE_WALLET
     { "absolute",               "privatesend",            &privatesend,            false, {} },
 #endif // ENABLE_WALLET

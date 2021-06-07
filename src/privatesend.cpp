@@ -162,7 +162,7 @@ void CPrivateSendBaseManager::CheckQueue()
             ++it;
     }
 
-    return false;
+
 }
 
 bool CPrivateSendBaseManager::GetQueueItemAndTry(CPrivateSendQueue& dsqRet)

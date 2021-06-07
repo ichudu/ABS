@@ -487,8 +487,7 @@ UniValue VoteWithMasternodes(const std::map<uint256, CKey>& keys,
             resultsObj.push_back(Pair(proTxHash.ToString(), statusObj));
             continue;
         }
-        govObjType = pGovObj->GetObjectType();
-    }
+
 
         CGovernanceException exception;
         if (governance.ProcessVoteAndRelay(vote, exception, *g_connman)) {

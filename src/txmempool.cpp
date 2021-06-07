@@ -818,23 +818,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx)
                 removeRecursive(txConflict, MemPoolRemovalReason::CONFLICT);
             }
         }
-    } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REGISTRAR) {
-        CProUpRegTx proTx;
-        if (!GetTxPayload(tx, proTx)) {
-            LogPrintf("%s: ERROR: Invalid transaction payload, tx: %s", __func__, tx.ToString());
-            return;
-        }
 
-        removeProTxPubKeyConflicts(tx, proTx.pubKeyOperator);
-        removeProTxKeyChangedConflicts(tx, proTx.proTxHash, ::SerializeHash(proTx.pubKeyOperator));
-    } else if (tx.nType == TRANSACTION_PROVIDER_UPDATE_REVOKE) {
-        CProUpRevTx proTx;
-        if (!GetTxPayload(tx, proTx)) {
-            LogPrintf("%s: ERROR: Invalid transaction payload, tx: %s", __func__, tx.ToString());
-            return;
-        }
-
-        removeProTxKeyChangedConflicts(tx, proTx.proTxHash, ::SerializeHash(CBLSPublicKey()));
     }
 }
 

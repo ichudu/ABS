@@ -413,6 +413,7 @@ public:
     int type;
     uint256 hash;
 
+};
 
 
 #endif // BITCOIN_PROTOCOL_H

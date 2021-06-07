@@ -23,9 +23,7 @@
 #include "llmq/quorums_instantsend.h"
 #include "llmq/quorums_dkgsessionmgr.h"
 
-#include "evo/deterministicmns.h"
 
-#include "llmq/quorums_dummydkg.h"
 void CDSNotificationInterface::InitializeCurrentBlockTip()
 {
     LOCK(cs_main);

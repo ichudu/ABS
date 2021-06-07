@@ -3284,13 +3284,7 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const 
                          REJECT_INVALID, "devnet-genesis");
     }
 
-    // Check PoVNet
-    if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
-            block.hashPrevBlock == consensusParams.hashGenesisBlock &&
-            block.GetHash() != consensusParams.hashDevnetGenesisBlock) {
-        return state.DoS(100, error("CheckBlockHeader(): wrong devnet genesis"),
-                         REJECT_INVALID, "devnet-genesis");
-    }
+
     return true;
 }
 

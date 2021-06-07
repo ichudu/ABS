@@ -23,11 +23,11 @@ std::map<int, int64_t> mapSporkDefaults = {
     {SPORK_3_INSTANTSEND_BLOCK_FILTERING,    0},             // ON
     {SPORK_5_INSTANTSEND_MAX_VALUE,          1000},          // 1000 ABS
     {SPORK_6_NEW_SIGS,                       4070908800ULL}, // OFF
-    {SPORK_8_MASTERNODE_PAYMENT_ENFORCEMENT, 1518732000},    // Payments start on 2/15/2018 22:00 CET
+
     {SPORK_9_SUPERBLOCKS_ENABLED,            1527811200},    // Friday 1 June 2018 00:00:00
-    {SPORK_10_MASTERNODE_PAY_UPDATED_NODES,  4070908800ULL}, // OFF
+
     {SPORK_12_RECONSIDER_BLOCKS,             0},             // 0 BLOCKS
-    {SPORK_14_REQUIRE_SENTINEL_FLAG,         1532476800},    // Wednesday, July 25, 2018 12:00:00 AM
+
     {SPORK_15_DETERMINISTIC_MNS_ENABLED,     970000},        // Block 970000
     {SPORK_16_INSTANTSEND_AUTOLOCKS,         1622376000},    // Sunday, 30 May 2021 12:00:00 GMT
     {SPORK_17_QUORUM_DKG_ENABLED,            4070908800ULL}, // OFF
@@ -115,63 +115,7 @@ void CSporkManager::CheckAndRemove()
 
 void CSporkManager::ProcessSpork(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
 {
-    LOCK(cs);
-    mapSporksActive.clear();
-    mapSporksByHash.clear();
-    // sporkPubKeyID and sporkPrivKey should be set in init.cpp,
-    // we should not alter them here.
-}
 
-void CSporkManager::CheckAndRemove()
-{
-    LOCK(cs);
-    bool fSporkAddressIsSet = !setSporkPubKeyIDs.empty();
-    assert(fSporkAddressIsSet);
-
-    auto itActive = mapSporksActive.begin();
-    while (itActive != mapSporksActive.end()) {
-        auto itSignerPair = itActive->second.begin();
-        while (itSignerPair != itActive->second.end()) {
-            if (setSporkPubKeyIDs.find(itSignerPair->first) == setSporkPubKeyIDs.end()) {
-                mapSporksByHash.erase(itSignerPair->second.GetHash());
-                continue;
-            }
-            if (!itSignerPair->second.CheckSignature(itSignerPair->first, false)) {
-                if (!itSignerPair->second.CheckSignature(itSignerPair->first, true)) {
-                    mapSporksByHash.erase(itSignerPair->second.GetHash());
-                    itActive->second.erase(itSignerPair++);
-                    continue;
-                }
-            }
-            ++itSignerPair;
-        }
-        if (itActive->second.empty()) {
-            mapSporksActive.erase(itActive++);
-            continue;
-        }
-        ++itActive;
-    }
-
-    auto itByHash = mapSporksByHash.begin();
-    while (itByHash != mapSporksByHash.end()) {
-        bool found = false;
-        for (const auto& signer: setSporkPubKeyIDs) {
-            if (itByHash->second.CheckSignature(signer, false) ||
-                itByHash->second.CheckSignature(signer, true)) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            mapSporksByHash.erase(itByHash++);
-            continue;
-        }
-        ++itByHash;
-    }
-}
-
-void CSporkManager::ProcessSpork(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman)
-{
     if(fLiteMode) return; // disable all Absolute specific functionality
 
     if (strCommand == NetMsgType::SPORK) {
@@ -467,34 +411,7 @@ bool CSporkMessage::Sign(const CKey& key, bool fSporkSixActive)
     if (!key.IsValid()) {
         LogPrintf("CSporkMessage::Sign -- signing key is not valid\n");
         return false;
-    }
-    CKeyID pubKeyId = key.GetPubKey().GetID();
-    std::string strError = "";
 
-    if (fSporkSixActive) {
-        uint256 hash = GetSignatureHash();
-
-        if(!CHashSigner::SignHash(hash, key, vchSig)) {
-            LogPrintf("CSporkMessage::Sign -- SignHash() failed\n");
-            return false;
-        }
-
-        if (!CHashSigner::VerifyHash(hash, pubKeyId, vchSig, strError)) {
-            LogPrintf("CSporkMessage::Sign -- VerifyHash() failed, error: %s\n", strError);
-            return false;
-        }
-    } else {
-        std::string strMessage = std::to_string(nSporkID) + std::to_string(nValue) + std::to_string(nTimeSigned);
-
-        if(!CMessageSigner::SignMessage(strMessage, vchSig, key)) {
-            LogPrintf("CSporkMessage::Sign -- SignMessage() failed\n");
-            return false;
-        }
-
-        if(!CMessageSigner::VerifyMessage(pubKeyId, vchSig, strMessage, strError)) {
-            LogPrintf("CSporkMessage::Sign -- VerifyMessage() failed, error: %s\n", strError);
-            return false;
-        }
     }
 
     CKeyID pubKeyId = key.GetPubKey().GetID();

@@ -35,9 +35,7 @@
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
 
-extern CWallet* pwalletMain;
 
 extern CWallet* pwalletMain;
 

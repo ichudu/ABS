@@ -41,8 +41,7 @@ bool fEnableInstantSend = true;
 std::atomic<bool> CInstantSend::isAutoLockBip9Active{false};
 const double CInstantSend::AUTO_IX_MEMPOOL_THRESHOLD = 0.1;
 
-std::atomic<bool> CInstantSend::isAutoLockBip9Active{false};
-const double CInstantSend::AUTO_IX_MEMPOOL_THRESHOLD = 0.1;
+
 
 CInstantSend instantsend;
 const std::string CInstantSend::SERIALIZATION_VERSION_STRING = "CInstantSend-Version-1";
@@ -254,10 +253,7 @@ void CInstantSend::Vote(CTxLockCandidate& txLockCandidate, CConnman& connman)
             LogPrint("instantsend", "CInstantSend::Vote -- Can't calculate rank for masternode %s\n", activeMasternodeInfo.outpoint.ToStringShort());
             continue;
         }
-        if (!deterministicMNManager->IsDeterministicMNsSporkActive()) {
-            // not used until spork15 activation
-            quorumModifierHash = uint256();
-        }
+
 
         int nSignaturesTotal = Params().GetConsensus().nInstantSendSigsTotal;
         if (nRank > nSignaturesTotal) {
@@ -1065,18 +1061,7 @@ bool CTxLockVote::IsValid(CNode* pnode, CConnman& connman) const
         return false;
     }
 
-    // Verify that masternodeProTxHash belongs to the same MN referred by the collateral
-    // Only v13 nodes will send us locks with this field set, and only after spork15 activation
-    if (!masternodeProTxHash.IsNull()) {
-        masternode_info_t mnInfo;
-        if (!mnodeman.GetMasternodeInfo(masternodeProTxHash, mnInfo) || mnInfo.outpoint != outpointMasternode) {
-            LogPrint("instantsend", "CTxLockVote::IsValid -- invalid masternodeProTxHash %s\n", masternodeProTxHash.ToString());
-            return false;
-        }
-    } else if (deterministicMNManager->IsDeterministicMNsSporkActive()) {
-        LogPrint("instantsend", "CTxLockVote::IsValid -- missing masternodeProTxHash while DIP3 is active\n");
-        return false;
-    }
+
     Coin coin;
     if (!GetUTXOCoin(outpoint, coin)) {
         LogPrint("instantsend", "CTxLockVote::IsValid -- Failed to find UTXO %s\n", outpoint.ToStringShort());

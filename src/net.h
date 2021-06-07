@@ -368,7 +368,7 @@ public:
 
     bool AddNode(const std::string& node);
     bool RemoveAddedNode(const std::string& node);
-    bool AddPendingMasternode(const CService& addr);
+
     std::vector<AddedNodeInfo> GetAddedNodeInfo();
 
     bool AddPendingMasternode(const CService& addr);

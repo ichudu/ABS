@@ -30,3 +30,4 @@ public:
 };
 
 #endif//ABSOLUTE_BATCHEDLOGGER_H
+

@@ -72,14 +72,7 @@ struct IteratorComparator
     }
 };
 
-struct IteratorComparator
-{
-    template<typename I>
-    bool operator()(const I& a, const I& b)
-    {
-        return &(*a) < &(*b);
-    }
-};
+
 struct COrphanTx {
     // When modifying, adapt the copy of this definition in tests/DoS_tests.
     CTransactionRef tx;
@@ -106,10 +99,7 @@ static const int STALE_RELAY_AGE_LIMIT = 30 * 24 * 60 * 60;
 /// limiting block relay. Set to one week, denominated in seconds.
 static const int HISTORICAL_BLOCK_AGE = 7 * 24 * 60 * 60;
 
-static size_t vExtraTxnForCompactIt = 0;
-static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
 
-static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SHA256("main address relay")[0:8]
 // Internal stuff
 namespace {
     /** Number of nodes with fSyncStarted. */
@@ -1442,18 +1432,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         return true;
     }
 
-    // BEGIN TEMPORARY CODE
-    bool fDIP0003Active;
-    {
-        LOCK(cs_main);
-        fDIP0003Active = VersionBitsState(chainActive.Tip(), chainparams.GetConsensus(), Consensus::DEPLOYMENT_DIP0003, versionbitscache) == THRESHOLD_ACTIVE;
-    }
-    // TODO delete this in next release after v13
-    int nMinPeerProtoVersion = MIN_PEER_PROTO_VERSION;
-    if (fDIP0003Active) {
-        nMinPeerProtoVersion = MIN_PEER_PROTO_VERSION_DIP3;
-    }
-    // END TEMPORARY CODE
+
     if (!(pfrom->GetLocalServices() & NODE_BLOOM) &&
               (strCommand == NetMsgType::FILTERLOAD ||
                strCommand == NetMsgType::FILTERADD))
@@ -1541,7 +1520,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             return false;
         }
 
-        if (nVersion < nMinPeerProtoVersion)
+        if (nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
@@ -2839,13 +2818,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             LogPrint("net", "Ignoring \"getaddr\" from outbound connection. peer=%d\n", pfrom->id);
             return true;
         }
-        // Only send one GetAddr response per connection to reduce resource waste
-        //  and discourage addr stamping of INV announcements.
-        if (pfrom->fSentAddr) {
-            LogPrint("net", "Ignoring repeated \"getaddr\". peer=%d\n", pfrom->id);
-            return true;
-        }
-        pfrom->fSentAddr = true;
+
 
         // Only send one GetAddr response per connection to reduce resource waste
         //  and discourage addr stamping of INV announcements.
