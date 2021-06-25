@@ -625,10 +625,10 @@ class AbsoluteTestFramework(BitcoinTestFramework):
             all_ok = True
             for mn in self.mninfo:
                 s = mn.node.quorum("dkgstatus")["session"]
-                if "llmq_5_60" not in s:
+                if "llmq_10_60" not in s:
                     all_ok = False
                     break
-                s = s["llmq_5_60"]
+                s = s["llmq_10_60"]
                 if "phase" not in s:
                     all_ok = False
                     break
@@ -654,7 +654,7 @@ class AbsoluteTestFramework(BitcoinTestFramework):
                     all_ok = False
                     break
                 s = s["minableCommitments"]
-                if "llmq_5_60" not in s:
+                if "llmq_10_60" not in s:
                     all_ok = False
                     break
             if all_ok:
@@ -726,7 +726,7 @@ class AbsoluteTestFramework(BitcoinTestFramework):
             set_node_times(self.nodes, get_mocktime())
             self.nodes[0].generate(1)
             sync_blocks(self.nodes)
-        new_quorum = self.nodes[0].quorum("list", 1)["llmq_5_60"][0]
+        new_quorum = self.nodes[0].quorum("list", 1)["llmq_10_60"][0]
 
         # Mine 8 (SIGN_HEIGHT_OFFSET) more blocks to make sure that the new quorum gets eligable for signing sessions
         self.nodes[0].generate(8)
