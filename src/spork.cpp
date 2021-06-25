@@ -23,16 +23,13 @@ std::map<int, int64_t> mapSporkDefaults = {
     {SPORK_3_INSTANTSEND_BLOCK_FILTERING,    0},             // ON
     {SPORK_5_INSTANTSEND_MAX_VALUE,          1000},          // 1000 ABS
     {SPORK_6_NEW_SIGS,                       4070908800ULL}, // OFF
-
     {SPORK_9_SUPERBLOCKS_ENABLED,            1527811200},    // Friday 1 June 2018 00:00:00
-
     {SPORK_12_RECONSIDER_BLOCKS,             0},             // 0 BLOCKS
-
     {SPORK_15_DETERMINISTIC_MNS_ENABLED,     970000},        // Block 970000
-    {SPORK_16_INSTANTSEND_AUTOLOCKS,         1622376000},    // Sunday, 30 May 2021 12:00:00 GMT
-    {SPORK_17_QUORUM_DKG_ENABLED,            4070908800ULL}, // OFF
-    {SPORK_19_CHAINLOCKS_ENABLED,            4070908800ULL}, // OFF
-    {SPORK_20_INSTANTSEND_LLMQ_BASED,        4070908800ULL}, // OFF
+    {SPORK_16_INSTANTSEND_AUTOLOCKS,         1623153600},    // Tuesday, 8 June 2021 12:00:00 GMT
+    {SPORK_17_QUORUM_DKG_ENABLED,            1627232400},    // Sunday, 25 July 2021 17:00:00 GMT
+    {SPORK_19_CHAINLOCKS_ENABLED,            1627243200},    // Sunday, 25 July 2021 20:00:00 GMT
+    {SPORK_20_INSTANTSEND_LLMQ_BASED,        1627250400},    // Sunday, 25 July 2021 22:00:00 GMT
 };
 
 bool CSporkManager::SporkValueIsActive(int nSporkID, int64_t &nActiveValueRet) const
