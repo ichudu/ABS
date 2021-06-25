@@ -1,4 +1,4 @@
-2//
+//
 // immer: immutable data structures for C++
 // Copyright (C) 2016, 2017, 2018 Juan Pedro Bolivar Puente
 //

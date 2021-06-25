@@ -310,7 +310,7 @@ private:
     bool fAttacked = false;
 
 public:
-    COutPointLock() {}
+
 
     COutPointLock() {}
 
