@@ -15,7 +15,6 @@
 #include "crypto/sha256.h"
 #include "crypto/sha512.h"
 
-
 /* Number of bytes to hash per iteration */
 static const uint64_t BUFFER_SIZE = 1000*1000;
 
@@ -149,4 +148,3 @@ BENCHMARK(HASH_DSHA256_0128b_single);
 BENCHMARK(HASH_DSHA256_0512b_single);
 BENCHMARK(HASH_DSHA256_1024b_single);
 BENCHMARK(HASH_DSHA256_2048b_single);
-

@@ -197,7 +197,6 @@ public:
 BOOST_AUTO_TEST_CASE(PrevectorTestInt)
 {
     for (int j = 0; j < 64; j++) {
-
         prevector_tester<8, int> test;
         for (int i = 0; i < 2048; i++) {
             int r = insecure_rand();

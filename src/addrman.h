@@ -1,4 +1,5 @@
 // Copyright (c) 2012 Pieter Wuille
+// Copyright (c) 2012-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -30,6 +31,7 @@ public:
 
     //! last counted attempt (memory only)
     int64_t nLastCountAttempt;
+
 private:
     //! where knowledge about this address first came from
     CNetAddr source;
@@ -205,12 +207,14 @@ private:
     //! last time Good was called (memory only)
     int64_t nLastGood;
 
-    // discriminate entries based on port. Should be false on mainnet/testnet and can be true devnet/regtest
+    // discriminate entries based on port. Should be false on mainnet/testnet and can be true on devnet/regtest
     bool discriminatePorts;
 
 protected:
     //! secret key to randomize bucket select with
     uint256 nKey;
+
+
     //! Source of random numbers for randomization in inner loops
     FastRandomContext insecure_rand;
 
@@ -261,6 +265,9 @@ protected:
 
     //! Update an entry's service bits.
     void SetServices_(const CService &addr, ServiceFlags nServices);
+
+    //! Get address info for address
+    CAddrInfo GetAddressInfo_(const CService& addr);
 
 public:
     /**
@@ -588,6 +595,18 @@ public:
         Check();
         SetServices_(addr, nServices);
         Check();
+    }
+
+    CAddrInfo GetAddressInfo(const CService& addr)
+    {
+        CAddrInfo addrRet;
+        {
+            LOCK(cs);
+            Check();
+            addrRet = GetAddressInfo_(addr);
+            Check();
+        }
+        return addrRet;
     }
 
 };

@@ -2,13 +2,12 @@
 # Copyright (c) 2016 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
+"""Test RPC commands for signing and verifying messages."""
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import *
 
-
 class SignMessagesTest(BitcoinTestFramework):
-    """Tests RPC commands for signing and verifying messages."""
 
     def __init__(self):
         super().__init__()
@@ -23,8 +22,8 @@ class SignMessagesTest(BitcoinTestFramework):
         message = 'This is just a test message'
 
         # Test the signing with a privkey
-        privKey = "HNTxQdLfmHgm4z3y5hmUsTVXD4PnKkZLpoNgMyYfE3VWDarAToe6"
-        address = "AU3Pns2QJAGiaMo8N5sgqhjpUXkMkEs3Qk"
+        privKey = "cU4zhap7nPJAWeMFu4j6jLrfPmqakDAzy8zn8Fhb3oEevdm4e5Lc"
+        address = "yeMpGzMj3rhtnz48XsfpB8itPHhHtgxLc3"
         signature = self.nodes[0].signmessagewithprivkey(privKey, message)
 
         # Verify the message

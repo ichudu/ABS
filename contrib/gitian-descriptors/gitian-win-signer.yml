@@ -5,16 +5,15 @@ suites:
 architectures:
 - "amd64"
 packages:
-- "libssl-dev"
+# Once osslsigncode supports openssl 1.1, we can change this back to libssl-dev
+- "libssl1.0-dev"
 - "autoconf"
-- "libtool"
-- "pkg-config"
 remotes:
 - "url": "https://github.com/absolute-community/absolute.detached.signatures"
   "dir": "signature"
 files:
 - "osslsigncode-2.0.tar.gz"
-- "dashcore-win-unsigned.tar.gz"
+- "absolutecore-win-unsigned.tar.gz"
 script: |
   BUILD_DIR=`pwd`
   SIGDIR=${BUILD_DIR}/signature/win

@@ -82,6 +82,7 @@ struct stl_shared_counter
     size_t use_count;
     size_t weak_count;
 };
+
 template<typename X>
 static inline size_t DynamicUsage(const std::vector<X>& v)
 {

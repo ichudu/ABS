@@ -116,6 +116,7 @@ Please refrain from creating several pull requests for the same change.
 Use the pull request that is already open (or was created earlier) to amend
 changes. This preserves the discussion and review that happened earlier for
 the respective change set.
+
 The length of time required for peer review is unpredictable and will vary from
 pull request to pull request.
 
@@ -232,7 +233,7 @@ The project leader is the release manager for each Absolute Core release.
 Copyright
 ---------
 
-By contributing to this repository, you agree to license your work under the 
-MIT license unless specified otherwise in `contrib/debian/copyright` or at 
-the top of the file itself. Any work contributed where you are not the original 
+By contributing to this repository, you agree to license your work under the
+MIT license unless specified otherwise in `contrib/debian/copyright` or at
+the top of the file itself. Any work contributed where you are not the original
 author must contain its license header with the original author(s) and source.

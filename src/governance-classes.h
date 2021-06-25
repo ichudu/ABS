@@ -1,11 +1,9 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef GOVERNANCE_CLASSES_H
 #define GOVERNANCE_CLASSES_H
-
-//#define ENABLE_ABSOLUTE_DEBUG
 
 #include "base58.h"
 #include "governance.h"
@@ -16,8 +14,6 @@
 class CSuperblock;
 class CGovernanceTriggerManager;
 class CSuperblockManager;
-
-
 
 typedef std::shared_ptr<CSuperblock> CSuperblock_sptr;
 

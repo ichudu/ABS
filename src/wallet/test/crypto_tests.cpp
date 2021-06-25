@@ -179,6 +179,7 @@ void TestAES256CBC(const std::string &hexkey, const std::string &hexiv, const st
     BOOST_CHECK_MESSAGE(OldDecryptAES256(sKey, sCiphertextIn, sIv, sPlaintextOutOld), "OldDecryptAES256: " + HexStr(sPlaintextOutOld) + std::string(" != ") + hexin);
     BOOST_CHECK(sPlaintextOut == sPlaintextOutOld);
 }
+
 class TestCrypter
 {
 public:

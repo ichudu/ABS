@@ -4,7 +4,6 @@
 
 #include "wallet/wallet.h"
 
-
 #include "wallet/test/wallet_test_fixture.h"
 
 #include <stdint.h>
@@ -32,7 +31,6 @@ GetResults(std::map<CAmount, CAccountingEntry>& results)
 
 BOOST_AUTO_TEST_CASE(acc_orderupgrade)
 {
-
     std::vector<CWalletTx*> vpwtx;
     CWalletTx wtx;
     CAccountingEntry ae;

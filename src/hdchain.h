@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT software license, see the accompanying
 #ifndef ABSOLUTE_HDCHAIN_H
 #define ABSOLUTE_HDCHAIN_H
@@ -63,7 +63,6 @@ public:
     {
         LOCK(cs_accounts);
         READWRITE(this->nVersion);
-
         READWRITE(id);
         READWRITE(fCrypted);
         READWRITE(vchSeed);
@@ -140,7 +139,6 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action)
     {
         READWRITE(this->nVersion);
-
         READWRITE(extPubKey);
         READWRITE(hdchainID);
         READWRITE(nAccountIndex);

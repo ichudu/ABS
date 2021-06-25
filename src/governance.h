@@ -1,12 +1,10 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef GOVERNANCE_H
 #define GOVERNANCE_H
-
-//#define ENABLE_ABSOLUTE_DEBUG
 
 #include "bloom.h"
 #include "cachemap.h"
@@ -21,6 +19,7 @@
 #include "util.h"
 
 #include "evo/deterministicmns.h"
+
 #include <univalue.h>
 
 class CGovernanceManager;
@@ -262,6 +261,8 @@ private:
     hash_s_t setRequestedVotes;
 
     bool fRateChecksEnabled;
+
+
     // used to check for changed voting keys
     CDeterministicMNList lastMNListForVotingKeys;
 
@@ -300,8 +301,8 @@ public:
      */
     bool ConfirmInventoryRequest(const CInv& inv);
 
-    void SyncSingleObjAndItsVotes(CNode* pnode, const uint256& nProp, const CBloomFilter& filter, CConnman& connman);
-    void SyncAll(CNode* pnode, CConnman& connman) const;
+    void SyncSingleObjVotes(CNode* pnode, const uint256& nProp, const CBloomFilter& filter, CConnman& connman);
+    void SyncObjects(CNode* pnode, CConnman& connman) const;
 
     void ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, CConnman& connman);
 
@@ -310,7 +311,6 @@ public:
     CGovernanceObject* FindGovernanceObject(const uint256& nHash);
 
     // These commands are only used in RPC
-    std::vector<CGovernanceVote> GetMatchingVotes(const uint256& nParentHash) const;
     std::vector<CGovernanceVote> GetCurrentVotes(const uint256& nParentHash, const COutPoint& mnCollateralOutpointFilter) const;
     std::vector<const CGovernanceObject*> GetAllNewerThan(int64_t nMoreThanTime) const;
 
@@ -344,7 +344,11 @@ public:
         LOCK(cs);
         std::string strVersion;
         if (ser_action.ForRead()) {
+            Clear();
             READWRITE(strVersion);
+            if (strVersion != SERIALIZATION_VERSION_STRING) {
+                return;
+            }
         } else {
             strVersion = SERIALIZATION_VERSION_STRING;
             READWRITE(strVersion);
@@ -356,10 +360,6 @@ public:
         READWRITE(mapObjects);
         READWRITE(mapLastMasternodeObject);
         READWRITE(lastMNListForVotingKeys);
-        if (ser_action.ForRead() && (strVersion != SERIALIZATION_VERSION_STRING)) {
-            Clear();
-            return;
-        }
     }
 
     void UpdatedBlockTip(const CBlockIndex* pindex, CConnman& connman);
@@ -453,11 +453,10 @@ private:
     void RequestOrphanObjects(CConnman& connman);
 
     void CleanOrphanObjects();
-    void RemoveInvalidProposalVotes();
 
-    // TODO can be removed after full DIP3 deployment
-    unsigned int GetMinVoteTime();
-    void ClearPreDIP3Votes();
+
+    void RemoveInvalidVotes();
+
 };
 
 #endif

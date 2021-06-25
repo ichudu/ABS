@@ -1,4 +1,5 @@
-# Absolute 0.13.0.1
+Absolute Core 0.14.0.1
+===============================
 
 Products designed by you. Create and configure your own items with the option to log your creation on the Absolute blockchain.
 
@@ -11,6 +12,10 @@ The One Protocol is Absolutes goal aiming for there only to be one ABS left in c
 On a monthly basis we take 10% of our profit margin to buy and then destroy those collected ABS. This destroyed ABS is sent to specific addresses which are then closed off and hardcoded into the system to make sure that they are never used again. We then use these addresses to offset the max supply calculations.
 
 Find out more about the One Protocol: https://absify.me/one-protocol/
+
+Absolute runs a Governance system which can be implemented via: http://proposal.absify.me/
+
+10% Of blockchain rewards are dedicated to our governance system, these super blocks are issued once a week.
 
 ----------------
 
@@ -25,9 +30,7 @@ Find out more about the One Protocol: https://absify.me/one-protocol/
 | Rewards split | Miners 20% and MasterNodes 80% |
 | Maximum supply | 52.5 M |
 | One Protocol (As of v.13) | 0.48 M |
-| Difficulty retargeting algo | Dark Gravity Wave v3 | 
-
-
+| Difficulty retargeting algo | Dark Gravity Wave v3 |
 
 
 For building please see INSTALL / proper files in the doc subfolder.
@@ -82,4 +85,3 @@ Translations are periodically pulled from Transifex and merged into the git repo
 
 **Important**: We do not accept translation changes as GitHub pull requests because the next
 pull from Transifex would automatically overwrite them again.
-

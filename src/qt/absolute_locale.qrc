@@ -1,5 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
     <qresource prefix="/translations">
+        <file alias="ar">locale/absolute_ar.qm</file>
         <file alias="bg">locale/absolute_bg.qm</file>
         <file alias="de">locale/absolute_de.qm</file>
         <file alias="en">locale/absolute_en.qm</file>
@@ -8,11 +9,15 @@
         <file alias="fr">locale/absolute_fr.qm</file>
         <file alias="it">locale/absolute_it.qm</file>
         <file alias="ja">locale/absolute_ja.qm</file>
+        <file alias="ko">locale/absolute_ko.qm</file>
+        <file alias="nl">locale/absolute_nl.qm</file>
         <file alias="pl">locale/absolute_pl.qm</file>
         <file alias="pt">locale/absolute_pt.qm</file>
         <file alias="ru">locale/absolute_ru.qm</file>
         <file alias="sk">locale/absolute_sk.qm</file>
         <file alias="sv">locale/absolute_sv.qm</file>
+        <file alias="th">locale/absolute_th.qm</file>
+        <file alias="tr">locale/absolute_tr.qm</file>
         <file alias="vi">locale/absolute_vi.qm</file>
         <file alias="zh_CN">locale/absolute_zh_CN.qm</file>
         <file alias="zh_TW">locale/absolute_zh_TW.qm</file>

@@ -1,5 +1,5 @@
-// Copyright (c) 2014-2020 The Dash Core developers
-// Copyright (c) 2018-2020 The Absolute Core developers
+// Copyright (c) 2014-2021 The Dash Core developers
+// Copyright (c) 2018-2021 The Absolute Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,9 +15,10 @@
 const size_t MAX_DATA_SIZE = 512;
 const size_t MAX_NAME_SIZE = 40;
 
-CProposalValidator::CProposalValidator(const std::string& strHexData) :
+CProposalValidator::CProposalValidator(const std::string& strHexData, bool fAllowLegacyFormat) :
     objJSON(UniValue::VOBJ),
     fJSONValid(false),
+    fAllowLegacyFormat(fAllowLegacyFormat),
     strErrorMessages()
 {
     if (!strHexData.empty()) {
@@ -208,9 +209,13 @@ void CProposalValidator::ParseJSONData(const std::string& strJSONData)
         if (obj.isObject()) {
             objJSON = obj;
         } else {
-            std::vector<UniValue> arr1 = obj.getValues();
-            std::vector<UniValue> arr2 = arr1.at(0).getValues();
-            objJSON = arr2.at(1);
+            if (fAllowLegacyFormat) {
+                std::vector<UniValue> arr1 = obj.getValues();
+                std::vector<UniValue> arr2 = arr1.at(0).getValues();
+                objJSON = arr2.at(1);
+            } else {
+                throw std::runtime_error("Legacy proposal serialization format not allowed");
+            }
         }
 
         fJSONValid = true;

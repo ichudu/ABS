@@ -1,9 +1,9 @@
-Absolute Core version 0.12.2.5
+Absolute Core version 0.14.0.1
 ==========================
 
 Release is now available from:
 
-  <hhttps://github.com/absolute-community/absolute/releases>
+  <https://absify.me/wallets/>
 
 Please report bugs using the issue tracker at github:
 
@@ -16,25 +16,24 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over /Applications/Absolute-Qt (on Mac) or
-absoluted/absolute-qt (on Linux). If you upgrade after DIP0003 activation you will
-have to reindex (start with -reindex-chainstate or -reindex) to make sure
-your wallet has all the new data synced (only if you were using version < 0.13).
+dabsoluted/absolute-qt (on Linux). If you upgrade after DIP0003 activation and you were
+using version < 0.13 you will have to reindex (start with -reindex-chainstate
+or -reindex) to make sure your wallet has all the new data synced. Upgrading from
+version 0.13 should not require any additional actions.
 
-As spork15 has been activated on mainnet, there is no need for `masternode start`
-anymore. Upgrading a masternode now only involves replacing binaries and restarting
-the node.
+When upgrading from a version prior to 0.14.0.3, the
+first startup of Absolute Core will run a migration process which can take a few minutes
+to finish. After the migration, a downgrade to an older version is only possible with
+a reindex (or reindex-chainstate).
 
 Downgrade warning
 -----------------
 
-### Downgrade to a major version < 0.13.0.0
+### Downgrade to a version < 0.14.0.3
 
-Downgrading to a major version smaller than 0.13 is not supported anymore as DIP2/DIP3 has activated
-on mainnet and testnet.
-
-### Downgrade to a minor version < 0.13.0.1
-
-Downgrading to previous 0.13 releases is fully supported but is not recommended unless you have some serious issues with the latest minor version
+Downgrading to a version smaller than 0.14.0.3 is not supported anymore due to changes
+in the "evodb" database format. If you need to use an older version, you have to perform
+a reindex or re-sync the whole chain.
 
 Notable changes
 ===============
@@ -62,23 +61,3 @@ There are few bug fixes in this release:
 
  0.13.0.1 Change log
 ===================
-
-See detailed [set of changes](https://github.com/absolute-community/absolute/compare/v12.3.1...absolute:v13.0.1).
-
-If you are running an older version, shut it down. Wait until it has completely
-shut down (which might take a few minutes for older versions), then run the
-installer (on Windows) or just copy over /Applications/absolute-Qt (on Mac) or
-absoluted/absolute-qt (on Linux).
-
-
-
-
-
-
-byaccount`, `listaccounts`.
-
-
-
-
-
-

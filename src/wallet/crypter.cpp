@@ -14,7 +14,6 @@
 #include <vector>
 #include <boost/foreach.hpp>
 
-
 int CCrypter::BytesToKeySHA512AES(const std::vector<unsigned char>& chSalt, const SecureString& strKeyData, int count, unsigned char *key,unsigned char *iv) const
 {
     // This mimics the behavior of openssl's EVP_BytesToKey with an aes256cbc
@@ -41,6 +40,9 @@ int CCrypter::BytesToKeySHA512AES(const std::vector<unsigned char>& chSalt, cons
     memory_cleanse(buf, sizeof(buf));
     return WALLET_CRYPTO_KEY_SIZE;
 }
+
+
+
 bool CCrypter::SetKeyFromPassphrase(const SecureString& strKeyData, const std::vector<unsigned char>& chSalt, const unsigned int nRounds, const unsigned int nDerivationMethod)
 {
     if (nRounds < 1 || chSalt.size() != WALLET_CRYPTO_SALT_SIZE)
@@ -99,7 +101,6 @@ bool CCrypter::Decrypt(const std::vector<unsigned char>& vchCiphertext, CKeyingM
     // plaintext will always be equal to or lesser than length of ciphertext
     int nLen = vchCiphertext.size();
 
-
     vchPlaintext.resize(nLen);
 
     AES256CBCDecrypt dec(vchKey.data(), vchIV.data(), true);
@@ -125,8 +126,6 @@ static bool EncryptSecret(const CKeyingMaterial& vMasterKey, const CKeyingMateri
 // General secure AES 256 CBC encryption routine
 bool EncryptAES256(const SecureString& sKey, const SecureString& sPlaintext, const std::string& sIV, std::string& sCiphertext)
 {
-
-
     // Verify key sizes
     if(sKey.size() != 32 || sIV.size() != AES_BLOCKSIZE) {
         LogPrintf("crypter EncryptAES256 - Invalid key or block size: Key: %d sIV:%d\n", sKey.size(), sIV.size());
@@ -159,8 +158,6 @@ static bool DecryptSecret(const CKeyingMaterial& vMasterKey, const std::vector<u
 // General secure AES 256 CBC decryption routine
 bool DecryptAES256(const SecureString& sKey, const std::string& sCiphertext, const std::string& sIV, SecureString& sPlaintext)
 {
-
-
     // Verify key sizes
     if(sKey.size() != 32 || sIV.size() != AES_BLOCKSIZE) {
         LogPrintf("crypter DecryptAES256 - Invalid key or block size\n");

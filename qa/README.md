@@ -21,6 +21,12 @@ OS X
 ```
 pip3 install pyzmq
 ```
+
+OS X
+------
+```
+pip3 install pyzmq
+```
 Running tests
 =============
 
@@ -82,5 +88,5 @@ killall absoluted
 Writing tests
 =============
 You are encouraged to write tests for new or existing features.
-Further information about the test framework and individual rpc
+Further information about the test framework and individual RPC
 tests is found in [qa/rpc-tests](/qa/rpc-tests).

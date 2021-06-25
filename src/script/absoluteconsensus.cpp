@@ -33,19 +33,19 @@ public:
 
         if (m_data == NULL)
             throw std::ios_base::failure(std::string(__func__) + ": bad source buffer");
-
+/// Returns 1 if the input nIn of the serialized transaction pointed to by
         memcpy(pch, m_data, nSize);
         m_remaining -= nSize;
         m_data += nSize;
     }
-
+/// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
     template<typename T>
     TxInputStream& operator>>(T& obj)
     {
         ::Unserialize(*this, obj);
         return *this;
     }
-
+/// the additional constraints specified by flags.
     int GetVersion() const { return m_version; }
     int GetType() const { return m_type; }
 private:
@@ -54,7 +54,7 @@ private:
     const unsigned char* m_data;
     size_t m_remaining;
 };
-
+/// If not NULL, err will contain an error/success code for the operation
 inline int set_error(absoluteconsensus_error* ret, absoluteconsensus_error serror)
 {
     if (ret)

@@ -45,9 +45,11 @@ QT_TRANSLATE_NOOP("absolute-core", ""
 "Bind to given address and whitelist peers connecting to it. Use [host]:port "
 "notation for IPv6"),
 QT_TRANSLATE_NOOP("absolute-core", ""
-"Bind to given address to listen for JSON-RPC connections. Use [host]:port "
-"notation for IPv6. This option can be specified multiple times (default: "
-"bind to all interfaces)"),
+"Bind to given address to listen for JSON-RPC connections. This option is "
+"ignored unless -rpcallowip is also passed. Port is optional and overrides -"
+"rpcport. Use [host]:port notation for IPv6. This option can be specified "
+"multiple times (default: 127.0.0.1 and ::1 i.e., localhost, or if -"
+"rpcallowip has been specified, 0.0.0.0 and :: i.e., all addresses)"),
 QT_TRANSLATE_NOOP("absolute-core", ""
 "Cannot obtain a lock on data directory %s. %s is probably already running."),
 QT_TRANSLATE_NOOP("absolute-core", ""
@@ -310,13 +312,7 @@ QT_TRANSLATE_NOOP("absolute-core", ""
 "Wallet will not create transactions that violate mempool chain limits "
 "(default: %u)"),
 QT_TRANSLATE_NOOP("absolute-core", ""
-"Warning: At least %d of %d masternodes are running on a newer software "
-"version. Please check latest releases, you might need to update too."),
-QT_TRANSLATE_NOOP("absolute-core", ""
-"Warning: Every masternode (out of %d known ones) is running on a newer "
-"software version. Please check latest releases, it's very likely that you "
-"missed a major/critical update."),
-QT_TRANSLATE_NOOP("absolute-core", ""
+
 "Warning: The network does not appear to fully agree! Some miners appear to "
 "be experiencing issues."),
 QT_TRANSLATE_NOOP("absolute-core", ""
@@ -338,9 +334,7 @@ QT_TRANSLATE_NOOP("absolute-core", ""
 QT_TRANSLATE_NOOP("absolute-core", ""
 "You are starting in lite mode, all Absolute-specific functionality is disabled."),
 QT_TRANSLATE_NOOP("absolute-core", ""
-"You must specify a masternodeprivkey in the configuration. Please see "
-"documentation for help."),
-QT_TRANSLATE_NOOP("absolute-core", ""
+
 "You need to rebuild the database using -reindex to go back to unpruned "
 "mode.  This will redownload the entire blockchain"),
 QT_TRANSLATE_NOOP("absolute-core", ""
@@ -351,15 +345,16 @@ QT_TRANSLATE_NOOP("absolute-core", ""
 QT_TRANSLATE_NOOP("absolute-core", "%s corrupt, salvage failed"),
 QT_TRANSLATE_NOOP("absolute-core", "%s is not a valid backup folder!"),
 QT_TRANSLATE_NOOP("absolute-core", "%s is set very high!"),
-QT_TRANSLATE_NOOP("absolute-core", "(%d could be used only on mainnet)"),
+
 QT_TRANSLATE_NOOP("absolute-core", "(default: %s)"),
 QT_TRANSLATE_NOOP("absolute-core", "(default: %u)"),
-QT_TRANSLATE_NOOP("absolute-core", "(must be %d for mainnet)"),
+
 QT_TRANSLATE_NOOP("absolute-core", "(press q to shutdown and continue later)"),
 QT_TRANSLATE_NOOP("absolute-core", "-devnet can only be specified once"),
 QT_TRANSLATE_NOOP("absolute-core", "-maxmempool must be at least %d MB"),
 QT_TRANSLATE_NOOP("absolute-core", "-port must be specified when -devnet and -listen are specified"),
 QT_TRANSLATE_NOOP("absolute-core", "-rpcport must be specified when -devnet and -server are specified"),
+QT_TRANSLATE_NOOP("absolute-core", "-wallet parameter must only specify a filename (not a path)"),
 QT_TRANSLATE_NOOP("absolute-core", "<category> can be:"),
 QT_TRANSLATE_NOOP("absolute-core", "Accept command line and JSON-RPC commands"),
 
@@ -391,7 +386,7 @@ QT_TRANSLATE_NOOP("absolute-core", "Connection options:"),
 QT_TRANSLATE_NOOP("absolute-core", "Copyright (C) 2009-%i The Bitcoin Core Developers"),
 
 QT_TRANSLATE_NOOP("absolute-core", "Corrupted block database detected"),
-QT_TRANSLATE_NOOP("absolute-core", "Could not parse masternode.conf"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Debugging/Testing options:"),
 QT_TRANSLATE_NOOP("absolute-core", "Do not load the wallet and disable wallet RPC calls"),
 QT_TRANSLATE_NOOP("absolute-core", "Do you want to rebuild the block database now?"),
@@ -433,9 +428,9 @@ QT_TRANSLATE_NOOP("absolute-core", "Failed to load InstantSend data cache from")
 QT_TRANSLATE_NOOP("absolute-core", "Failed to load fulfilled requests cache from"),
 QT_TRANSLATE_NOOP("absolute-core", "Failed to load governance cache from"),
 QT_TRANSLATE_NOOP("absolute-core", "Failed to load masternode cache from"),
-QT_TRANSLATE_NOOP("absolute-core", "Failed to load masternode payments cache from"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Failed to load sporks cache from"),
-QT_TRANSLATE_NOOP("absolute-core", "Failed to parse host:port string"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Failed to start a new mixing queue"),
 QT_TRANSLATE_NOOP("absolute-core", "Fee (in %s/kB) to add to transactions you send (default: %s)"),
 QT_TRANSLATE_NOOP("absolute-core", "Found enough users, signing ( waiting %s )"),
@@ -453,17 +448,18 @@ QT_TRANSLATE_NOOP("absolute-core", "Initialization sanity check failed. %s is sh
 QT_TRANSLATE_NOOP("absolute-core", "Input is not valid."),
 QT_TRANSLATE_NOOP("absolute-core", "InstantSend options:"),
 QT_TRANSLATE_NOOP("absolute-core", "Insufficient funds."),
-QT_TRANSLATE_NOOP("absolute-core", "Invalid -onion address: '%s'"),
-QT_TRANSLATE_NOOP("absolute-core", "Invalid -proxy address: '%s'"),
+QT_TRANSLATE_NOOP("absolute-core", "Invalid -onion address or hostname: '%s'"),
+QT_TRANSLATE_NOOP("absolute-core", "Invalid -proxy address or hostname: '%s'"),
 QT_TRANSLATE_NOOP("absolute-core", "Invalid amount for -%s=<amount>: '%s'"),
 QT_TRANSLATE_NOOP("absolute-core", "Invalid amount for -fallbackfee=<amount>: '%s'"),
 
 QT_TRANSLATE_NOOP("absolute-core", "Invalid amount for -paytxfee=<amount>: '%s' (must be at least %s)"),
+QT_TRANSLATE_NOOP("absolute-core", "Invalid characters in -wallet filename"),
 QT_TRANSLATE_NOOP("absolute-core", "Invalid masternodeblsprivkey. Please see documenation."),
-QT_TRANSLATE_NOOP("absolute-core", "Invalid masternodeprivkey. Please see documenation."),
+
 QT_TRANSLATE_NOOP("absolute-core", "Invalid minimum number of spork signers specified with -minsporkkeys"),
 QT_TRANSLATE_NOOP("absolute-core", "Invalid netmask specified in -whitelist: '%s'"),
-QT_TRANSLATE_NOOP("absolute-core", "Invalid port detected in masternode.conf"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Invalid script detected."),
 QT_TRANSLATE_NOOP("absolute-core", "Invalid spork address specified with -sporkaddr"),
 QT_TRANSLATE_NOOP("absolute-core", "KeePassHttp id for the established association"),
@@ -474,25 +470,26 @@ QT_TRANSLATE_NOOP("absolute-core", "Keep the transaction memory pool below <n> m
 QT_TRANSLATE_NOOP("absolute-core", "Keypool ran out, please call keypoolrefill first"),
 QT_TRANSLATE_NOOP("absolute-core", "Last PrivateSend was too recent."),
 QT_TRANSLATE_NOOP("absolute-core", "Last successful PrivateSend action was too recent."),
-QT_TRANSLATE_NOOP("absolute-core", "Line: %d"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Listen for JSON-RPC connections on <port> (default: %u or testnet: %u)"),
 QT_TRANSLATE_NOOP("absolute-core", "Listen for connections on <port> (default: %u or testnet: %u)"),
 QT_TRANSLATE_NOOP("absolute-core", "Loading InstantSend data cache..."),
-QT_TRANSLATE_NOOP("absolute-core", "Loading addresses..."),
+
+QT_TRANSLATE_NOOP("absolute-core", "Loading P2P addresses..."),
 QT_TRANSLATE_NOOP("absolute-core", "Loading banlist..."),
 QT_TRANSLATE_NOOP("absolute-core", "Loading block index..."),
 QT_TRANSLATE_NOOP("absolute-core", "Loading fulfilled requests cache..."),
 QT_TRANSLATE_NOOP("absolute-core", "Loading governance cache..."),
 QT_TRANSLATE_NOOP("absolute-core", "Loading masternode cache..."),
-QT_TRANSLATE_NOOP("absolute-core", "Loading masternode payment cache..."),
+
 QT_TRANSLATE_NOOP("absolute-core", "Loading sporks cache..."),
 QT_TRANSLATE_NOOP("absolute-core", "Loading wallet... (%3.2f %%)"),
 QT_TRANSLATE_NOOP("absolute-core", "Loading wallet..."),
 QT_TRANSLATE_NOOP("absolute-core", "Location of the auth cookie (default: data dir)"),
 QT_TRANSLATE_NOOP("absolute-core", "Lock is already in place."),
-QT_TRANSLATE_NOOP("absolute-core", "Lock masternodes from masternode configuration file (default: %u)"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Make the wallet broadcast transactions"),
-QT_TRANSLATE_NOOP("absolute-core", "Masternode cache is empty, skipping payments and governance cache..."),
+
 QT_TRANSLATE_NOOP("absolute-core", "Masternode options:"),
 QT_TRANSLATE_NOOP("absolute-core", "Masternode queue is full."),
 QT_TRANSLATE_NOOP("absolute-core", "Masternode:"),
@@ -517,7 +514,7 @@ QT_TRANSLATE_NOOP("absolute-core", "Number of automatic wallet backups (default:
 QT_TRANSLATE_NOOP("absolute-core", "Only connect to nodes in network <net> (ipv4, ipv6 or onion)"),
 QT_TRANSLATE_NOOP("absolute-core", "Options:"),
 QT_TRANSLATE_NOOP("absolute-core", "Password for JSON-RPC connections"),
-QT_TRANSLATE_NOOP("absolute-core", "Port: %d"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Prepend debug output with timestamp (default: %u)"),
 QT_TRANSLATE_NOOP("absolute-core", "Print this help message and exit"),
 QT_TRANSLATE_NOOP("absolute-core", "Print version and exit"),
@@ -547,7 +544,7 @@ QT_TRANSLATE_NOOP("absolute-core", "Set database cache size in megabytes (%d to 
 QT_TRANSLATE_NOOP("absolute-core", "Set key pool size to <n> (default: %u)"),
 QT_TRANSLATE_NOOP("absolute-core", "Set maximum block size in bytes (default: %d)"),
 QT_TRANSLATE_NOOP("absolute-core", "Set the masternode BLS private key"),
-QT_TRANSLATE_NOOP("absolute-core", "Set the masternode private key"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Set the number of threads to service RPC calls (default: %d)"),
 QT_TRANSLATE_NOOP("absolute-core", "Show all debugging options (usage: --help -help-debug)"),
 QT_TRANSLATE_NOOP("absolute-core", "Shrink debug.log file on client startup (default: 1 when no -debug)"),
@@ -555,22 +552,22 @@ QT_TRANSLATE_NOOP("absolute-core", "Signing transaction failed"),
 QT_TRANSLATE_NOOP("absolute-core", "Specify configuration file (default: %s)"),
 QT_TRANSLATE_NOOP("absolute-core", "Specify connection timeout in milliseconds (minimum: 1, default: %d)"),
 QT_TRANSLATE_NOOP("absolute-core", "Specify data directory"),
-QT_TRANSLATE_NOOP("absolute-core", "Specify masternode configuration file (default: %s)"),
+
 QT_TRANSLATE_NOOP("absolute-core", "Specify pid file (default: %s)"),
 QT_TRANSLATE_NOOP("absolute-core", "Specify wallet file (within data directory)"),
 QT_TRANSLATE_NOOP("absolute-core", "Specify your own public address"),
 QT_TRANSLATE_NOOP("absolute-core", "Spend unconfirmed change when sending transactions (default: %u)"),
 QT_TRANSLATE_NOOP("absolute-core", "Starting network threads..."),
-QT_TRANSLATE_NOOP("absolute-core", "Submitted following entries to masternode: %u / %d"),
-QT_TRANSLATE_NOOP("absolute-core", "Submitted to masternode, waiting for more entries ( %u / %d ) %s"),
+QT_TRANSLATE_NOOP("absolute-core", "Submitted following entries to masternode: %u"),
+QT_TRANSLATE_NOOP("absolute-core", "Submitted to masternode, waiting for more entries ( %u ) %s"),
 QT_TRANSLATE_NOOP("absolute-core", "Submitted to masternode, waiting in queue %s"),
-QT_TRANSLATE_NOOP("absolute-core", "Synchroning blockchain..."),
+
 QT_TRANSLATE_NOOP("absolute-core", "Synchronization failed"),
 QT_TRANSLATE_NOOP("absolute-core", "Synchronization finished"),
 QT_TRANSLATE_NOOP("absolute-core", "Synchronization pending..."),
+QT_TRANSLATE_NOOP("absolute-core", "Synchronizing blockchain..."),
 QT_TRANSLATE_NOOP("absolute-core", "Synchronizing governance objects..."),
-QT_TRANSLATE_NOOP("absolute-core", "Synchronizing masternode payments..."),
-QT_TRANSLATE_NOOP("absolute-core", "Synchronizing masternodes..."),
+
 QT_TRANSLATE_NOOP("absolute-core", "The source code is available from %s."),
 QT_TRANSLATE_NOOP("absolute-core", "The transaction amount is too small to pay the fee"),
 QT_TRANSLATE_NOOP("absolute-core", "The wallet will avoid paying less than the minimum relay fee."),

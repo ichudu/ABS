@@ -32,7 +32,7 @@ not done, build failures might occur when building Absolute.
 
 Please read the [depends](../depends/README.md) documentation for more details on supported hosts and configuration
 options. If no host is specified (as in the above example) when calling `make`, the depends system will default to your
-local host system. 
+local host system.
 
 Building Absolute Core
 ---------------------
@@ -40,7 +40,7 @@ Building Absolute Core
 ```bash
 $ ./autogen.sh
 
-Pick one of the following configure setups: 
+Pick one of the following configure setups:
 $ ./configure --prefix `pwd`/depends/i686-pc-linux-gnu
 $ ./configure --prefix `pwd`/depends/x86_64-pc-linux-gnu
 $ ./configure --prefix `pwd`/depends/i686-w64-mingw32

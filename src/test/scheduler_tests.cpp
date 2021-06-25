@@ -42,7 +42,6 @@ static void MicroSleep(uint64_t n)
 
 BOOST_AUTO_TEST_CASE(manythreads)
 {
-
     // Stress test: hundreds of microsecond-scheduled tasks,
     // serviced by 10 threads.
     //

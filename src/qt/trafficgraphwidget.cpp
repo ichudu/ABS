@@ -89,11 +89,11 @@ void TrafficGraphWidget::paintEvent(QPaintEvent *)
     // decide what order of magnitude we are
     int base = floor(log10(fMax));
     float val = pow(10.0f, base);
-    float val2;
+    float val2 = val;
 
     const QString units     = tr("KB/s");
     const float yMarginText = 2.0;
-    
+
     // draw lines
     painter.setPen(axisCol);
     for(float y = val; y < fMax; y += val) {

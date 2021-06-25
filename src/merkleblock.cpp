@@ -27,6 +27,7 @@ CMerkleBlock::CMerkleBlock(const CBlock& block, CBloomFilter& filter)
             TRANSACTION_PROVIDER_UPDATE_REVOKE,
             TRANSACTION_COINBASE,
     };
+
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const auto& tx = *block.vtx[i];

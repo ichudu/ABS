@@ -14,7 +14,7 @@
 
 #include "univalue.h"
 
-namespace 
+namespace
 {
 static bool ParsePrechecks(const std::string& str)
 {
@@ -121,7 +121,6 @@ bool UniValue::setNumStr(const string& val_)
 
 bool UniValue::setInt(uint64_t val_)
 {
-
     ostringstream oss;
 
     oss << val_;
@@ -131,7 +130,6 @@ bool UniValue::setInt(uint64_t val_)
 
 bool UniValue::setInt(int64_t val_)
 {
-
     ostringstream oss;
 
     oss << val_;
@@ -141,7 +139,6 @@ bool UniValue::setInt(int64_t val_)
 
 bool UniValue::setFloat(double val_)
 {
-
     ostringstream oss;
 
     oss << std::setprecision(16) << val_;
@@ -357,4 +354,3 @@ const UniValue& UniValue::get_array() const
         throw std::runtime_error("JSON value is not an array as expected");
     return *this;
 }
-
