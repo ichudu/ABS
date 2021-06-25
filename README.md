@@ -13,6 +13,10 @@ On a monthly basis we take 10% of our profit margin to buy and then destroy thos
 
 Find out more about the One Protocol: https://absify.me/one-protocol/
 
+Absolute runs a Governance system which can be implemented via: http://proposal.absify.me/
+
+10% Of blockchain rewards are dedicated to our governance system, these super blocks are issued once a week.
+
 ----------------
 
 ## Absolute Technical Details
@@ -27,8 +31,6 @@ Find out more about the One Protocol: https://absify.me/one-protocol/
 | Maximum supply | 52.5 M |
 | One Protocol (As of v.13) | 0.48 M |
 | Difficulty retargeting algo | Dark Gravity Wave v3 |
-
-
 
 
 For building please see INSTALL / proper files in the doc subfolder.
