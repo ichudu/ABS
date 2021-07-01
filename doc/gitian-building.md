@@ -253,17 +253,29 @@ Replace `root` with `debian` to log in as user.
 Non-Debian / Ubuntu, Manual and Offline Building
 ------------------------------------------------
 
-The `gitian-build.py` script will checkout different release tags, so it's best to copy it:
+The `gitian-build.py` script will checkout different release tags, so it's best to copy it some else in the enviroment:
 
-```bash
-cp absolute/contrib/gitian-build.py .
+Assuming you are in the root folder of your system, clone the absolute repository:
+```
+git clone https://github.com/absolute-community/absolute.git
 ```
 
-You only need to do this once:
+```
+mkdir build
+cp absolute/contrib/gitian-build.py build/.
+chmod 777 build -R 
+cd build
+```
+
+You will only need to do this once to setup the build enviroment:
 
 ```
-./gitian-build.py --setup
+ export NAME=absolute
+ export VERSION=0.15.0.1
+./gitian-build.py --setup $NAME $VERSION
 ```
+Where `0.15.0.1` is the most recent tag (without `v`).  
+Where `absolute` is your name.  
 
 In order to sign gitian builds on your host machine, which has your PGP key, fork the gitian.sigs repository and clone it on your host machine:
 
@@ -273,7 +285,7 @@ git clone git@github.com:$NAME/gitian.sigs.git
 git remote add $NAME git@github.com:$NAME/gitian.sigs.git
 ```
 
-Where `absolute` is your GitHub name.
+Where `absolute` is your GitHub name.  
 
 macOS code signing
 ------------------
@@ -295,14 +307,17 @@ Build binaries
 -----------------------------
 Windows and macOS have code signed binaries, but those won't be available until a few developers have gitian signed the non-codesigned binaries.
 
-To build the most recent tag:
+To build a recent tag, specify your name and tag version. Then run the script:
 ```
  export NAME=absolute
- export VERSION=13.0.1
- ./gitian-build.py --detach-sign --no-commit -b $NAME $VERSION
+ export VERSION=0.15.0.1
+ ./gitian-build.py --detach-sign --no-commit -j 10 -m 5000 -b $NAME $VERSION
 ```
 
-Where `0.18.0rc2` is the most recent tag (without `v`).
+Where `0.15.0.1` is the most recent tag (without `v`).  
+Where `absolute` is your name.  
+Where you are using `10` cores on build  
+Where you are using `5000mb` of RAM  
 
 To speed up the build, use `-j 5 -m 5000` as the first arguments, where `5` is the number of CPU cores you allocated to the VM plus one, and `5000` is a little bit less than the MBs of RAM you allocated.
 
