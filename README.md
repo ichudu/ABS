@@ -13,9 +13,9 @@ On a monthly basis we take 10% of our profit margin to buy and then destroy thos
 
 Find out more about the One Protocol: https://absify.me/one-protocol/
 
-Absolute runs a Governance system which can be implemented via: http://proposal.absify.me/
+Absolute runs a Governance system maintained by LLMQ based Masternodes which can be serviced via: http://proposal.absify.me/
 
-10% Of blockchain rewards are dedicated to our governance system, these super blocks are issued once a week.
+10% Of blockchain rewards are dedicated to our governance system, these super blocks are issued once per week.
 
 ----------------
 
