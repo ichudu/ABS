@@ -112,11 +112,7 @@ script: |
   for i in $HOSTS; do
     make ${MAKEOPTS} -C ${BASEPREFIX} HOST="${i}"
   done
-  # Faketime for binaries
-  export PATH=${PATH_orig}
-  create_global_faketime_wrappers "${REFERENCE_DATETIME}"
-  create_per-host_faketime_wrappers "${REFERENCE_DATETIME}"
-  export PATH=${WRAP_DIR}:${PATH}
+
 
   # Faketime for binaries
   export PATH=${PATH_orig}
